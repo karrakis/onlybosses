@@ -1,0 +1,16 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "GitHub.copilot",
+  "[typescript]": {
+    "editor.defaultFormatter": "GitHub.copilot"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "GitHub.copilot"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "GitHub.copilot"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "GitHub.copilot"
+  }
+}
