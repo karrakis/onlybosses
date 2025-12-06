@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  boss: one
+  boss_keyword: one
+  position: 1
+
+two:
+  boss: two
+  boss_keyword: two
+  position: 1
