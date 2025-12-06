@@ -11,7 +11,7 @@ module Api
         return render json: { error: 'keyword_names array required' }, status: :bad_request
       end
       
-      boss = BossFactory.find_or_create(keyword_names)
+      boss = ::BossFactory.find_or_create(keyword_names)
       
       render json: boss_json(boss), status: :ok
     rescue ArgumentError => e

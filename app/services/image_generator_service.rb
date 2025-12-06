@@ -7,7 +7,7 @@ class ImageGeneratorService
   
   def initialize(boss)
     @boss = boss
-    @api_key = ENV['PIXELLAB_API_KEY']
+    @api_key = ENV['PIXELLAB_API_KEY'] || (defined?(PIXELLAB_API_KEY) ? PIXELLAB_API_KEY : nil)
     raise GenerationError, "PIXELLAB_API_KEY not set" unless @api_key
   end
   
@@ -38,19 +38,23 @@ class ImageGeneratorService
     
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
+    http.read_timeout = 300 # 5 minutes
+    http.open_timeout = 300 # 5 minutes
     
     request = Net::HTTP::Post.new(uri.path)
     request['Authorization'] = "Bearer #{@api_key}"
     request['Content-Type'] = 'application/json'
     request.body = {
       description: prompt,
-      image_size: { width: 512, height: 512 }
+      image_size: { width: 200, height: 200 }
     }.to_json
     
     response = http.request(request)
     
     unless response.is_a?(Net::HTTPSuccess)
-      raise GenerationError, "API request failed: #{response.code} #{response.message}"
+      error_body = response.body rescue "No response body"
+      Rails.logger.error "PixelLab API Error: #{response.code} #{response.message} - #{error_body}"
+      raise GenerationError, "API request failed: #{response.code} #{response.message} - #{error_body}"
     end
     
     data = JSON.parse(response.body)
