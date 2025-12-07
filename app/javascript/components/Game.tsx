@@ -56,39 +56,44 @@ const Game: React.FC<GameProps> = ({onExit}) => {
     return (<div className="w-screen h-screen flex flex-col items-center justify-center bg-transparent text-white relative">
             <button className="z-10 absolute top-4 right-4 border border-white rounded px-4 py-2" onClick={onExit}>Surrender</button>
             <div className="w-3/4 h-3/4 border-4 border-dashed border-gray-400 flex flex-col">
-            <div className="h-full flex items-center justify-center">
-                <div id="left-panel" className="w-1/3 h-full border-r-2 border-gray-400 flex flex-col items-center justify-center p-4">
-                    <img 
-                        src={playerImage} 
-                        alt="Player"
-                        className="max-w-full max-h-full object-contain"
-                    />
+            <div className="h-full flex items-center justify-center relative">
+                <div id="game-background" className="absolute inset-0 -z-1">
+                    <div className="w-full h-1/2 bg-gradient-to-b from-blue-900 to-orange-500"></div>
+                    <div className="w-full h-1/2 bg-gradient-to-t from-green-700 to-green-900"></div>
                 </div>
-                <div id="center-panel" className="w-1/5 h-full border-r-2 border-gray-400 flex flex-col items-center justify-center">
-                    Center Panel
+                <div id="game-panels" className="absolute inset-0 w-full h-full flex z-10">
+                    <div id="left-panel" className="w-1/3 h-full flex flex-1 flex-col items-center justify-end p-4">
+                        <img 
+                            src={playerImage} 
+                            alt="Player"
+                            className="w-1/2 h-auto object-contain mb-16"
+                        />
+                    </div>
+                    <div id="center-panel" className="w-1/5 h-full flex flex-col items-center justify-center">
+                    </div>
+                    <div id="right-panel" className="flex-1 h-full flex flex-col items-center justify-end p-4">
+                        {loading && <div className="text-gray-400">Loading boss...</div>}
+                        {error && <div className="text-red-400">Error: {error}</div>}
+                        {boss && (
+                            <div className="w-full flex flex-col items-center justify-end">
+                                {boss.image_status === 'completed' && boss.image_url ? (
+                                    <img 
+                                        src={boss.image_url} 
+                                        alt={boss.name}
+                                        className="w-1/2 h-auto object-contain mb-16"
+                                    />
+                                ) : boss.image_status === 'generating' || boss.image_status === 'pending' ? (
+                                    <div className="flex flex-col items-center gap-4">
+                                        <div className="text-gray-400 animate-pulse">Generating boss image...</div>
+                                        <div className="text-sm text-gray-500">{boss.name}</div>
+                                    </div>
+                                ) : boss.image_status === 'failed' ? (
+                                    <div className="text-red-400">Failed to generate image</div>
+                                ) : null}
+                            </div>
+                        )}
+                    </div> 
                 </div>
-                <div id="right-panel" className="w-1/3 h-full flex flex-col items-center justify-center p-4">
-                    {loading && <div className="text-gray-400">Loading boss...</div>}
-                    {error && <div className="text-red-400">Error: {error}</div>}
-                    {boss && (
-                        <div className="w-full h-full flex flex-col items-center justify-center">
-                            {boss.image_status === 'completed' && boss.image_url ? (
-                                <img 
-                                    src={boss.image_url} 
-                                    alt={boss.name}
-                                    className="max-w-full max-h-full object-contain"
-                                />
-                            ) : boss.image_status === 'generating' || boss.image_status === 'pending' ? (
-                                <div className="flex flex-col items-center gap-4">
-                                    <div className="text-gray-400 animate-pulse">Generating boss image...</div>
-                                    <div className="text-sm text-gray-500">{boss.name}</div>
-                                </div>
-                            ) : boss.image_status === 'failed' ? (
-                                <div className="text-red-400">Failed to generate image</div>
-                            ) : null}
-                        </div>
-                    )}
-                </div> 
             </div>
                 <div id="bottom-panel" className="w-full h-32 border-t-2 border-gray-400 flex items-center justify-between px-4">
                     <div id="life-bar" className="flex items-center gap-2">
