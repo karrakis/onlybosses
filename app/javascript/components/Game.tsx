@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BossService, Boss } from '../services/BossService';
+import playerImage from '../images/player.png';
 
 interface GameProps {
     onExit: () => void;
@@ -56,8 +57,12 @@ const Game: React.FC<GameProps> = ({onExit}) => {
             <button className="z-10 absolute top-4 right-4 border border-white rounded px-4 py-2" onClick={onExit}>Surrender</button>
             <div className="w-3/4 h-3/4 border-4 border-dashed border-gray-400 flex flex-col">
             <div className="h-full flex items-center justify-center">
-                <div id="left-panel" className="w-1/3 h-full border-r-2 border-gray-400 flex flex-col items-center justify-center">
-                    Left Panel
+                <div id="left-panel" className="w-1/3 h-full border-r-2 border-gray-400 flex flex-col items-center justify-center p-4">
+                    <img 
+                        src={playerImage} 
+                        alt="Player"
+                        className="max-w-full max-h-full object-contain"
+                    />
                 </div>
                 <div id="center-panel" className="w-1/5 h-full border-r-2 border-gray-400 flex flex-col items-center justify-center">
                     Center Panel

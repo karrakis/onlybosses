@@ -46,7 +46,10 @@ class ImageGeneratorService
     request['Content-Type'] = 'application/json'
     request.body = {
       description: prompt,
-      image_size: { width: 200, height: 200 }
+      image_size: { width: 200, height: 200 },
+      no_background: true,
+      from_direction: 'east',
+      to_direction: 'west'
     }.to_json
     
     response = http.request(request)
