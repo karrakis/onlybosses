@@ -1,0 +1,146 @@
+{
+    "endurance": {
+        "basic_attack": {
+            "damage": "weapon damage + stats + modifier, within range"
+        },
+        "power_strike": {
+            "damage": "weapon damage + stats + modifier, within range",
+            "effect": "high damage, chance to stun target for x turns"
+        },
+        "shield_block": {
+            "damage": "none",
+            "effect": "reduces incoming damage by 50% for x turns"
+        },
+        "dodge": {
+            "damage": "none",
+            "effect": "increases chance to dodge attacks by x% for y turns"
+        },
+        "mirror image": {
+            "damage": "none",
+            "effect": "creates a duplicate of the player. Attacks have a chance to hit the duplicate instead of the player for x turns.  You may have any number of these duplicates active at once."
+        },
+        "A thousand cuts": {
+            "damage": "weapon damage + stats + modifier, within range",
+            "effect": "applies x stacks of bleed to target, dealing y% of weapon damage each turn for z turns"
+        },
+        "Poisoned blade": {
+            "damage": "weapon damage + stats + modifier, within range",
+            "effect": "applies x stacks of poison to target, dealing y% of weapon damage each turn for z turns"
+        },
+        "Adrenaline rush": {
+            "damage": "none",
+            "effect": "restores x endurance immediately and an additional y endurance each turn for z turns, at a cost of reducing maximum health by w% for the duration"
+        }
+    },
+    "mana": {
+        "fire": {
+            "fireball": {
+                "damage": "magic damage + stats + modifier, within range",
+                "effect": "high damage, hits all targets"
+            },
+            "fire bolt": {
+                "damage": "magic damage + stats + modifier, within range",
+                "effect": "ignites ignitable targets for x turns for y damage per turn"
+            },
+            "fire wall": {
+                "damage": "none",
+                "effect": "creates a wall of fire that gives the player high fire thorns damage"
+            }
+        },
+        "ice": {
+            "ice shard": {
+                "damage": "magic damage + stats + modifier, within range",
+                "effect": "lowers target dexterity for x turns"
+            },
+            "ice storm": {
+                "damage": "magic damage + stats + modifier, within range",
+                "effect": "medium damage, hits all targets, chance to freeze targets for x turns"
+            },
+            "ice barrier": {
+                "damage": "none",
+                "effect": "creates a barrier that absorbs x amount of damage"
+            }
+        },
+        "lightning": {
+            "lightning strike": {
+                "damage": "magic damage + stats + modifier, within range",
+                "effect": "medium damage, chance to stun target for x turns"
+            },
+            "chain lightning": {
+                "damage": "magic damage + stats + modifier, within range",
+                "effect": "hits primary target and jumps to y additional targets"
+            },
+            "lightning shield": {
+                "damage": "none",
+                "effect": "creates a shield that stuns attackers for 1 turn and possibly shocks them, increasing damage taken"
+            },
+            "shock": {
+                "damage": "none, applies x levels of shock to target",
+                "effect": "(100 / target shock stacks + 1)% chance to stun target for 1 turn, increases damage taken for [shock stacks] turns"
+            }
+        },
+        "light": {
+            "heal": {
+                "healing": "magic healing + stats + modifier, within range",
+                "effect": "restores health to player"
+            },
+            "holy strike": {
+                "damage": "magic damage + stats + modifier, within range",
+                "effect": "medium damage, extra damage to undead targets, chance to blind target for x turns"
+            },
+            "blessing": {
+                "damage": "none",
+                "effect": "increases player's stats for x turns"
+            }
+        },
+        "nature": {
+            "vine whip": {
+                "damage": "magic damage + stats + modifier, within range",
+                "effect": "low damage, chance to entangle target for x turns, which gives a flat 50% chance to miss attacks and negates all bonuses to chance to hit"
+            },
+            "earthquake": {
+                "damage": "magic damage + stats + modifier, within range",
+                "effect": "medium damage, hits all targets, chance to stun targets for x turns"
+            },
+            "wall of thorns": {
+                "damage": "none",
+                "effect": "creates a shield that reduces incoming damage by 50% and deals low thorn damage to attackers"
+            },
+            "regeneration": {
+                "healing": "magic healing + stats + modifier, within range",
+                "effect": "restores health over time for x turns"
+            }
+        }
+
+    },
+    "mana + endurance": {
+        "vampiric strike": {
+            "damage": "weapon damage + stats + modifier, within range",
+            "effect": "heals for x% of damage dealt"
+        },
+        "dark pact": {
+            "damage": "none",
+            "effect": "sacrifice x% of current health to restore y% of max mana each turn for y turns.  Can kill player."
+        },
+        "infusion": {
+            "damage": "none",
+            "effect": "convert x% of mana to endurance each turn for y turns"
+        },
+        "last stand": {
+            "damage": "life - 1 * modifiers",
+            "effect": "sacrifice all but one life to deal massive damage to all enemies.  You are stunned for 1 turn after using this ability."
+        },
+        "edge of madness": {
+            "damage": "extremely variable",
+            "effect": "deal random damage between 0 and double your max health to target. Take damage equal to half the damage dealt (this damage cannot be prevented or reduced). Gain life, mana or stamina equal to 10% of damage dealt, *after* damage is taken."
+        },
+        "gentleman's agreement": {
+            "damage": "none",
+            "effect": "Your maximum life is halved and your opponent loses maximum life equal to the maximum life you lost.  This can kill your opponent."
+        },
+        "steal fate": {
+            "damage": "none",
+            "effect": "For x turns, y% of damage dealt to enemies is also dealt to their maximum life.  This can kill enemies. You gain an equivalent amount of maximum life but do not heal the gained maximum life."
+        }
+    }
+}
