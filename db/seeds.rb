@@ -4,78 +4,50 @@
 # Boss Keywords
 keywords_data = [
   # Creatures
-  { name: "skeleton", category: "creature", rarity: 1, attributes: {
-    resistances: ["piercing"],
-    vulnerabilities: ["blunt"],
-    base_stats: { defense: -2, speed: 2 }
-  }},
-  { name: "octopus", category: "creature", rarity: 2, attributes: {
-    resistances: ["blunt", "charm"],
-    special: { max_weapons: 8 },
-    base_stats: { intelligence: 9, dexterity: 3 }
-  }},
-  { name: "dragon", category: "creature", rarity: 3, attributes: {
-    resistances: ["fire", "piercing"],
-    vulnerabilities: ["ice"],
-    base_stats: { strength: 10, defense: 8, health: 50 },
-    special: { can_fly: true }
-  }},
-  { name: "golem", category: "creature", rarity: 2, attributes: {
-    resistances: ["piercing", "slashing", "blunt"],
-    vulnerabilities: ["magic"],
-    base_stats: { defense: 15, speed: -3 }
-  }},
-  { name: "ghost", category: "creature", rarity: 2, attributes: {
-    resistances: ["physical"],
-    vulnerabilities: ["holy"],
-    base_stats: { defense: -5 },
-    special: { intangible: true }
-  }},
-  { name: "vampire", category: "creature", rarity: 3, attributes: {
-    resistances: ["charm", "fear"],
-    vulnerabilities: ["holy", "fire"],
-    base_stats: { strength: 5, speed: 4 },
-    special: { life_drain: true }
-  }},
-  { name: "goat", category: "creature", rarity: 1, attributes: {
-    base_stats: { stubbornness: 10 }
-  }},
+  { name: "skeleton", category: "creature", rarity: 1, attributes: {"hp"=>0.8, "dexterity"=>0.8, "endurance"=>0.8, "phys_armor"=>1.4, "resistances"=>["piercing", "dark", "mind"], "vulnerabilities"=>["blunt", "light", "holy"]}},
+  { name: "octopus", category: "creature", rarity: 2, attributes: {"hp"=>1.2, "dexterity"=>1.3, "intelligence"=>1.5, "resistances"=>["blunt", "charm"], "vulnerabilities"=>["fire", "lightning"]}},
+  { name: "dragon", category: "creature", rarity: 3, attributes: {"hp"=>2.0, "strength"=>1.8, "phys_armor"=>1.5, "mag_armor"=>1.3, "resistances"=>["fire", "piercing"], "vulnerabilities"=>["ice"]}},
+  { name: "golem", category: "creature", rarity: 2, attributes: {"hp"=>1.5, "phys_armor"=>2.0, "dexterity"=>0.5, "resistances"=>["piercing", "slashing", "blunt"], "vulnerabilities"=>["magic", "lightning"]}},
+  { name: "ghost", category: "creature", rarity: 2, attributes: {"hp"=>0.6, "dexterity"=>1.4, "mag_armor"=>1.2, "resistances"=>["physical"], "vulnerabilities"=>["holy", "light"]}},
+  { name: "vampire", category: "creature", rarity: 3, attributes: {"hp"=>1.3, "strength"=>1.4, "dexterity"=>1.3, "resistances"=>["charm", "fear", "dark"], "vulnerabilities"=>["holy", "fire", "light"]}},
+  { name: "goat", category: "creature", rarity: 1, attributes: {"hp"=>1.0, "endurance"=>1.2, "strength"=>0.9, "resistances"=>["charm"], "vulnerabilities"=>["slashing"]}},
   
   # Weapons
   { name: "spear", category: "weapon", rarity: 1, attributes: {
     weapon_type: "piercing",
-    base_stats: { attack: 5, range: 2 }
+    base_stats: { damage: 5, range: 2 }
   }},
   { name: "sword", category: "weapon", rarity: 1, attributes: {
     weapon_type: "slashing",
-    base_stats: { attack: 6, range: 1 }
+    base_stats: { damage: 6, range: 1 }
   }},
   { name: "axe", category: "weapon", rarity: 1, attributes: {
     weapon_type: "slashing",
-    base_stats: { attack: 8, speed: -1 }
+    base_stats: { damage: 8, range: 1 }
   }},
   { name: "bow", category: "weapon", rarity: 1, attributes: {
     weapon_type: "piercing",
-    base_stats: { attack: 4, range: 5 }
+    base_stats: { damage: 4, range: 5 }
   }},
-  { name: "staff", category: "weapon", rarity: 2, attributes: {
+  { name: "wizard staff", category: "weapon", rarity: 2, attributes: {
     weapon_type: "magic",
-    base_stats: { magic: 5, intelligence: 2 }
+    base_stats: { damage: 5, range: 4}
   }},
   
   # Elements
   { name: "fire", category: "element", rarity: 2, attributes: {
-    resistances: ["ice"],
-    vulnerabilities: ["water"],
+    resistances: ["fire", "light"],
+    vulnerabilities: ["water", "ice"],
     base_stats: { attack: 3 }
   }},
   { name: "ice", category: "element", rarity: 2, attributes: {
-    resistances: ["water"],
-    vulnerabilities: ["fire"],
+    resistances: ["water", "ice"],
+    vulnerabilities: ["lightning", "blunt"],
     base_stats: { defense: 2 }
   }},
   { name: "lightning", category: "element", rarity: 2, attributes: {
-    resistances: ["water"],
+    resistances: ["air", "dark"],
+    vulnerabilities: ["earth", "water"],
     base_stats: { speed: 3, attack: 4 }
   }},
 ]

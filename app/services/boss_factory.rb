@@ -69,7 +69,8 @@ class BossFactory
         vulnerabilities: [],
         base_stats: {},
         special: {},
-        weapons: []
+        weapons: [],
+        abilities: [],
       }
       
       keywords.each do |keyword|
