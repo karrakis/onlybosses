@@ -11,6 +11,14 @@ const Game: React.FC<GameProps> = ({onExit}) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const [playerLife, setPlayerLife] = useState<number>(100);
+    const [playerStamina, setPlayerStamina] = useState<number>(100);
+    const [playerMana, setPlayerMana] = useState<number>(100);
+
+    const [bossLife, setBossLife] = useState<number>(100);
+    const [bossStamina, setBossStamina] = useState<number>(100);
+    const [bossMana, setBossMana] = useState<number>(100);
+
     useEffect(() => {
         // Load the first boss (skeleton) when component mounts
         const loadBoss = async () => {
@@ -76,6 +84,18 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                         {error && <div className="text-red-400">Error: {error}</div>}
                         {boss && (
                             <div className="w-full flex flex-col items-center justify-end">
+                                <div className="text-2xl font-bold mb-4">{boss.name}</div>
+                                <div className="mb-4 flex">
+                                    <div id="boss-life-bar" className="w-64 h-6 bg-gray-600 border-2 border-gray-400 overflow-hidden">
+                                        <div className="h-full bg-red-500" style={{width: `${bossLife}%`}}></div>
+                                    </div>
+                                    <div id="boss-stamina-bar" className="w-64 h-6 bg-yellow-600 border-2 border-gray-400 overflow-hidden ml-4">
+                                        <div className="h-full bg-green-500" style={{width: `${bossStamina}%`}}></div>
+                                    </div>
+                                    <div id="boss-mana-bar" className="w-64 h-6 bg-blue-600 border-2 border-gray-400 overflow-hidden ml-4">
+                                        <div className="h-full bg-blue-500" style={{width: `${bossMana}%`}}></div>
+                                    </div>
+                                </div>
                                 {boss.image_status === 'completed' && boss.image_url ? (
                                     <img 
                                         src={boss.image_url} 
@@ -98,17 +118,17 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                 <div id="bottom-panel" className="w-full h-32 border-t-2 border-gray-400 flex items-center justify-between px-4">
                     <div id="life-bar" className="flex items-center gap-2">
                         <div className="w-24 h-24 rounded-full bg-black border-2 border-gray-400 relative overflow-hidden">
-                            <div className="absolute bottom-0 w-full h-[75%] bg-red-600"></div>
+                            <div className="absolute bottom-0 w-full bg-red-600" style={{height: `${playerLife}%`}}></div>
                         </div>
                     </div>
                     <div id="stamina-bar" className="flex items-center gap-2">
                         <div className="w-24 h-24 rounded-full bg-black border-2 border-gray-400 relative overflow-hidden">
-                            <div className="absolute bottom-0 w-full h-[55%] bg-green-600"></div>
+                            <div className="absolute bottom-0 w-full bg-green-600" style={{height: `${playerStamina}%`}}></div>
                         </div>
                     </div>
                     <div id="mana-bar" className="flex items-center gap-2">
                         <div className="w-24 h-24 rounded-full bg-black border-2 border-gray-400 relative overflow-hidden">
-                            <div className="absolute bottom-0 w-full h-[40%] bg-blue-600"></div>
+                            <div className="absolute bottom-0 w-full bg-blue-600" style={{height: `${playerMana}%`}}></div>
                         </div>
                     </div>
                     <div id="character-picture" className="flex items-center gap-2">
@@ -118,7 +138,7 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                     </div>
                     <div id="action-bar" className="flex items-center gap-2 w-full">
                         <div className="w-64 h-24 rounded-lg bg-gray-800 border-2 border-gray-400 flex items-center justify-center">
-                            Action 1
+                            Attack
                         </div>
                         <div className="w-64 h-24 rounded-lg bg-gray-800 border-2 border-gray-400 flex items-center justify-center">
                             Action 2
