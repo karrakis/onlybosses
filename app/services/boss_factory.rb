@@ -67,11 +67,13 @@ class BossFactory
       merged = {
         resistances: [],
         vulnerabilities: [],
-        base_stats: {},
+        base_stats: {life: 100, mana: 100, endurance: 100, damage: 10, defense: 10},
         special: {},
         weapons: [],
         abilities: [],
       }
+
+      level = keywords.count
       
       keywords.each do |keyword|
         attrs = keyword.properties.deep_symbolize_keys
@@ -86,8 +88,8 @@ class BossFactory
         merged[:vulnerabilities] -= merged[:resistances]
         
         # Merge base stats (additive)
-        (attrs[:base_stats] || {}).each do |stat, value|
-          merged[:base_stats][stat] = (merged[:base_stats][stat] || 0) + value
+        (attrs[:multipliers] || {}).each do |stat, value|
+          merged[:base_stats][stat] = (merged[:base_stats][stat] * value)
         end
         
         # Merge special attributes (last one wins for conflicts)

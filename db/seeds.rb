@@ -4,13 +4,13 @@
 # Boss Keywords
 keywords_data = [
   # Creatures
-  { name: "skeleton", category: "creature", rarity: 1, attributes: {"hp"=>0.8, "dexterity"=>0.8, "endurance"=>0.8, "phys_armor"=>1.4, "resistances"=>["piercing", "dark", "mind"], "vulnerabilities"=>["blunt", "light", "holy"]}},
-  { name: "octopus", category: "creature", rarity: 2, attributes: {"hp"=>1.2, "dexterity"=>1.3, "intelligence"=>1.5, "resistances"=>["blunt", "charm"], "vulnerabilities"=>["fire", "lightning"]}},
-  { name: "dragon", category: "creature", rarity: 3, attributes: {"hp"=>2.0, "strength"=>1.8, "phys_armor"=>1.5, "mag_armor"=>1.3, "resistances"=>["fire", "piercing"], "vulnerabilities"=>["ice"]}},
-  { name: "golem", category: "creature", rarity: 2, attributes: {"hp"=>1.5, "phys_armor"=>2.0, "dexterity"=>0.5, "resistances"=>["piercing", "slashing", "blunt"], "vulnerabilities"=>["magic", "lightning"]}},
-  { name: "ghost", category: "creature", rarity: 2, attributes: {"hp"=>0.6, "dexterity"=>1.4, "mag_armor"=>1.2, "resistances"=>["physical"], "vulnerabilities"=>["holy", "light"]}},
-  { name: "vampire", category: "creature", rarity: 3, attributes: {"hp"=>1.3, "strength"=>1.4, "dexterity"=>1.3, "resistances"=>["charm", "fear", "dark"], "vulnerabilities"=>["holy", "fire", "light"]}},
-  { name: "goat", category: "creature", rarity: 1, attributes: {"hp"=>1.0, "endurance"=>1.2, "strength"=>0.9, "resistances"=>["charm"], "vulnerabilities"=>["slashing"]}},
+  { name: "skeleton", category: "creature", rarity: 1, attributes: {"multipliers" => {"life"=>0.8, "dexterity"=>0.8, "endurance"=>0.8, "mana"=>1.5, "phys_armor"=>1.4}, "resistances"=>["piercing", "dark", "mind"], "vulnerabilities"=>["blunt", "light", "holy"]}},
+  { name: "octopus", category: "creature", rarity: 2, attributes: {"multipliers" => {"life"=>1.2, "dexterity"=>1.3, "intelligence"=>1.5}, "resistances"=>["blunt", "charm"], "vulnerabilities"=>["fire", "lightning"]}},
+  { name: "dragon", category: "creature", rarity: 3, attributes: {"multipliers" => {"life"=>2.0, "strength"=>1.8, "phys_armor"=>1.5, "mag_armor"=>1.3}, "resistances"=>["fire", "piercing"], "vulnerabilities"=>["ice"]}},
+  { name: "golem", category: "creature", rarity: 2, attributes: {"multipliers" => {"life"=>1.5, "phys_armor"=>2.0, "dexterity"=>0.5}, "resistances"=>["piercing", "slashing", "blunt"], "vulnerabilities"=>["magic", "lightning"]}},
+  { name: "ghost", category: "creature", rarity: 2, attributes: {"multipliers" => {"life"=>0.6, "dexterity"=>1.6, "mag_armor"=>1.2}, "resistances"=>["physical"], "vulnerabilities"=>["holy", "light"]}},
+  { name: "vampire", category: "creature", rarity: 3, attributes: {"multipliers" => {"life"=>1.3, "strength"=>1.2, "dexterity"=>1.3, "mana" => 1.2}, "resistances"=>["charm", "fear", "dark"], "vulnerabilities"=>["holy", "fire", "light"]}},
+  { name: "goat", category: "creature", rarity: 1, attributes: {"multipliers" => {"life"=>1.0, "endurance"=>1.2, "strength"=>0.9}, "resistances"=>["charm"], "vulnerabilities"=>["slashing"]}},
   
   # Weapons
   { name: "spear", category: "weapon", rarity: 1, attributes: {
