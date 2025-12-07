@@ -20,6 +20,21 @@ const Game: React.FC<GameProps> = ({onExit}) => {
     const [bossMana, setBossMana] = useState<number>(100);
 
     useEffect(() => {
+        if (boss) {
+            // Assuming boss.stats has life, mana, endurance properties
+            console.log('Boss stats:', boss.stats);
+            const stats = boss.stats;
+            const maxLife = stats.base_stats.life || 100;
+            const maxMana = stats.base_stats.mana || 100;
+            const maxEndurance = stats.base_stats.endurance || 100;
+
+            setBossLife(maxLife);
+            setBossMana(maxMana);
+            setBossStamina(maxEndurance);
+        }
+    }, [boss]);
+
+    useEffect(() => {
         // Load the first boss (skeleton) when component mounts
         const loadBoss = async () => {
             try {
@@ -87,13 +102,13 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                                 <div className="text-2xl font-bold mb-4">{boss.name}</div>
                                 <div className="mb-4 flex">
                                     <div id="boss-life-bar" className="w-64 h-6 bg-gray-600 border-2 border-gray-400 overflow-hidden">
-                                        <div className="h-full bg-red-500" style={{width: `${bossLife}%`}}></div>
+                                        <div className="h-full bg-red-500" style={{width: `${bossLife}%`}}>{bossLife}</div>
                                     </div>
                                     <div id="boss-stamina-bar" className="w-64 h-6 bg-yellow-600 border-2 border-gray-400 overflow-hidden ml-4">
-                                        <div className="h-full bg-green-500" style={{width: `${bossStamina}%`}}></div>
+                                        <div className="h-full bg-green-500" style={{width: `${bossStamina}%`}}>{bossStamina}</div>
                                     </div>
                                     <div id="boss-mana-bar" className="w-64 h-6 bg-blue-600 border-2 border-gray-400 overflow-hidden ml-4">
-                                        <div className="h-full bg-blue-500" style={{width: `${bossMana}%`}}></div>
+                                        <div className="h-full bg-blue-500" style={{width: `${bossMana}%`}}>{bossMana}</div>
                                     </div>
                                 </div>
                                 {boss.image_status === 'completed' && boss.image_url ? (
