@@ -15,6 +15,10 @@ const Game: React.FC<GameProps> = ({onExit}) => {
     const [playerStamina, setPlayerStamina] = useState<number>(100);
     const [playerMana, setPlayerMana] = useState<number>(100);
 
+    const [bossLifePercentage, setBossLifePercentage] = useState<number>(100);
+    const [bossStaminaPercentage, setBossStaminaPercentage] = useState<number>(100);
+    const [bossManaPercentage, setBossManaPercentage] = useState<number>(100);
+
     const [bossLife, setBossLife] = useState<number>(100);
     const [bossStamina, setBossStamina] = useState<number>(100);
     const [bossMana, setBossMana] = useState<number>(100);
@@ -27,6 +31,10 @@ const Game: React.FC<GameProps> = ({onExit}) => {
             const maxLife = stats.base_stats.life || 100;
             const maxMana = stats.base_stats.mana || 100;
             const maxEndurance = stats.base_stats.endurance || 100;
+
+            setBossLifePercentage(maxLife / maxLife * 100);
+            setBossManaPercentage(maxMana / maxMana * 100);
+            setBossStaminaPercentage(maxEndurance / maxEndurance * 100);
 
             setBossLife(maxLife);
             setBossMana(maxMana);
@@ -101,14 +109,17 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                             <div className="w-full flex flex-col items-center justify-end">
                                 <div className="text-2xl font-bold mb-4">{boss.name}</div>
                                 <div className="mb-4 flex">
-                                    <div id="boss-life-bar" className="w-64 h-6 bg-gray-600 border-2 border-gray-400 overflow-hidden">
-                                        <div className="h-full bg-red-500" style={{width: `${bossLife}%`}}>{bossLife}</div>
+                                    <div id="boss-life-bar" className="w-64 h-12 bg-gray-600 border-2 border-gray-400 overflow-hidden relative">
+                                        <div className="h-full bg-red-500" style={{width: `${bossLifePercentage}%`}}></div>
+                                        <div className="absolute inset-0 flex items-center justify-center">{bossLife}</div>
                                     </div>
-                                    <div id="boss-stamina-bar" className="w-64 h-6 bg-yellow-600 border-2 border-gray-400 overflow-hidden ml-4">
-                                        <div className="h-full bg-green-500" style={{width: `${bossStamina}%`}}>{bossStamina}</div>
+                                    <div id="boss-stamina-bar" className="w-64 h-12 bg-yellow-600 border-2 border-gray-400 overflow-hidden ml-4 relative">
+                                        <div className="h-full bg-green-500" style={{width: `${bossStaminaPercentage}%`}}></div>
+                                        <div className="absolute inset-0 flex items-center justify-center">{bossStamina}</div>
                                     </div>
-                                    <div id="boss-mana-bar" className="w-64 h-6 bg-blue-600 border-2 border-gray-400 overflow-hidden ml-4">
-                                        <div className="h-full bg-blue-500" style={{width: `${bossMana}%`}}>{bossMana}</div>
+                                    <div id="boss-mana-bar" className="w-64 h-12 bg-blue-600 border-2 border-gray-400 overflow-hidden ml-4 relative">
+                                        <div className="h-full bg-blue-500" style={{width: `${bossManaPercentage}%`}}></div>
+                                        <div className="absolute inset-0 flex items-center justify-center">{bossMana}</div>
                                     </div>
                                 </div>
                                 {boss.image_status === 'completed' && boss.image_url ? (

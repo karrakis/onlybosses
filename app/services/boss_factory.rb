@@ -9,25 +9,32 @@ class BossFactory
       missing = sorted_names - keywords.keys
       raise ArgumentError, "Keywords not found: #{missing.join(', ')}" if missing.any?
       
+      puts "Looking for boss with keywords: #{keywords.values.map(&:name).join(', ')}"
+      puts "Keyword IDs: #{keywords.values.map(&:id).sort.inspect}"
+      
       # Find existing boss with exact keyword combination
       boss = find_boss_by_keywords(keywords.values)
       
       if boss
+        puts "FOUND EXISTING BOSS: #{boss.id} - #{boss.name}"
         # Boss exists - check if image needs generation
         if boss.image.attached?
           return boss
         else
           # Trigger image generation if not already in progress
           unless boss.image_generation_status == 'generating'
-            GenerateBossImageJob.perform_later(boss.id)
+            # temporarily decoupled to avoid expending API credits
+            # GenerateBossImageJob.perform_later(boss.id)
           end
           return boss
         end
       end
       
       # Create new boss
+      puts "NO EXISTING BOSS FOUND - Creating new boss"
       boss = create_boss_with_keywords(keywords.values)
-      GenerateBossImageJob.perform_later(boss.id)
+      # temporarily decoupled to avoid expending API credits
+    #   GenerateBossImageJob.perform_later(boss.id)
       
       boss
     end
@@ -43,6 +50,7 @@ class BossFactory
     end
     
     def create_boss_with_keywords(keywords)
+        puts "Creating boss with keywords: #{keywords.map(&:name).join(', ')}"
       boss = Boss.create!(
         name: generate_name(keywords),
         computed_stats: compute_stats(keywords)
@@ -64,6 +72,7 @@ class BossFactory
     end
     
     def compute_stats(keywords)
+        puts "Computing stats for keywords: #{keywords.map(&:name).join(', ')}"
       merged = {
         resistances: [],
         vulnerabilities: [],
@@ -76,6 +85,8 @@ class BossFactory
       level = keywords.count
       
       keywords.each do |keyword|
+        puts "Merging stats from keyword: #{keyword.name}"
+        
         attrs = keyword.properties.deep_symbolize_keys
         
         # Add resistances
@@ -87,9 +98,15 @@ class BossFactory
         # Resistances cancel out vulnerabilities
         merged[:vulnerabilities] -= merged[:resistances]
         
-        # Merge base stats (additive)
-        (attrs[:multipliers] || {}).each do |stat, value|
-          merged[:base_stats][stat] = (merged[:base_stats][stat] * value)
+        # Merge base stats (multiplicative)
+        (attrs[:multipliers] || {}).each do |stat, multiplier|
+          stat_key = stat.to_sym
+          if merged[:base_stats].key?(stat_key)
+            puts "  Applying multiplier to #{stat_key}: #{merged[:base_stats][stat_key]} * #{multiplier} = #{merged[:base_stats][stat_key] * multiplier}"
+            merged[:base_stats][stat_key] = (merged[:base_stats][stat_key] * multiplier).round(2)
+          else
+            puts "  Warning: stat '#{stat_key}' not found in base_stats, skipping"
+          end
         end
         
         # Merge special attributes (last one wins for conflicts)

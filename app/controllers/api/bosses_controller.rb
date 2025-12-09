@@ -5,7 +5,11 @@ module Api
     # POST /api/bosses/generate
     # Body: { keyword_names: ["skeleton", "octopus", "spear"] }
     def generate
+      Rails.logger.info "=" * 80
+      Rails.logger.info "BOSS GENERATE ENDPOINT HIT"
+      Rails.logger.info "=" * 80
       keyword_names = params[:keyword_names]
+      puts "Generating a boss: Received keyword names: #{keyword_names.inspect}"
       
       if keyword_names.blank? || !keyword_names.is_a?(Array)
         return render json: { error: 'keyword_names array required' }, status: :bad_request
