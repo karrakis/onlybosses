@@ -1,6 +1,8 @@
 Rails.application.routes.draw do
   root 'components#index'
   
+  post 'take_action', to: 'game#take_action'
+  
   namespace :api do
     resources :bosses, only: [:show, :index] do
       collection do

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BossService, Boss } from '../services/BossService';
 import playerImage from '../images/player.png';
+import takeAction from '../actions/takeAction';
 
 interface GameProps {
     onExit: () => void;
@@ -22,6 +23,28 @@ const Game: React.FC<GameProps> = ({onExit}) => {
     const [bossLife, setBossLife] = useState<number>(100);
     const [bossStamina, setBossStamina] = useState<number>(100);
     const [bossMana, setBossMana] = useState<number>(100);
+
+    const [player, setPlayer] = useState<any>({
+        name: 'Hero',
+        stats: {
+            life: 100,
+            stamina: 100,
+            mana: 100,
+            damage: 10,
+        },
+        actions: ['attack']
+    });
+
+    const gameStatus = {
+        playerLife,
+        playerStamina,
+        playerMana,
+        bossLife,
+        bossStamina,
+        bossMana,
+        player,
+        boss
+    }
 
     useEffect(() => {
         if (boss) {
@@ -83,6 +106,38 @@ const Game: React.FC<GameProps> = ({onExit}) => {
 
         loadBoss();
     }, []);
+
+    const handleAttack = async () => {
+        try {
+            const response = await takeAction('attack', gameStatus);
+            
+            console.log("received game status:", response);
+            
+            // Response is the game_status directly
+            if (response.bossLife !== undefined) {
+                console.log("updating boss life to:", response.bossLife);
+                setBossLife(response.bossLife);
+                const stats = boss?.stats;
+                const maxLife = stats?.base_stats?.life || 100;
+                console.log("updating boss life percentage to:", (response.bossLife / maxLife) * 100);
+                setBossLifePercentage((response.bossLife / maxLife) * 100);
+            }
+            
+            // Update other game state as needed
+            if (response.playerLife !== undefined) {
+                setPlayerLife(response.playerLife);
+            }
+            if (response.playerStamina !== undefined) {
+                setPlayerStamina(response.playerStamina);
+            }
+            if (response.playerMana !== undefined) {
+                setPlayerMana(response.playerMana);
+            }
+        } catch (err) {
+            console.error('Error taking action:', err);
+            setError(err instanceof Error ? err.message : 'Failed to take action');
+        }
+    };
 
     return (<div className="w-screen h-screen flex flex-col items-center justify-center bg-transparent text-white relative">
             <button className="z-10 absolute top-4 right-4 border border-white rounded px-4 py-2" onClick={onExit}>Surrender</button>
@@ -163,7 +218,7 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                         </div>
                     </div>
                     <div id="action-bar" className="flex items-center gap-2 w-full">
-                        <div className="w-64 h-24 rounded-lg bg-gray-800 border-2 border-gray-400 flex items-center justify-center">
+                        <div className="w-64 h-24 rounded-lg bg-gray-800 border-2 border-gray-400 flex items-center justify-center cursor-pointer hover:bg-gray-700 active:bg-gray-600" onClick={handleAttack}>
                             Attack
                         </div>
                         <div className="w-64 h-24 rounded-lg bg-gray-800 border-2 border-gray-400 flex items-center justify-center">
