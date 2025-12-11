@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BossService, Boss } from '../services/BossService';
 import playerImage from '../images/player.png';
 import takeAction from '../actions/takeAction';
+import ShakeAnimation from './ShakeAnimation';
 
 interface GameProps {
     onExit: () => void;
@@ -23,6 +24,7 @@ const Game: React.FC<GameProps> = ({onExit}) => {
     const [bossLife, setBossLife] = useState<number>(100);
     const [bossStamina, setBossStamina] = useState<number>(100);
     const [bossMana, setBossMana] = useState<number>(100);
+    const [bossShaking, setBossShaking] = useState<boolean>(false);
 
     const [player, setPlayer] = useState<any>({
         name: 'Hero',
@@ -109,6 +111,7 @@ const Game: React.FC<GameProps> = ({onExit}) => {
 
     const handleAction = async (action: string) => {
         try {
+            
             const response = await takeAction(action, gameStatus);
             
             console.log("received game status:", response);
@@ -116,6 +119,9 @@ const Game: React.FC<GameProps> = ({onExit}) => {
             // Response is the game_status directly
             if (response.bossLife !== undefined) {
                 console.log("updating boss life to:", response.bossLife);
+                if (response.bossLife < bossLife) {
+                    setBossShaking(true);
+                }
                 setBossLife(response.bossLife);
                 const stats = boss?.stats;
                 const maxLife = stats?.base_stats?.life || 100;
@@ -178,11 +184,18 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                                     </div>
                                 </div>
                                 {boss.image_status === 'completed' && boss.image_url ? (
-                                    <img 
-                                        src={boss.image_url} 
-                                        alt={boss.name}
-                                        className="w-1/2 h-auto object-contain mb-16"
-                                    />
+                                    <ShakeAnimation 
+                                        isShaking={bossShaking} 
+                                        duration={500} 
+                                        intensity={10}
+                                        onComplete={() => setBossShaking(false)}
+                                    >
+                                        <img 
+                                            src={boss.image_url} 
+                                            alt={boss.name}
+                                            className="w-1/2 h-auto object-contain mb-16"
+                                        />
+                                    </ShakeAnimation>
                                 ) : boss.image_status === 'generating' || boss.image_status === 'pending' ? (
                                     <div className="flex flex-col items-center gap-4">
                                         <div className="text-gray-400 animate-pulse">Generating boss image...</div>
