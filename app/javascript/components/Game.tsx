@@ -25,6 +25,7 @@ const Game: React.FC<GameProps> = ({onExit}) => {
     const [bossStamina, setBossStamina] = useState<number>(100);
     const [bossMana, setBossMana] = useState<number>(100);
     const [bossShaking, setBossShaking] = useState<boolean>(false);
+    const [grassHeight, setGrassHeight] = useState<number>(50);
 
     const [player, setPlayer] = useState<any>({
         name: 'Hero',
@@ -66,6 +67,29 @@ const Game: React.FC<GameProps> = ({onExit}) => {
             setBossStamina(maxEndurance);
         }
     }, [boss]);
+
+    useEffect(() => {
+        // Dynamically calculate grass height based on window width
+        const calculateGrassHeight = () => {
+            const width = window.innerWidth;
+            // Linear interpolation: wider screens = taller grass
+            // At 400px: 12% grass, at 2000px: 38% grass
+            const minWidth = 400;
+            const maxWidth = 2000;
+            const minHeight = 12;
+            const maxHeight = 38;
+            
+            const clampedWidth = Math.max(minWidth, Math.min(maxWidth, width));
+            const heightPercent = minHeight + ((clampedWidth - minWidth) / (maxWidth - minWidth)) * (maxHeight - minHeight);
+            
+            setGrassHeight(heightPercent);
+        };
+        
+        calculateGrassHeight();
+        window.addEventListener('resize', calculateGrassHeight);
+        
+        return () => window.removeEventListener('resize', calculateGrassHeight);
+    }, []);
 
     useEffect(() => {
         // Load the first boss (skeleton) when component mounts
@@ -149,9 +173,9 @@ const Game: React.FC<GameProps> = ({onExit}) => {
             <button className="z-10 absolute top-4 right-4 border border-white rounded px-4 py-2" onClick={onExit}>Surrender</button>
             <div className="w-3/4 h-3/4 border-4 border-dashed border-gray-400 flex flex-col">
             <div className="h-full flex items-center justify-center relative">
-                <div id="game-background" className="absolute inset-0 -z-1">
-                    <div className="w-full h-1/2 bg-gradient-to-b from-blue-900 to-orange-500"></div>
-                    <div className="w-full h-1/2 bg-gradient-to-t from-green-700 to-green-900"></div>
+                <div id="game-background" className="absolute inset-0 -z-1 flex flex-col">
+                    <div className="w-full flex-1 bg-gradient-to-b from-blue-900 to-orange-500"></div>
+                    <div className="w-full bg-gradient-to-t from-green-700 to-green-900 transition-all duration-300" style={{ height: `${grassHeight}%` }}></div>
                 </div>
                 <div id="game-panels" className="absolute inset-0 w-full h-full flex z-10">
                     <div id="left-panel" className="flex-[2] min-w-0 h-full flex flex-col items-center justify-end p-4">
