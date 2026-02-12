@@ -109,10 +109,10 @@ const Game: React.FC<GameProps> = ({onExit}) => {
         loadBoss();
     }, []);
 
-    const handleAction = async (action: string) => {
+    const handleAction = async (action: string, actionTaker: string = 'player', target: string = 'boss') => {
         try {
             
-            const response = await takeAction(action, gameStatus);
+            const response = await takeAction(action, gameStatus, actionTaker, target);
             
             console.log("received game status:", response);
             
@@ -231,7 +231,7 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                         </div>
                     </div>
                     <div id="action-bar" className="flex items-center gap-2 w-full">
-                        <div className="w-64 h-24 rounded-lg bg-gray-800 border-2 border-gray-400 flex items-center justify-center cursor-pointer hover:bg-gray-700 active:bg-gray-600" onClick={() => handleAction('attack')}>
+                        <div className="w-64 h-24 rounded-lg bg-gray-800 border-2 border-gray-400 flex items-center justify-center cursor-pointer hover:bg-gray-700 active:bg-gray-600" onClick={() => handleAction('attack', 'player', 'boss')}>
                             Attack
                         </div>
                     </div>
