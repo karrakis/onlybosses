@@ -154,33 +154,33 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                     <div className="w-full h-1/2 bg-gradient-to-t from-green-700 to-green-900"></div>
                 </div>
                 <div id="game-panels" className="absolute inset-0 w-full h-full flex z-10">
-                    <div id="left-panel" className="w-1/3 h-full flex flex-1 flex-col items-center justify-end p-4">
+                    <div id="left-panel" className="flex-[2] min-w-0 h-full flex flex-col items-center justify-end p-4">
                         <img 
                             src={playerImage} 
                             alt="Player"
                             className="w-1/2 h-auto object-contain mb-16"
                         />
                     </div>
-                    <div id="center-panel" className="w-1/5 h-full flex flex-col items-center justify-center">
+                    <div id="center-panel" className="flex-1 min-w-0 h-full flex flex-col items-center justify-center">
                     </div>
-                    <div id="right-panel" className="flex-1 h-full flex flex-col items-center justify-end p-4">
+                    <div id="right-panel" className="flex-[2] min-w-0 h-full flex flex-col items-center justify-end p-4">
                         {loading && <div className="text-gray-400">Loading boss...</div>}
                         {error && <div className="text-red-400">Error: {error}</div>}
                         {boss && (
                             <div className="w-full flex flex-col items-center justify-end">
                                 <div className="text-2xl font-bold mb-4">{boss.name}</div>
-                                <div className="mb-4 flex">
-                                    <div id="boss-life-bar" className="w-64 h-12 bg-gray-600 border-2 border-gray-400 overflow-hidden relative">
+                                <div className="mb-4 flex gap-2 w-full">
+                                    <div id="boss-life-bar" className="flex-1 h-12 bg-gray-600 border-2 border-gray-400 overflow-hidden relative">
                                         <div className="h-full bg-red-500" style={{width: `${bossLifePercentage}%`}}></div>
-                                        <div className="absolute inset-0 flex items-center justify-center">{bossLife}</div>
+                                        <div className="absolute inset-0 flex items-center justify-center text-sm">{bossLife}</div>
                                     </div>
-                                    <div id="boss-stamina-bar" className="w-64 h-12 bg-yellow-600 border-2 border-gray-400 overflow-hidden ml-4 relative">
+                                    <div id="boss-stamina-bar" className="flex-1 h-12 bg-yellow-600 border-2 border-gray-400 overflow-hidden relative">
                                         <div className="h-full bg-green-500" style={{width: `${bossStaminaPercentage}%`}}></div>
-                                        <div className="absolute inset-0 flex items-center justify-center">{bossStamina}</div>
+                                        <div className="absolute inset-0 flex items-center justify-center text-sm">{bossStamina}</div>
                                     </div>
-                                    <div id="boss-mana-bar" className="w-64 h-12 bg-blue-600 border-2 border-gray-400 overflow-hidden ml-4 relative">
+                                    <div id="boss-mana-bar" className="flex-1 h-12 bg-blue-600 border-2 border-gray-400 overflow-hidden relative">
                                         <div className="h-full bg-blue-500" style={{width: `${bossManaPercentage}%`}}></div>
-                                        <div className="absolute inset-0 flex items-center justify-center">{bossMana}</div>
+                                        <div className="absolute inset-0 flex items-center justify-center text-sm">{bossMana}</div>
                                     </div>
                                 </div>
                                 {boss.image_status === 'completed' && boss.image_url ? (
