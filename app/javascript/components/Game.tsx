@@ -135,33 +135,64 @@ const Game: React.FC<GameProps> = ({onExit}) => {
 
     const handleAction = async (action: string, actionTaker: string = 'player', target: string = 'boss') => {
         try {
-            
             const response = await takeAction(action, gameStatus, actionTaker, target);
             
-            console.log("received game status:", response);
+            console.log("received response:", response);
             
-            // Response is the game_status directly
-            if (response.bossLife !== undefined) {
-                console.log("updating boss life to:", response.bossLife);
-                if (response.bossLife < bossLife) {
+            // Check if response has the new format with metadata
+            const hasMetadata = response.playerAction !== undefined;
+            const currentState = hasMetadata ? response.gameState : response;
+            const bossAction = hasMetadata ? response.bossAction : null;
+            
+            // Store the state before boss action for comparison
+            const stateAfterPlayer = hasMetadata ? {
+                bossLife: currentState.bossLife,
+                playerLife: playerLife,
+                playerStamina: playerStamina,
+                playerMana: playerMana
+            } : null;
+            
+            // Apply player action effects immediately
+            if (currentState.bossLife !== undefined) {
+                console.log("updating boss life to:", currentState.bossLife);
+                if (stateAfterPlayer && currentState.bossLife < bossLife) {
                     setBossShaking(true);
                 }
-                setBossLife(response.bossLife);
+                setBossLife(currentState.bossLife);
                 const stats = boss?.stats;
                 const maxLife = stats?.base_stats?.life || 100;
-                console.log("updating boss life percentage to:", (response.bossLife / maxLife) * 100);
-                setBossLifePercentage((response.bossLife / maxLife) * 100);
+                console.log("updating boss life percentage to:", (currentState.bossLife / maxLife) * 100);
+                setBossLifePercentage((currentState.bossLife / maxLife) * 100);
             }
             
-            // Update other game state as needed
-            if (response.playerLife !== undefined) {
-                setPlayerLife(response.playerLife);
-            }
-            if (response.playerStamina !== undefined) {
-                setPlayerStamina(response.playerStamina);
-            }
-            if (response.playerMana !== undefined) {
-                setPlayerMana(response.playerMana);
+            // If there's a boss action, apply its effects after a delay
+            if (bossAction && stateAfterPlayer) {
+                setTimeout(() => {
+                    console.log("Applying delayed boss action:", bossAction);
+                    
+                    // Apply boss action effects
+                    if (currentState.playerLife !== undefined) {
+                        setPlayerLife(currentState.playerLife);
+                        // TODO: Add player shake animation when player takes damage
+                    }
+                    if (currentState.playerStamina !== undefined) {
+                        setPlayerStamina(currentState.playerStamina);
+                    }
+                    if (currentState.playerMana !== undefined) {
+                        setPlayerMana(currentState.playerMana);
+                    }
+                }, 1000); // 1 second delay for boss action
+            } else {
+                // No boss action (boss defeated or old format), apply state immediately
+                if (currentState.playerLife !== undefined) {
+                    setPlayerLife(currentState.playerLife);
+                }
+                if (currentState.playerStamina !== undefined) {
+                    setPlayerStamina(currentState.playerStamina);
+                }
+                if (currentState.playerMana !== undefined) {
+                    setPlayerMana(currentState.playerMana);
+                }
             }
         } catch (err) {
             console.error('Error taking action:', err);

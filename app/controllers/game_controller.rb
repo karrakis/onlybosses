@@ -14,10 +14,36 @@ class GameController < ApplicationController
     puts "Action taker: #{action_taker.inspect}"
     puts "Target: #{target.inspect}"
     
-    # Call the action as a private method if it exists
+    # Process player action
     if respond_to?(action_name, true)
-      result = send(action_name, game_status, action_taker, target)
-      puts "Action result: #{result.inspect}"
+      game_status = send(action_name, game_status, action_taker, target)
+      puts "After player action: #{game_status.inspect}"
+      
+      # Boss takes a turn in response (if boss is still alive)
+      if game_status['bossLife'] && game_status['bossLife'] > 0
+        boss_action = choose_boss_action(game_status)
+        puts "Boss choosing action: #{boss_action}"
+        
+        if respond_to?(boss_action, true)
+          game_status = send(boss_action, game_status, 'boss', 'player')
+          puts "After boss action: #{game_status.inspect}"
+        end
+        
+        # Return metadata about both actions
+        result = {
+          playerAction: action_name,
+          bossAction: boss_action,
+          gameState: game_status
+        }
+      else
+        # Boss is defeated, no boss action
+        result = {
+          playerAction: action_name,
+          bossAction: nil,
+          gameState: game_status
+        }
+      end
+      
       render json: result
     else
       render json: { success: false, error: "Unknown action: #{action_name}" }, status: :bad_request
@@ -25,6 +51,13 @@ class GameController < ApplicationController
   end
 
   private
+  
+  def choose_boss_action(game_status)
+    # For now, boss only knows attack
+    # Later this can be expanded to check boss abilities
+    available_actions = ['attack']
+    available_actions.sample
+  end
   
   def action_params
     params.permit(
@@ -76,9 +109,13 @@ class GameController < ApplicationController
     action_taker ||= 'player'
     target ||= 'boss'
     
-    # Get action_taker's damage stat
+    # Get action_taker's damage stat (handle different structures for player vs boss)
     action_taker_data = game_status[action_taker]
-    damage = action_taker_data['stats']['damage']
+    if action_taker == 'boss' && action_taker_data['stats']['base_stats']
+      damage = action_taker_data['stats']['base_stats']['damage']
+    else
+      damage = action_taker_data['stats']['damage']
+    end
     
     # Deal damage to target's life
     life_key = "#{target}Life"
