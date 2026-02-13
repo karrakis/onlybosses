@@ -59,9 +59,10 @@ const Game: React.FC<GameProps> = ({onExit}) => {
             // Assuming boss.stats has life, mana, endurance properties
             console.log('Boss stats:', boss.stats);
             const stats = boss.stats;
-            const maxLife = stats.base_stats.life || 100;
-            const maxMana = stats.base_stats.mana || 100;
-            const maxEndurance = stats.base_stats.endurance || 100;
+            console.log('Boss base stats:', stats.base_stats);
+            const maxLife = Math.ceil(stats.base_stats.life) || 100;
+            const maxMana = Math.ceil(stats.base_stats.mana) || 100;
+            const maxEndurance = Math.ceil(stats.base_stats.endurance) || 100;
 
             setBossLifePercentage(maxLife / maxLife * 100);
             setBossManaPercentage(maxMana / maxMana * 100);

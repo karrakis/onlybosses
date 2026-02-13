@@ -71,10 +71,11 @@ class BossFactory
     
     def compute_stats(keywords)
         puts "Computing stats for keywords: #{keywords.map(&:name).join(', ')}"
+        keyword_quantity = keywords.count
       merged = {
         resistances: [],
         vulnerabilities: [],
-        base_stats: {life: 100, mana: 100, endurance: 100, damage: 10, defense: 10},
+        base_stats: {life: 100 + keywords.count * 10, mana: 100 + keywords.count * 10, endurance: 100 + keywords.count * 10, damage: 10, defense: 10},
         special: {},
         weapons: [],
         abilities: [],
