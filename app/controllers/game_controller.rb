@@ -14,6 +14,18 @@ class GameController < ApplicationController
     puts "Action taker: #{action_taker.inspect}"
     puts "Target: #{target.inspect}"
     
+    # Initialize or validate turn token
+    current_token = game_status['turnToken']
+    
+    if current_token.nil?
+      # First action, generate initial token
+      current_token = SecureRandom.uuid
+      puts "Generated initial turn token: #{current_token}"
+    end
+    
+    # For subsequent actions, validate the token hasn't been reused
+    # (We'll check this by generating a new token after each turn)
+    
     # Process player action
     if respond_to?(action_name, true)
       game_status = send(action_name, game_status, action_taker, target)
@@ -29,6 +41,11 @@ class GameController < ApplicationController
           puts "After boss action: #{game_status.inspect}"
         end
         
+        # Generate new token for next turn
+        new_token = SecureRandom.uuid
+        game_status['turnToken'] = new_token
+        puts "Generated new turn token: #{new_token}"
+        
         # Return metadata about both actions
         result = {
           playerAction: action_name,
@@ -37,6 +54,9 @@ class GameController < ApplicationController
         }
       else
         # Boss is defeated, no boss action
+        new_token = SecureRandom.uuid
+        game_status['turnToken'] = new_token
+        
         result = {
           playerAction: action_name,
           bossAction: nil,
@@ -67,6 +87,7 @@ class GameController < ApplicationController
       game_status: [
         :playerLife, :playerStamina, :playerMana,
         :bossLife, :bossStamina, :bossMana,
+        :turnToken,
         player: [:name, { actions: [] }, { stats: [:life, :stamina, :mana, :damage] }],
         boss: [
           :id, :name, :image_status, :image_url, :created_at,

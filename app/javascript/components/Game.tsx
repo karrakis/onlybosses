@@ -27,6 +27,8 @@ const Game: React.FC<GameProps> = ({onExit}) => {
     const [bossShaking, setBossShaking] = useState<boolean>(false);
     const [bossDying, setBossDying] = useState<boolean>(false);
     const [playerShaking, setPlayerShaking] = useState<boolean>(false);
+    const [actionInProgress, setActionInProgress] = useState<boolean>(false);
+    const [turnToken, setTurnToken] = useState<string | null>(null);
     const [grassHeight, setGrassHeight] = useState<number>(50);
 
     const [player, setPlayer] = useState<any>({
@@ -47,6 +49,7 @@ const Game: React.FC<GameProps> = ({onExit}) => {
         bossLife,
         bossStamina,
         bossMana,
+        turnToken,
         player,
         boss
     }
@@ -136,6 +139,13 @@ const Game: React.FC<GameProps> = ({onExit}) => {
     }, []);
 
     const handleAction = async (action: string, actionTaker: string = 'player', target: string = 'boss') => {
+        if (actionInProgress) {
+            console.log("Action already in progress, ignoring");
+            return;
+        }
+        
+        setActionInProgress(true);
+        
         try {
             const response = await takeAction(action, gameStatus, actionTaker, target);
             
@@ -172,6 +182,12 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                 setBossLifePercentage((currentState.bossLife / maxLife) * 100);
             }
             
+            // Update turn token for next action
+            if (currentState.turnToken) {
+                console.log("Updating turn token to:", currentState.turnToken);
+                setTurnToken(currentState.turnToken);
+            }
+            
             // If there's a boss action, apply its effects after a delay
             if (bossAction && stateAfterPlayer) {
                 setTimeout(() => {
@@ -190,6 +206,9 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                     if (currentState.playerMana !== undefined) {
                         setPlayerMana(currentState.playerMana);
                     }
+                    
+                    // Turn complete, allow new actions
+                    setActionInProgress(false);
                 }, 1000); // 1 second delay for boss action
             } else {
                 // No boss action (boss defeated or old format), apply state immediately
@@ -202,10 +221,14 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                 if (currentState.playerMana !== undefined) {
                     setPlayerMana(currentState.playerMana);
                 }
+                
+                // No boss turn, action complete
+                setActionInProgress(false);
             }
         } catch (err) {
             console.error('Error taking action:', err);
             setError(err instanceof Error ? err.message : 'Failed to take action');
+            setActionInProgress(false); // Clear on error
         }
     };
 
@@ -310,7 +333,14 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                         </div>
                     </div>
                     <div id="action-bar" className="flex items-center gap-2 w-full">
-                        <div className="w-64 h-24 rounded-lg bg-gray-800 border-2 border-gray-400 flex items-center justify-center cursor-pointer hover:bg-gray-700 active:bg-gray-600" onClick={() => handleAction('attack', 'player', 'boss')}>
+                        <div 
+                            className={`w-64 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
+                                actionInProgress || bossDying 
+                                    ? 'bg-gray-900 text-gray-600 cursor-not-allowed' 
+                                    : 'bg-gray-800 hover:bg-gray-700 active:bg-gray-600'
+                            }`}
+                            onClick={() => !actionInProgress && !bossDying && handleAction('attack', 'player', 'boss')}
+                        >
                             Attack
                         </div>
                     </div>
