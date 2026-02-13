@@ -213,18 +213,20 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                 </div>
                 <div id="game-panels" className="absolute inset-0 w-full h-full flex z-10">
                     <div id="left-panel" className="flex-[2] min-w-0 h-full flex flex-col items-center justify-end p-4">
-                        <ShakeAnimation 
-                            isShaking={playerShaking} 
-                            duration={500} 
-                            intensity={10}
-                            onComplete={() => setPlayerShaking(false)}
-                        >
-                            <img 
-                                src={playerImage} 
-                                alt="Player"
-                                className="w-1/2 h-auto object-contain mb-16"
-                            />
-                        </ShakeAnimation>
+                        <div className="w-full flex flex-col items-center justify-end">
+                            <ShakeAnimation 
+                                isShaking={playerShaking} 
+                                duration={500} 
+                                intensity={10}
+                                onComplete={() => setPlayerShaking(false)}
+                            >
+                                <img 
+                                    src={playerImage} 
+                                    alt="Player"
+                                    className="w-1/2 h-auto object-contain mb-16"
+                                />
+                            </ShakeAnimation>
+                        </div>
                     </div>
                     <div id="center-panel" className="flex-1 min-w-0 h-full flex flex-col items-center justify-center">
                     </div>
