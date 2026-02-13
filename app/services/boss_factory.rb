@@ -23,8 +23,7 @@ class BossFactory
         else
           # Trigger image generation if not already in progress
           unless boss.image_generation_status == 'generating'
-            # temporarily decoupled to avoid expending API credits
-            # GenerateBossImageJob.perform_later(boss.id)
+            GenerateBossImageJob.perform_later(boss.id)
           end
           return boss
         end
@@ -33,8 +32,7 @@ class BossFactory
       # Create new boss
       puts "NO EXISTING BOSS FOUND - Creating new boss"
       boss = create_boss_with_keywords(keywords.values)
-      # temporarily decoupled to avoid expending API credits
-    #   GenerateBossImageJob.perform_later(boss.id)
+      GenerateBossImageJob.perform_later(boss.id)
       
       boss
     end

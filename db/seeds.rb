@@ -50,6 +50,13 @@ keywords_data = [
     vulnerabilities: ["earth", "water"],
     base_stats: { speed: 3, attack: 4 }
   }},
+
+  # Characteristics
+  { name: "undead", category: "characteristic", rarity: 3, attributes: {
+    multipliers: { life: 0.8, mana: 1.2 },
+    resistances: ["poison", "charm"],
+    vulnerabilities: ["holy", "light"]
+  }},
 ]
 
 puts "Seeding keywords..."

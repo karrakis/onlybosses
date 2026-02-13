@@ -126,10 +126,6 @@ class GameController < ApplicationController
   end
 
   def attack(game_status, action_taker = 'player', target = 'boss')
-    # Handle nil values by using defaults
-    action_taker ||= 'player'
-    target ||= 'boss'
-    
     # Get action_taker's damage stat (handle different structures for player vs boss)
     action_taker_data = game_status[action_taker]
     if action_taker == 'boss' && action_taker_data['stats']['base_stats']
@@ -142,6 +138,37 @@ class GameController < ApplicationController
     life_key = "#{target}Life"
     game_status[life_key] -= damage
     game_status[life_key] = 0 if game_status[life_key] < 0
+    
+    game_status
+  end
+
+  def heal(game_status, action_taker = 'player', target = 'player')    
+    # Get action_taker's healing stat (handle different structures for player vs boss)
+    action_taker_data = game_status[action_taker]
+    if action_taker == 'boss' && action_taker_data['stats']['base_stats']
+      healing = action_taker_data['stats']['base_stats']['damage'] * 2 || 0
+    else
+      healing = action_taker_data['stats']['damage'] * 2 || 0
+    end
+    
+    # Check if target is undead
+    target_data = game_status[target]
+    is_undead = false
+    
+    if target_data['keywords']
+      is_undead = target_data['keywords'].include?('undead')
+    end
+    
+    life_key = "#{target}Life"
+    
+    if is_undead
+      # Healing damages undead
+      game_status[life_key] -= healing
+      game_status[life_key] = 0 if game_status[life_key] < 0
+    else
+      # Normal healing
+      game_status[life_key] += healing
+    end
     
     game_status
   end

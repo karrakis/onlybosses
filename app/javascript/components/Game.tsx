@@ -101,7 +101,7 @@ const Game: React.FC<GameProps> = ({onExit}) => {
         const loadBoss = async () => {
             try {
                 setLoading(true);
-                const generatedBoss = await BossService.generateBoss(['skeleton']);
+                const generatedBoss = await BossService.generateBoss(['skeleton','undead']);
                 setBoss(generatedBoss);
                 
                 // If image is still generating, poll for updates
@@ -238,7 +238,7 @@ const Game: React.FC<GameProps> = ({onExit}) => {
             <div className="h-full flex items-center justify-center relative">
                 <div id="game-background" className="absolute inset-0 -z-1 flex flex-col">
                     <div className="w-full flex-1 bg-gradient-to-b from-blue-900 to-orange-500"></div>
-                    <div className="w-full bg-gradient-to-t from-green-700 to-green-900 transition-all duration-300" style={{ height: `${grassHeight}%` }}></div>
+                    <div className="w-full bg-gradient-to-t from-green-700 to-green-900" style={{ height: `${grassHeight}%` }}></div>
                 </div>
                 <div id="game-panels" className="absolute inset-0 w-full h-full flex z-10">
                     <div id="left-panel" className="flex-[2] min-w-0 h-full flex flex-col items-center justify-end p-4">
