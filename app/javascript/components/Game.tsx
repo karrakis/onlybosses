@@ -25,6 +25,7 @@ const Game: React.FC<GameProps> = ({onExit}) => {
     const [bossStamina, setBossStamina] = useState<number>(100);
     const [bossMana, setBossMana] = useState<number>(100);
     const [bossShaking, setBossShaking] = useState<boolean>(false);
+    const [bossDying, setBossDying] = useState<boolean>(false);
     const [playerShaking, setPlayerShaking] = useState<boolean>(false);
     const [grassHeight, setGrassHeight] = useState<number>(50);
 
@@ -159,6 +160,11 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                 if (stateAfterPlayer && currentState.bossLife < bossLife) {
                     setBossShaking(true);
                 }
+                // Check if boss is defeated
+                if (currentState.bossLife <= 0 && !bossDying) {
+                    setBossDying(true);
+                    setBossShaking(true);
+                }
                 setBossLife(currentState.bossLife);
                 const stats = boss?.stats;
                 const maxLife = stats?.base_stats?.life || 100;
@@ -252,15 +258,21 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                                 </div>
                                 {boss.image_status === 'completed' && boss.image_url ? (
                                     <ShakeAnimation 
-                                        isShaking={bossShaking} 
-                                        duration={500} 
+                                        isShaking={bossShaking || bossDying} 
+                                        duration={bossDying ? 5000 : 500}
                                         intensity={10}
-                                        onComplete={() => setBossShaking(false)}
+                                        onComplete={() => {
+                                            setBossShaking(false);
+                                            if (!bossDying) {
+                                                // Only reset shake if not dying
+                                            }
+                                        }}
                                     >
                                         <img 
                                             src={boss.image_url} 
                                             alt={boss.name}
-                                            className="w-1/2 h-auto object-contain mb-16"
+                                            className="w-1/2 h-auto object-contain mb-16 transition-opacity duration-[5000ms]"
+                                            style={{ opacity: bossDying ? 0 : 1 }}
                                         />
                                     </ShakeAnimation>
                                 ) : boss.image_status === 'generating' || boss.image_status === 'pending' ? (
