@@ -79,6 +79,7 @@ class BossFactory
         special: {},
         weapons: [],
         abilities: [],
+        passives: [],
       }
 
       level = keywords.count
