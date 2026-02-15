@@ -14,6 +14,9 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const [playerMaxLife, setPlayerMaxLife] = useState<number>(100);
+    const [playerMaxStamina, setPlayerMaxStamina] = useState<number>(100);
+    const [playerMaxMana, setPlayerMaxMana] = useState<number>(100);
     const [playerLife, setPlayerLife] = useState<number>(100);
     const [playerStamina, setPlayerStamina] = useState<number>(100);
     const [playerMana, setPlayerMana] = useState<number>(100);
@@ -184,6 +187,19 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             
             setBossKeywords(updatedKeywords);
             setShowKeywordSelection(false);
+            
+            // Increase player base stats by 10
+            const newMaxLife = playerMaxLife + 10;
+            const newMaxStamina = playerMaxStamina + 10;
+            const newMaxMana = playerMaxMana + 10;
+            setPlayerMaxLife(newMaxLife);
+            setPlayerMaxStamina(newMaxStamina);
+            setPlayerMaxMana(newMaxMana);
+            
+            // Fully heal player
+            setPlayerLife(newMaxLife);
+            setPlayerStamina(newMaxStamina);
+            setPlayerMana(newMaxMana);
             
             // Reset game state for new boss
             setLoading(true);
@@ -400,17 +416,20 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 <div id="bottom-panel" className="w-full h-32 border-t-2 border-gray-400 flex items-center justify-between px-4">
                     <div id="life-bar" className="flex items-center gap-2">
                         <div className="w-24 h-24 rounded-full bg-black border-2 border-gray-400 relative overflow-hidden">
-                            <div className="absolute bottom-0 w-full bg-red-600" style={{height: `${playerLife}%`}}></div>
+                            <div className="absolute bottom-0 w-full bg-red-600" style={{height: `${(playerLife / playerMaxLife) * 100}%`}}></div>
+                            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{Math.round(playerLife)}</div>
                         </div>
                     </div>
                     <div id="stamina-bar" className="flex items-center gap-2">
                         <div className="w-24 h-24 rounded-full bg-black border-2 border-gray-400 relative overflow-hidden">
-                            <div className="absolute bottom-0 w-full bg-green-600" style={{height: `${playerStamina}%`}}></div>
+                            <div className="absolute bottom-0 w-full bg-green-600" style={{height: `${(playerStamina / playerMaxStamina) * 100}%`}}></div>
+                            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{Math.round(playerStamina)}</div>
                         </div>
                     </div>
                     <div id="mana-bar" className="flex items-center gap-2">
                         <div className="w-24 h-24 rounded-full bg-black border-2 border-gray-400 relative overflow-hidden">
-                            <div className="absolute bottom-0 w-full bg-blue-600" style={{height: `${playerMana}%`}}></div>
+                            <div className="absolute bottom-0 w-full bg-blue-600" style={{height: `${(playerMana / playerMaxMana) * 100}%`}}></div>
+                            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{Math.round(playerMana)}</div>
                         </div>
                     </div>
                     <div id="character-picture" className="flex items-center gap-2">
