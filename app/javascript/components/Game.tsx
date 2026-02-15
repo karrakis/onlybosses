@@ -6,9 +6,10 @@ import ShakeAnimation from './ShakeAnimation';
 
 interface GameProps {
     onExit: () => void;
+    availableKeywords: string[];
 }
 
-const Game: React.FC<GameProps> = ({onExit}) => {
+const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailableKeywords }) => {
     const [boss, setBoss] = useState<Boss | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -30,6 +31,10 @@ const Game: React.FC<GameProps> = ({onExit}) => {
     const [actionInProgress, setActionInProgress] = useState<boolean>(false);
     const [turnToken, setTurnToken] = useState<string | null>(null);
     const [grassHeight, setGrassHeight] = useState<number>(50);
+    const [playerKeywords, setPlayerKeywords] = useState<string[]>([]);
+    const [bossKeywords, setBossKeywords] = useState<string[]>(['skeleton']);
+    const [showKeywordSelection, setShowKeywordSelection] = useState<boolean>(false);
+    const [availableKeywords] = useState<string[]>(initialAvailableKeywords);
 
     const [player, setPlayer] = useState<any>({
         name: 'Hero',
@@ -71,6 +76,11 @@ const Game: React.FC<GameProps> = ({onExit}) => {
             setBossLife(maxLife);
             setBossMana(maxMana);
             setBossStamina(maxEndurance);
+            
+            // Update boss keywords from loaded boss
+            if (boss.keywords && boss.keywords.length > 0) {
+                setBossKeywords(boss.keywords);
+            }
         }
     }, [boss]);
 
@@ -138,6 +148,72 @@ const Game: React.FC<GameProps> = ({onExit}) => {
 
         loadBoss();
     }, []);
+
+    const handleDescend = () => {
+        if (bossLife <= 0) {
+            setShowKeywordSelection(true);
+        }
+    };
+
+    const handleKeywordSelection = async (selectedKeyword: string) => {
+        try {
+            // Add selected keyword to player
+            setPlayerKeywords([...playerKeywords, selectedKeyword]);
+            
+            // Remove selected keyword from boss keywords
+            const updatedKeywords = bossKeywords.filter(k => k !== selectedKeyword);
+            
+            // Add two new random keywords from available keywords (excluding boss's current keywords)
+            const unusedKeywords = availableKeywords.filter(k => !updatedKeywords.includes(k));
+            
+            // Add 2 random new keywords
+            for (let i = 0; i < 2 && unusedKeywords.length > 0; i++) {
+                const randomIndex = Math.floor(Math.random() * unusedKeywords.length);
+                const newKeyword = unusedKeywords.splice(randomIndex, 1)[0];
+                updatedKeywords.push(newKeyword);
+            }
+            
+            setBossKeywords(updatedKeywords);
+            setShowKeywordSelection(false);
+            
+            // Reset game state for new boss
+            setLoading(true);
+            setBossDying(false);
+            setBossShaking(false);
+            setTurnToken(null);
+            
+            // Generate new boss with updated keywords
+            const generatedBoss = await BossService.generateBoss(updatedKeywords);
+            setBoss(generatedBoss);
+            
+            // If image is still generating, poll for updates
+            if (generatedBoss.image_status === 'pending' || generatedBoss.image_status === 'generating') {
+                pollForImage(generatedBoss.id);
+            }
+            
+            setLoading(false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to generate new boss');
+            setLoading(false);
+        }
+    };
+
+    const pollForImage = async (bossId: number) => {
+        const interval = setInterval(async () => {
+            try {
+                const updatedBoss = await BossService.getBoss(bossId);
+                setBoss(updatedBoss);
+                
+                // Stop polling when image is ready or failed
+                if (updatedBoss.image_status === 'completed' || updatedBoss.image_status === 'failed') {
+                    clearInterval(interval);
+                }
+            } catch (err) {
+                console.error('Error polling for boss image:', err);
+                clearInterval(interval);
+            }
+        }, 3000); // Poll every 3 seconds
+    };
 
     const handleAction = async (action: string, actionTaker: string = 'player', target: string = 'boss') => {
         if (actionInProgress) {
@@ -334,19 +410,53 @@ const Game: React.FC<GameProps> = ({onExit}) => {
                         </div>
                     </div>
                     <div id="action-bar" className="flex items-center gap-2 w-full">
-                        <div 
-                            className={`w-64 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
-                                actionInProgress || bossDying 
-                                    ? 'bg-gray-900 text-gray-600 cursor-not-allowed' 
-                                    : 'bg-gray-800 hover:bg-gray-700 active:bg-gray-600'
-                            }`}
-                            onClick={() => !actionInProgress && !bossDying && handleAction('attack', 'player', 'boss')}
-                        >
-                            Attack
-                        </div>
+                        {bossLife <= 0 ? (
+                            <div 
+                                className="w-64 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer bg-green-800 hover:bg-green-700 active:bg-green-600"
+                                onClick={handleDescend}
+                            >
+                                Descend
+                            </div>
+                        ) : (
+                            <div 
+                                className={`w-64 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
+                                    actionInProgress || bossDying 
+                                        ? 'bg-gray-900 text-gray-600 cursor-not-allowed' 
+                                        : 'bg-gray-800 hover:bg-gray-700 active:bg-gray-600'
+                                }`}
+                                onClick={() => !actionInProgress && !bossDying && handleAction('attack', 'player', 'boss')}
+                            >
+                                Attack
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
+            
+            {/* Keyword Selection Modal */}
+            {showKeywordSelection && boss && (
+                <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                    <div className="bg-gray-800 border-4 border-gray-400 rounded-lg p-8 max-w-2xl">
+                        <h2 className="text-3xl font-bold mb-6 text-center">Choose a Power to Absorb</h2>
+                        <div className="grid grid-cols-2 gap-4">
+                            {boss.keywords && boss.keywords.map((keyword: string) => (
+                                <button
+                                    key={keyword}
+                                    onClick={() => handleKeywordSelection(keyword)}
+                                    className="bg-gray-700 hover:bg-gray-600 border-2 border-gray-500 rounded-lg p-4 text-xl font-semibold capitalize transition-colors"
+                                >
+                                    {keyword}
+                                </button>
+                            ))}
+                        </div>
+                        {playerKeywords.length > 0 && (
+                            <div className="mt-6 pt-4 border-t-2 border-gray-600">
+                                <p className="text-sm text-gray-400">Your Powers: {playerKeywords.join(', ')}</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>);
 };
 

@@ -8,12 +8,16 @@ const StartButton: React.FC<{message: string, onClick: () => void}> = ({message,
     );
 }
 
-const Home: React.FC = () => {
+interface HomeProps {
+    availableKeywords: string[];
+}
+
+const Home: React.FC<HomeProps> = ({ availableKeywords }) => {
     const [activeGame, setActiveGame] = useState<boolean>(false);
     return (
         <div className="w-screen h-screen flex items-center justify-center text-3xl font-bold relative overflow-hidden">
             <MagmaBackground />
-            {activeGame ? <Game onExit={() => setActiveGame(false)} /> : 
+            {activeGame ? <Game onExit={() => setActiveGame(false)} availableKeywords={availableKeywords} /> : 
             <div id="home-button-container" className="relative z-10 text-center w-[320px] h-[320px] flex flex-col items-center justify-around border-4 border-dashed border-gray-300 rounded-lg bg-black/30 backdrop-blur-sm bg-gray-100 bg-opacity-70">
                 <StartButton onClick={() => setActiveGame(true)} message="Descend" />
                 {/* <StartButton message="Continue Descent" />                */}
