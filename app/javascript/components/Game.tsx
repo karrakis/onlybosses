@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BossService, Boss } from '../services/BossService';
+import { PlayerService, Player } from '../services/PlayerService';
 import playerImage from '../images/player.png';
 import takeAction from '../actions/takeAction';
 import ShakeAnimation from './ShakeAnimation';
@@ -11,23 +12,10 @@ interface GameProps {
 
 const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailableKeywords }) => {
     const [boss, setBoss] = useState<Boss | null>(null);
+    const [player, setPlayer] = useState<Player | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const [playerMaxLife, setPlayerMaxLife] = useState<number>(100);
-    const [playerMaxStamina, setPlayerMaxStamina] = useState<number>(100);
-    const [playerMaxMana, setPlayerMaxMana] = useState<number>(100);
-    const [playerLife, setPlayerLife] = useState<number>(100);
-    const [playerStamina, setPlayerStamina] = useState<number>(100);
-    const [playerMana, setPlayerMana] = useState<number>(100);
-
-    const [bossLifePercentage, setBossLifePercentage] = useState<number>(100);
-    const [bossStaminaPercentage, setBossStaminaPercentage] = useState<number>(100);
-    const [bossManaPercentage, setBossManaPercentage] = useState<number>(100);
-
-    const [bossLife, setBossLife] = useState<number>(100);
-    const [bossStamina, setBossStamina] = useState<number>(100);
-    const [bossMana, setBossMana] = useState<number>(100);
     const [bossShaking, setBossShaking] = useState<boolean>(false);
     const [bossDying, setBossDying] = useState<boolean>(false);
     const [playerShaking, setPlayerShaking] = useState<boolean>(false);
@@ -35,52 +23,12 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const [actionInProgress, setActionInProgress] = useState<boolean>(false);
     const [turnToken, setTurnToken] = useState<string | null>(null);
     const [grassHeight, setGrassHeight] = useState<number>(50);
-    const [playerKeywords, setPlayerKeywords] = useState<string[]>([]);
     const [bossKeywords, setBossKeywords] = useState<string[]>(['skeleton']);
     const [showKeywordSelection, setShowKeywordSelection] = useState<boolean>(false);
     const [availableKeywords] = useState<string[]>(initialAvailableKeywords);
 
-    const [player, setPlayer] = useState<any>({
-        name: 'Hero',
-        stats: {
-            life: 100,
-            stamina: 100,
-            mana: 100,
-            damage: 10,
-        },
-        actions: ['attack']
-    });
-
-    const gameStatus = {
-        playerLife,
-        playerStamina,
-        playerMana,
-        bossLife,
-        bossStamina,
-        bossMana,
-        turnToken,
-        player,
-        boss
-    }
-
     useEffect(() => {
         if (boss) {
-            // Assuming boss.stats has life, mana, endurance properties
-            console.log('Boss stats:', boss.stats);
-            const stats = boss.stats;
-            console.log('Boss base stats:', stats.base_stats);
-            const maxLife = Math.ceil(stats.base_stats.life) || 100;
-            const maxMana = Math.ceil(stats.base_stats.mana) || 100;
-            const maxEndurance = Math.ceil(stats.base_stats.endurance) || 100;
-
-            setBossLifePercentage(maxLife / maxLife * 100);
-            setBossManaPercentage(maxMana / maxMana * 100);
-            setBossStaminaPercentage(maxEndurance / maxEndurance * 100);
-
-            setBossLife(maxLife);
-            setBossMana(maxMana);
-            setBossStamina(maxEndurance);
-            
             // Update boss keywords from loaded boss
             if (boss.keywords && boss.keywords.length > 0) {
                 setBossKeywords(boss.keywords);
@@ -90,11 +38,11 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
 
     useEffect(() => {
         // Check if player has died
-        if (playerLife <= 0 && !playerDead) {
+        if (player && player.life <= 0 && !playerDead) {
             setPlayerDead(true);
             setActionInProgress(true); // Prevent further actions
         }
-    }, [playerLife, playerDead]);
+    }, [player, playerDead]);
 
     useEffect(() => {
         // Dynamically calculate grass height based on window width
@@ -120,10 +68,16 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     }, []);
 
     useEffect(() => {
-        // Load the first boss (skeleton) when component mounts
-        const loadBoss = async () => {
+        // Load player and boss when component mounts
+        const loadGame = async () => {
             try {
                 setLoading(true);
+                
+                // Load player from backend
+                const loadedPlayer = await PlayerService.getPlayer();
+                setPlayer(loadedPlayer);
+                
+                // Load the first boss
                 const generatedBoss = await BossService.generateBoss(['skeleton','undead']);
                 setBoss(generatedBoss);
                 
@@ -132,11 +86,13 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                     pollForImage(generatedBoss.id);
                 }
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to load boss');
+                setError(err instanceof Error ? err.message : 'Failed to load game');
             } finally {
                 setLoading(false);
             }
         };
+
+        loadGame();
 
         const pollForImage = async (bossId: number) => {
             const interval = setInterval(async () => {
@@ -157,20 +113,25 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             // Cleanup interval on unmount
             return () => clearInterval(interval);
         };
-
-        loadBoss();
     }, []);
 
     const handleDescend = () => {
-        if (bossLife <= 0) {
+        if (boss && boss.life !== undefined && boss.life <= 0) {
             setShowKeywordSelection(true);
         }
     };
 
+    const handlePlayerDeath = async () => {
+        // Reset player on backend
+        await PlayerService.resetPlayer();
+        onExit();
+    };
+
     const handleKeywordSelection = async (selectedKeyword: string) => {
         try {
-            // Add selected keyword to player
-            setPlayerKeywords([...playerKeywords, selectedKeyword]);
+            // Add selected keyword to player on backend and level up
+            const updatedPlayer = await PlayerService.addKeyword(selectedKeyword);
+            setPlayer(updatedPlayer);
             
             // Remove selected keyword from boss keywords
             const updatedKeywords = bossKeywords.filter(k => k !== selectedKeyword);
@@ -187,19 +148,6 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             
             setBossKeywords(updatedKeywords);
             setShowKeywordSelection(false);
-            
-            // Increase player base stats by 10
-            const newMaxLife = playerMaxLife + 10;
-            const newMaxStamina = playerMaxStamina + 10;
-            const newMaxMana = playerMaxMana + 10;
-            setPlayerMaxLife(newMaxLife);
-            setPlayerMaxStamina(newMaxStamina);
-            setPlayerMaxMana(newMaxMana);
-            
-            // Fully heal player
-            setPlayerLife(newMaxLife);
-            setPlayerStamina(newMaxStamina);
-            setPlayerMana(newMaxMana);
             
             // Reset game state for new boss
             setLoading(true);
@@ -240,7 +188,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         }, 3000); // Poll every 3 seconds
     };
 
-    const handleAction = async (action: string, actionTaker: string = 'player', target: string = 'boss') => {
+    const handleAction = async (action: string) => {
         if (actionInProgress) {
             console.log("Action already in progress, ignoring");
             return;
@@ -249,82 +197,52 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         setActionInProgress(true);
         
         try {
-            const response = await takeAction(action, gameStatus, actionTaker, target);
+            const response = await takeAction(action);
             
             console.log("received response:", response);
             
-            // Check if response has the new format with metadata
-            const hasMetadata = response.playerAction !== undefined;
-            const currentState = hasMetadata ? response.gameState : response;
-            const bossAction = hasMetadata ? response.bossAction : null;
+            // Extract new game state from response
+            const currentState = response.gameState;
+            const bossAction = response.bossAction;
+            const newTurnToken = response.turnToken;
             
-            // Store the state before boss action for comparison
-            const stateAfterPlayer = hasMetadata ? {
-                bossLife: currentState.bossLife,
-                playerLife: playerLife,
-                playerStamina: playerStamina,
-                playerMana: playerMana
-            } : null;
+            // Update player and boss from backend
+            if (currentState.player) {
+                const oldPlayerLife = player?.life || 100;
+                setPlayer(currentState.player);
+                if (currentState.player.life < oldPlayerLife) {
+                    setPlayerShaking(true);
+                }
+            }
             
-            // Apply player action effects immediately
-            if (currentState.bossLife !== undefined) {
-                console.log("updating boss life to:", currentState.bossLife);
-                if (stateAfterPlayer && currentState.bossLife < bossLife) {
+            if (currentState.boss) {
+                const oldBossLife = boss?.life || 100;
+                setBoss(currentState.boss);
+                
+                // Trigger boss shake if damaged
+                if (currentState.boss.life < oldBossLife) {
                     setBossShaking(true);
                 }
+                
                 // Check if boss is defeated
-                if (currentState.bossLife <= 0 && !bossDying) {
+                if (currentState.boss.life <= 0 && !bossDying) {
                     setBossDying(true);
                     setBossShaking(true);
                 }
-                setBossLife(currentState.bossLife);
-                const stats = boss?.stats;
-                const maxLife = stats?.base_stats?.life || 100;
-                console.log("updating boss life percentage to:", (currentState.bossLife / maxLife) * 100);
-                setBossLifePercentage((currentState.bossLife / maxLife) * 100);
             }
             
-            // Update turn token for next action
-            if (currentState.turnToken) {
-                console.log("Updating turn token to:", currentState.turnToken);
-                setTurnToken(currentState.turnToken);
+            // Update turn token
+            if (newTurnToken) {
+                setTurnToken(newTurnToken);
             }
             
-            // If there's a boss action, apply its effects after a delay
-            if (bossAction && stateAfterPlayer) {
+            // If there's a boss action, wait for animation
+            if (bossAction) {
                 setTimeout(() => {
-                    console.log("Applying delayed boss action:", bossAction);
-                    
-                    // Apply boss action effects
-                    if (currentState.playerLife !== undefined) {
-                        if (currentState.playerLife < playerLife) {
-                            setPlayerShaking(true);
-                        }
-                        setPlayerLife(currentState.playerLife);
-                    }
-                    if (currentState.playerStamina !== undefined) {
-                        setPlayerStamina(currentState.playerStamina);
-                    }
-                    if (currentState.playerMana !== undefined) {
-                        setPlayerMana(currentState.playerMana);
-                    }
-                    
-                    // Turn complete, allow new actions
+                    console.log("Boss action complete");
                     setActionInProgress(false);
-                }, 1000); // 1 second delay for boss action
+                }, 1000);
             } else {
-                // No boss action (boss defeated or old format), apply state immediately
-                if (currentState.playerLife !== undefined) {
-                    setPlayerLife(currentState.playerLife);
-                }
-                if (currentState.playerStamina !== undefined) {
-                    setPlayerStamina(currentState.playerStamina);
-                }
-                if (currentState.playerMana !== undefined) {
-                    setPlayerMana(currentState.playerMana);
-                }
-                
-                // No boss turn, action complete
                 setActionInProgress(false);
             }
         } catch (err) {
@@ -369,16 +287,16 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                 <div className="text-2xl font-bold mb-4">{boss.name}</div>
                                 <div className="mb-4 flex gap-2 w-full">
                                     <div id="boss-life-bar" className="flex-1 h-12 bg-gray-600 border-2 border-gray-400 overflow-hidden relative">
-                                        <div className="h-full bg-red-500" style={{width: `${bossLifePercentage}%`}}></div>
-                                        <div className="absolute inset-0 flex items-center justify-center text-sm">{bossLife}</div>
+                                        <div className="h-full bg-red-500" style={{width: `${boss.life && boss.stats?.base_stats?.life ? (boss.life / Math.ceil(boss.stats.base_stats.life)) * 100 : 100}%`}}></div>
+                                        <div className="absolute inset-0 flex items-center justify-center text-sm">{boss.life || Math.ceil(boss.stats?.base_stats?.life || 100)}</div>
                                     </div>
                                     <div id="boss-stamina-bar" className="flex-1 h-12 bg-yellow-600 border-2 border-gray-400 overflow-hidden relative">
-                                        <div className="h-full bg-green-500" style={{width: `${bossStaminaPercentage}%`}}></div>
-                                        <div className="absolute inset-0 flex items-center justify-center text-sm">{bossStamina}</div>
+                                        <div className="h-full bg-green-500" style={{width: `${boss.stamina && boss.stats?.base_stats?.endurance ? (boss.stamina / Math.ceil(boss.stats.base_stats.endurance)) * 100 : 100}%`}}></div>
+                                        <div className="absolute inset-0 flex items-center justify-center text-sm">{boss.stamina || Math.ceil(boss.stats?.base_stats?.endurance || 100)}</div>
                                     </div>
                                     <div id="boss-mana-bar" className="flex-1 h-12 bg-blue-600 border-2 border-gray-400 overflow-hidden relative">
-                                        <div className="h-full bg-blue-500" style={{width: `${bossManaPercentage}%`}}></div>
-                                        <div className="absolute inset-0 flex items-center justify-center text-sm">{bossMana}</div>
+                                        <div className="h-full bg-blue-500" style={{width: `${boss.mana && boss.stats?.base_stats?.mana ? (boss.mana / Math.ceil(boss.stats.base_stats.mana)) * 100 : 100}%`}}></div>
+                                        <div className="absolute inset-0 flex items-center justify-center text-sm">{boss.mana || Math.ceil(boss.stats?.base_stats?.mana || 100)}</div>
                                     </div>
                                 </div>
                                 {boss.image_status === 'completed' && boss.image_url ? (
@@ -416,20 +334,20 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 <div id="bottom-panel" className="w-full h-32 border-t-2 border-gray-400 flex items-center justify-between px-4">
                     <div id="life-bar" className="flex items-center gap-2">
                         <div className="w-24 h-24 rounded-full bg-black border-2 border-gray-400 relative overflow-hidden">
-                            <div className="absolute bottom-0 w-full bg-red-600" style={{height: `${(playerLife / playerMaxLife) * 100}%`}}></div>
-                            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{Math.round(playerLife)}</div>
+                            <div className="absolute bottom-0 w-full bg-red-600" style={{height: `${((player?.life || 0) / (player?.max_life || 100)) * 100}%`}}></div>
+                            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{Math.round(player?.life || 0)}</div>
                         </div>
                     </div>
                     <div id="stamina-bar" className="flex items-center gap-2">
                         <div className="w-24 h-24 rounded-full bg-black border-2 border-gray-400 relative overflow-hidden">
-                            <div className="absolute bottom-0 w-full bg-green-600" style={{height: `${(playerStamina / playerMaxStamina) * 100}%`}}></div>
-                            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{Math.round(playerStamina)}</div>
+                            <div className="absolute bottom-0 w-full bg-green-600" style={{height: `${((player?.stamina || 0) / (player?.max_stamina || 100)) * 100}%`}}></div>
+                            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{Math.round(player?.stamina || 0)}</div>
                         </div>
                     </div>
                     <div id="mana-bar" className="flex items-center gap-2">
                         <div className="w-24 h-24 rounded-full bg-black border-2 border-gray-400 relative overflow-hidden">
-                            <div className="absolute bottom-0 w-full bg-blue-600" style={{height: `${(playerMana / playerMaxMana) * 100}%`}}></div>
-                            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{Math.round(playerMana)}</div>
+                            <div className="absolute bottom-0 w-full bg-blue-600" style={{height: `${((player?.mana || 0) / (player?.max_mana || 100)) * 100}%`}}></div>
+                            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{Math.round(player?.mana || 0)}</div>
                         </div>
                     </div>
                     <div id="character-picture" className="flex items-center gap-2">
@@ -438,7 +356,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                         </div>
                     </div>
                     <div id="action-bar" className="flex items-center gap-2 w-full">
-                        {bossLife <= 0 ? (
+                        {boss && boss.life !== undefined && boss.life <= 0 ? (
                             <div 
                                 className="w-64 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer bg-green-800 hover:bg-green-700 active:bg-green-600"
                                 onClick={handleDescend}
@@ -452,7 +370,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                         ? 'bg-gray-900 text-gray-600 cursor-not-allowed' 
                                         : 'bg-gray-800 hover:bg-gray-700 active:bg-gray-600'
                                 }`}
-                                onClick={() => !actionInProgress && !bossDying && handleAction('attack', 'player', 'boss')}
+                                onClick={() => !actionInProgress && !bossDying && handleAction('attack')}
                             >
                                 Attack
                             </div>
@@ -477,9 +395,9 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                 </button>
                             ))}
                         </div>
-                        {playerKeywords.length > 0 && (
+                        {player && player.keywords.length > 0 && (
                             <div className="mt-6 pt-4 border-t-2 border-gray-600">
-                                <p className="text-sm text-gray-400">Your Powers: {playerKeywords.join(', ')}</p>
+                                <p className="text-sm text-gray-400">Your Powers: {player.keywords.join(', ')}</p>
                             </div>
                         )}
                     </div>
@@ -494,7 +412,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                         <p className="text-xl mb-8 text-gray-300">Your descent ends here...</p>
                         <div className="flex flex-col gap-4">
                             <button
-                                onClick={onExit}
+                                onClick={handlePlayerDeath}
                                 className="bg-gray-700 hover:bg-gray-600 border-2 border-gray-500 rounded-lg p-4 text-xl font-semibold transition-colors"
                             >
                                 Return to Surface

@@ -17,6 +17,9 @@ export interface Boss {
   image_status: 'pending' | 'generating' | 'completed' | 'failed';
   image_url: string | null;
   created_at: string;
+  life?: number;
+  stamina?: number;
+  mana?: number;
 }
 
 export const BossService = {
@@ -33,7 +36,32 @@ export const BossService = {
       throw new Error(error.error || 'Failed to generate boss');
     }
     
-    return response.json();
+    const boss = await response.json();
+    
+    // Save boss to backend session
+    await this.saveBossToSession(boss);
+    
+    return boss;
+  },
+  
+  // Save boss to backend session
+  async saveBossToSession(boss: Boss): Promise<void> {
+    const response = await fetch('/set_boss', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        boss: {
+          ...boss,
+          life: Math.ceil(boss.stats.base_stats.life),
+          stamina: Math.ceil(boss.stats.base_stats.endurance),
+          mana: Math.ceil(boss.stats.base_stats.mana)
+        }
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to save boss to session');
+    }
   },
   
   // Get a specific boss
