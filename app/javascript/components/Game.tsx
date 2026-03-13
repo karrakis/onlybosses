@@ -206,15 +206,12 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             const bossAction = response.bossAction;
             const newTurnToken = response.turnToken;
             
-            // Update player and boss from backend
-            if (currentState.player) {
-                const oldPlayerLife = player?.life || 100;
-                setPlayer(currentState.player);
-                if (currentState.player.life < oldPlayerLife) {
-                    setPlayerShaking(true);
-                }
-            }
+            // Save old player state before any updates
+            const oldPlayerLife = player?.life || 100;
+            const playerBeforeBossAttack = player;
             
+            // PHASE 1: Show player action result immediately
+            // Update boss from backend (player's attack result)
             if (currentState.boss) {
                 const oldBossLife = boss?.life || 100;
                 setBoss(currentState.boss);
@@ -236,13 +233,25 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 setTurnToken(newTurnToken);
             }
             
-            // If there's a boss action, wait for animation
+            // PHASE 2: Show boss reaction after a delay
             if (bossAction) {
                 setTimeout(() => {
+                    // Update player from backend (boss's attack result)
+                    if (currentState.player) {
+                        setPlayer(currentState.player);
+                        if (currentState.player.life < oldPlayerLife) {
+                            setPlayerShaking(true);
+                        }
+                    }
+                    
                     console.log("Boss action complete");
                     setActionInProgress(false);
-                }, 1000);
+                }, 800); // Boss reacts after 800ms
             } else {
+                // No boss action (boss is dead), update player immediately
+                if (currentState.player) {
+                    setPlayer(currentState.player);
+                }
                 setActionInProgress(false);
             }
         } catch (err) {
@@ -287,16 +296,16 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                 <div className="text-2xl font-bold mb-4">{boss.name}</div>
                                 <div className="mb-4 flex gap-2 w-full">
                                     <div id="boss-life-bar" className="flex-1 h-12 bg-gray-600 border-2 border-gray-400 overflow-hidden relative">
-                                        <div className="h-full bg-red-500" style={{width: `${boss.life && boss.stats?.base_stats?.life ? (boss.life / Math.ceil(boss.stats.base_stats.life)) * 100 : 100}%`}}></div>
-                                        <div className="absolute inset-0 flex items-center justify-center text-sm">{boss.life || Math.ceil(boss.stats?.base_stats?.life || 100)}</div>
+                                        <div className="h-full bg-red-500" style={{width: `${boss.life !== undefined && boss.stats?.base_stats?.life ? (boss.life / Math.ceil(boss.stats.base_stats.life)) * 100 : 0}%`}}></div>
+                                        <div className="absolute inset-0 flex items-center justify-center text-sm">{boss.life !== undefined ? boss.life : Math.ceil(boss.stats?.base_stats?.life || 100)}</div>
                                     </div>
                                     <div id="boss-stamina-bar" className="flex-1 h-12 bg-yellow-600 border-2 border-gray-400 overflow-hidden relative">
-                                        <div className="h-full bg-green-500" style={{width: `${boss.stamina && boss.stats?.base_stats?.endurance ? (boss.stamina / Math.ceil(boss.stats.base_stats.endurance)) * 100 : 100}%`}}></div>
-                                        <div className="absolute inset-0 flex items-center justify-center text-sm">{boss.stamina || Math.ceil(boss.stats?.base_stats?.endurance || 100)}</div>
+                                        <div className="h-full bg-green-500" style={{width: `${boss.stamina !== undefined && boss.stats?.base_stats?.endurance ? (boss.stamina / Math.ceil(boss.stats.base_stats.endurance)) * 100 : 0}%`}}></div>
+                                        <div className="absolute inset-0 flex items-center justify-center text-sm">{boss.stamina !== undefined ? boss.stamina : Math.ceil(boss.stats?.base_stats?.endurance || 100)}</div>
                                     </div>
                                     <div id="boss-mana-bar" className="flex-1 h-12 bg-blue-600 border-2 border-gray-400 overflow-hidden relative">
-                                        <div className="h-full bg-blue-500" style={{width: `${boss.mana && boss.stats?.base_stats?.mana ? (boss.mana / Math.ceil(boss.stats.base_stats.mana)) * 100 : 100}%`}}></div>
-                                        <div className="absolute inset-0 flex items-center justify-center text-sm">{boss.mana || Math.ceil(boss.stats?.base_stats?.mana || 100)}</div>
+                                        <div className="h-full bg-blue-500" style={{width: `${boss.mana !== undefined && boss.stats?.base_stats?.mana ? (boss.mana / Math.ceil(boss.stats.base_stats.mana)) * 100 : 0}%`}}></div>
+                                        <div className="absolute inset-0 flex items-center justify-center text-sm">{boss.mana !== undefined ? boss.mana : Math.ceil(boss.stats?.base_stats?.mana || 100)}</div>
                                     </div>
                                 </div>
                                 {boss.image_status === 'completed' && boss.image_url ? (

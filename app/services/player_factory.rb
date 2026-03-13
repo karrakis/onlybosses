@@ -18,17 +18,17 @@ class PlayerFactory
   # Create a new player with base stats
   def self.create_new_player
     {
-      name: 'Hero',
-      keywords: [],
-      bosses_defeated: 0,
-      max_life: BASE_LIFE,
-      max_stamina: BASE_STAMINA,
-      max_mana: BASE_MANA,
-      life: BASE_LIFE,
-      stamina: BASE_STAMINA,
-      mana: BASE_MANA,
-      damage: BASE_DAMAGE,
-      actions: ['attack']
+      'name' => 'Hero',
+      'keywords' => [],
+      'bosses_defeated' => 0,
+      'max_life' => BASE_LIFE,
+      'max_stamina' => BASE_STAMINA,
+      'max_mana' => BASE_MANA,
+      'life' => BASE_LIFE,
+      'stamina' => BASE_STAMINA,
+      'mana' => BASE_MANA,
+      'damage' => BASE_DAMAGE,
+      'actions' => ['attack']
     }
   end
   
@@ -39,25 +39,25 @@ class PlayerFactory
   
   # Add a keyword to the player and recalculate stats
   def self.add_keyword(player, keyword)
-    return player if player[:keywords].include?(keyword)
+    return player if player['keywords'].include?(keyword)
     
-    player[:keywords] << keyword
+    player['keywords'] << keyword
     recalculate_stats(player)
   end
   
   # Called when player defeats a boss
   def self.level_up(player)
-    player[:bosses_defeated] += 1
+    player['bosses_defeated'] += 1
     
     # Increase base stats
-    player[:max_life] += STAT_INCREASE_PER_BOSS
-    player[:max_stamina] += STAT_INCREASE_PER_BOSS
-    player[:max_mana] += STAT_INCREASE_PER_BOSS
+    player['max_life'] += STAT_INCREASE_PER_BOSS
+    player['max_stamina'] += STAT_INCREASE_PER_BOSS
+    player['max_mana'] += STAT_INCREASE_PER_BOSS
     
     # Fully heal
-    player[:life] = player[:max_life]
-    player[:stamina] = player[:max_stamina]
-    player[:mana] = player[:max_mana]
+    player['life'] = player['max_life']
+    player['stamina'] = player['max_stamina']
+    player['mana'] = player['max_mana']
     
     recalculate_stats(player)
   end
@@ -68,7 +68,7 @@ class PlayerFactory
     total_damage = BASE_DAMAGE
     
     # Apply keyword bonuses
-    player[:keywords].each do |keyword|
+    player['keywords'].each do |keyword|
       keyword_data = BossKeyword.find_by(name: keyword)
       next unless keyword_data
       
@@ -79,7 +79,7 @@ class PlayerFactory
       end
     end
     
-    player[:damage] = total_damage
+    player['damage'] = total_damage
     player
   end
   

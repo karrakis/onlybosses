@@ -60,13 +60,6 @@ class GameController < ApplicationController
     # Convert player hash with symbol keys to string keys for consistency
     player_with_string_keys = player.deep_stringify_keys
     
-    # Debug logging
-    Rails.logger.debug "==== PLAYER DATA ===="
-    Rails.logger.debug "Player object: #{player.inspect}"
-    Rails.logger.debug "Player life: #{player[:life].inspect}"
-    Rails.logger.debug "Player stamina: #{player[:stamina].inspect}"
-    Rails.logger.debug "Player mana: #{player[:mana].inspect}"
-    
     # Build game_status from session data
     game_status = {
       'playerLife' => player['life'],
@@ -78,12 +71,6 @@ class GameController < ApplicationController
       'player' => player_with_string_keys,
       'boss' => boss
     }
-    
-    # Debug logging
-    Rails.logger.debug "==== GAME STATUS ===="
-    Rails.logger.debug "Player keys: #{game_status['player']&.keys&.inspect}"
-    Rails.logger.debug "Boss keys: #{game_status['boss']&.keys&.inspect}"
-    Rails.logger.debug "Player stats: #{game_status['player']&.dig('stats')&.inspect}"
     
     # Process player action
     if respond_to?(action_name, true)
@@ -190,13 +177,6 @@ class GameController < ApplicationController
     
     # Deal damage to target's life
     life_key = "#{target}Life"
-    
-    Rails.logger.debug "==== ATTACK DEBUG ===="
-    Rails.logger.debug "Action taker: #{action_taker}, Target: #{target}"
-    Rails.logger.debug "Damage: #{damage.inspect}"
-    Rails.logger.debug "Life key: #{life_key}"
-    Rails.logger.debug "Current life: #{game_status[life_key].inspect}"
-    
     game_status[life_key] -= damage
     game_status[life_key] = 0 if game_status[life_key] < 0
     
