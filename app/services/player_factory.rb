@@ -85,6 +85,7 @@ class PlayerFactory
   
   # Reset player (new run)
   def self.reset_player(session)
-    session[:player] = create_new_player
+    session[:player] = nil  # Clear existing player
+    session[:player] = create_new_player  # Create fresh player
   end
 end

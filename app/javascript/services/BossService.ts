@@ -38,10 +38,18 @@ export const BossService = {
     
     const boss = await response.json();
     
-    // Save boss to backend session
-    await this.saveBossToSession(boss);
+    // Add computed life/stamina/mana fields to boss object
+    const bossWithStats = {
+      ...boss,
+      life: Math.ceil(boss.stats.base_stats.life),
+      stamina: Math.ceil(boss.stats.base_stats.endurance),
+      mana: Math.ceil(boss.stats.base_stats.mana)
+    };
     
-    return boss;
+    // Save boss to backend session
+    await this.saveBossToSession(bossWithStats);
+    
+    return bossWithStats;
   },
   
   // Save boss to backend session

@@ -73,7 +73,10 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             try {
                 setLoading(true);
                 
-                // Load player from backend
+                // Reset player for new game
+                await PlayerService.resetPlayer();
+                
+                // Load fresh player from backend
                 const loadedPlayer = await PlayerService.getPlayer();
                 setPlayer(loadedPlayer);
                 

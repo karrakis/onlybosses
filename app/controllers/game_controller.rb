@@ -22,6 +22,7 @@ class GameController < ApplicationController
   # POST /reset_player
   def reset_player
     PlayerFactory.reset_player(session)
+    session[:current_boss] = nil  # Clear boss from session
     player = PlayerFactory.get_player(session)
     render json: player
   end
