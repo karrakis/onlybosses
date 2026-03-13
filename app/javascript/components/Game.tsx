@@ -216,6 +216,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             setLoading(true);
             setBossDying(false);
             setBossShaking(false);
+            setDescendClicked(false);
             setTurnToken(null);
             
             // Generate new boss with updated keywords

@@ -87,8 +87,23 @@ class GameController < ApplicationController
       boss['stamina'] = game_status['bossStamina']
       boss['mana'] = game_status['bossMana']
       
+      # Determine which resource is the boss's life resource
+      boss_life_resource = 'life'
+      if boss['keywords']
+        boss['keywords'].each do |keyword_name|
+          keyword = BossKeyword.find_by(name: keyword_name)
+          if keyword && keyword.properties['life_resource']
+            boss_life_resource = keyword.properties['life_resource']
+            break
+          end
+        end
+      end
+      
+      # Check the appropriate resource to see if boss is alive
+      boss_current_life = boss_life_resource == 'mana' ? game_status['bossMana'] : game_status['bossLife']
+      
       # Boss takes a turn in response (if boss is still alive)
-      if game_status['bossLife'] && game_status['bossLife'] > 0
+      if boss_current_life && boss_current_life > 0
         boss_action = choose_boss_action(game_status)
         
         if respond_to?(boss_action, true)
@@ -174,7 +189,7 @@ class GameController < ApplicationController
     # Calculate damage using the typed damage system
     damage_result = DamageCalculator.calculate_damage(attacker_data, defender_data, ability_damage)
     
-    total_damage = damage_result[:total_damage]
+    total_damage = damage_result[:total_damage].ceil
     life_resource = damage_result[:life_resource]
     
     # Apply damage to the appropriate resource
