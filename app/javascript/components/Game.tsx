@@ -26,6 +26,11 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const [bossKeywords, setBossKeywords] = useState<string[]>(['skeleton']);
     const [showKeywordSelection, setShowKeywordSelection] = useState<boolean>(false);
     const [availableKeywords] = useState<string[]>(initialAvailableKeywords);
+    
+    // Initial keyword selection state
+    const [showInitialKeywordSelection, setShowInitialKeywordSelection] = useState<boolean>(true);
+    const [initialKeywordOptions, setInitialKeywordOptions] = useState<any[]>([]);
+    const [selectedInitialKeywords, setSelectedInitialKeywords] = useState<string[]>([]);
 
     useEffect(() => {
         if (boss) {
@@ -80,28 +85,15 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 const loadedPlayer = await PlayerService.getPlayer();
                 setPlayer(loadedPlayer);
                 
-                // Fetch all keywords with metadata
+                // Fetch all keywords for initial selection
                 const response = await fetch('/api/bosses/keywords');
                 const allKeywords = await response.json();
                 
-                // Filter for rarity 1 creatures and characteristics
-                const rarity1Creatures = allKeywords.filter((k: any) => k.category === 'creature' && k.rarity === 1);
-                const characteristics = allKeywords.filter((k: any) => k.category === 'characteristic');
+                // Randomly select 5 keywords for the player to choose from
+                const shuffled = allKeywords.sort(() => 0.5 - Math.random());
+                const selectedOptions = shuffled.slice(0, 5);
+                setInitialKeywordOptions(selectedOptions);
                 
-                // Randomly select one creature and one characteristic
-                const randomCreature = rarity1Creatures[Math.floor(Math.random() * rarity1Creatures.length)];
-                const randomCharacteristic = characteristics[Math.floor(Math.random() * characteristics.length)];
-                
-                const selectedKeywords = [randomCreature.name, randomCharacteristic.name];
-                
-                // Load the first boss with random keywords
-                const generatedBoss = await BossService.generateBoss(selectedKeywords);
-                setBoss(generatedBoss);
-                
-                // If image is still generating, poll for updates
-                if (generatedBoss.image_status === 'pending' || generatedBoss.image_status === 'generating') {
-                    pollForImage(generatedBoss.id);
-                }
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load game');
             } finally {
@@ -142,6 +134,58 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         // Reset player on backend
         await PlayerService.resetPlayer();
         onExit();
+    };
+    
+    const handleInitialKeywordToggle = (keywordName: string) => {
+        if (selectedInitialKeywords.includes(keywordName)) {
+            setSelectedInitialKeywords(selectedInitialKeywords.filter(k => k !== keywordName));
+        } else if (selectedInitialKeywords.length < 2) {
+            setSelectedInitialKeywords([...selectedInitialKeywords, keywordName]);
+        }
+    };
+    
+    const handleInitialKeywordConfirm = async () => {
+        if (selectedInitialKeywords.length !== 2) return;
+        
+        try {
+            setLoading(true);
+            
+            // Add both keywords to player
+            for (const keyword of selectedInitialKeywords) {
+                const updatedPlayer = await PlayerService.addKeyword(keyword);
+                setPlayer(updatedPlayer);
+            }
+            
+            // Fetch all keywords for boss generation
+            const response = await fetch('/api/bosses/keywords');
+            const allKeywords = await response.json();
+            
+            // Filter for rarity 1 creatures and characteristics
+            const rarity1Creatures = allKeywords.filter((k: any) => k.category === 'creature' && k.rarity === 1);
+            const characteristics = allKeywords.filter((k: any) => k.category === 'characteristic');
+            
+            // Randomly select one creature and one characteristic
+            const randomCreature = rarity1Creatures[Math.floor(Math.random() * rarity1Creatures.length)];
+            const randomCharacteristic = characteristics[Math.floor(Math.random() * characteristics.length)];
+            
+            const selectedKeywords = [randomCreature.name, randomCharacteristic.name];
+            
+            // Load the first boss with random keywords
+            const generatedBoss = await BossService.generateBoss(selectedKeywords);
+            setBoss(generatedBoss);
+            
+            // If image is still generating, poll for updates
+            if (generatedBoss.image_status === 'pending' || generatedBoss.image_status === 'generating') {
+                pollForImage(generatedBoss.id);
+            }
+            
+            // Hide initial selection screen
+            setShowInitialKeywordSelection(false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to apply keywords');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleKeywordSelection = async (selectedKeyword: string) => {
@@ -277,6 +321,89 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             setActionInProgress(false); // Clear on error
         }
     };
+    
+    const formatKeywordAttributes = (keyword: any): string => {
+        const attrs = keyword.properties || {};
+        const parts: string[] = [];
+        
+        if (attrs.multipliers) {
+            const mults = attrs.multipliers;
+            Object.entries(mults).forEach(([key, value]) => {
+                const num = value as number;
+                if (num > 1) {
+                    parts.push(`+${((num - 1) * 100).toFixed(0)}% ${key}`);
+                } else if (num < 1) {
+                    parts.push(`${((num - 1) * 100).toFixed(0)}% ${key}`);
+                }
+            });
+        }
+        
+        if (attrs.resistances && attrs.resistances.length > 0) {
+            parts.push(`Resist: ${attrs.resistances.join(', ')}`);
+        }
+        
+        if (attrs.vulnerabilities && attrs.vulnerabilities.length > 0) {
+            parts.push(`Weak: ${attrs.vulnerabilities.join(', ')}`);
+        }
+        
+        if (attrs.passives && attrs.passives.length > 0) {
+            parts.push(`Passive: ${attrs.passives.join(', ')}`);
+        }
+        
+        return parts.join(' • ') || 'No special attributes';
+    };
+    
+    // Show initial keyword selection screen
+    if (showInitialKeywordSelection) {
+        return (
+            <div className="w-screen h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 text-white">
+                <div className="max-w-4xl p-8">
+                    <h1 className="text-4xl font-bold mb-4 text-center">Choose Your Path</h1>
+                    <p className="text-xl mb-8 text-center text-gray-300">Select 2 keywords to begin your journey</p>
+                    
+                    <div className="grid grid-cols-1 gap-4 mb-8">
+                        {initialKeywordOptions.map((keyword) => {
+                            const isSelected = selectedInitialKeywords.includes(keyword.name);
+                            return (
+                                <button
+                                    key={keyword.name}
+                                    onClick={() => handleInitialKeywordToggle(keyword.name)}
+                                    disabled={!isSelected && selectedInitialKeywords.length >= 2}
+                                    className={`p-6 rounded-lg border-2 transition-all text-left ${
+                                        isSelected 
+                                            ? 'border-green-500 bg-green-900 bg-opacity-30' 
+                                            : 'border-gray-600 bg-gray-800 hover:border-gray-400'
+                                    } ${!isSelected && selectedInitialKeywords.length >= 2 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                >
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="text-2xl font-bold capitalize">{keyword.name}</h3>
+                                        <span className="text-sm px-3 py-1 rounded bg-gray-700">
+                                            {keyword.category} • Rarity {keyword.rarity}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-300">{formatKeywordAttributes(keyword)}</p>
+                                </button>
+                            );
+                        })}
+                    </div>
+                    
+                    <div className="flex justify-center">
+                        <button
+                            onClick={handleInitialKeywordConfirm}
+                            disabled={selectedInitialKeywords.length !== 2 || loading}
+                            className={`px-8 py-4 text-xl font-bold rounded-lg ${
+                                selectedInitialKeywords.length === 2 && !loading
+                                    ? 'bg-green-600 hover:bg-green-700 cursor-pointer'
+                                    : 'bg-gray-600 cursor-not-allowed opacity-50'
+                            }`}
+                        >
+                            {loading ? 'Loading...' : `Descend (${selectedInitialKeywords.length}/2 selected)`}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (<div className="w-screen h-screen flex flex-col items-center justify-center bg-transparent text-white relative">
             <button className="z-10 absolute top-4 right-4 border border-white rounded px-4 py-2" onClick={onExit}>Surrender</button>
