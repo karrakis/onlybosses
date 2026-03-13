@@ -1,0 +1,3 @@
+{"name":"fire","category":"element","rarity":2,"attributes":{"passives":["burn"],"damage_output_by_type":{"fire":1.5},"damage_reduction_by_type":{"fire":0.3,"light":0.7,"water":1.5,"ice":1.8}}}
+{"name":"ice","category":"element","rarity":2,"attributes":{"passives":["chill"],"damage_output_by_type":{"ice":1.5},"damage_reduction_by_type":{"water":0.5,"ice":0.3,"lightning":1.5,"blunt":1.3,"fire":1.8}}}
+{"name":"lightning","category":"element","rarity":2,"attributes":{"passives":["shock"],"damage_output_by_type":{"lightning":1.6},"damage_reduction_by_type":{"dark":0.7,"water":1.5}}}
