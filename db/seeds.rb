@@ -11,6 +11,7 @@ keywords_data = [
   { name: "ghost", category: "creature", rarity: 2, passives: ["ethereal"], abilities: [], attributes: {"multipliers" => {"life"=>0.6, "dexterity"=>1.6, "mag_armor"=>1.2}, "resistances"=>["physical"], "vulnerabilities"=>["holy", "light"]}},
   { name: "vampire", category: "creature", rarity: 3, passives: ["leech"], abilities: ["bite"], attributes: {"multipliers" => {"life"=>1.3, "strength"=>1.2, "dexterity"=>1.3, "mana" => 1.2}, "resistances"=>["charm", "fear", "dark"], "vulnerabilities"=>["holy", "fire", "light"]}},
   { name: "goat", category: "creature", rarity: 1, passives: ["lucky"], abilities: [], attributes: {"multipliers" => {"life"=>1.0, "endurance"=>1.2, "strength"=>0.9}, "resistances"=>["charm"], "vulnerabilities"=>["slashing"]}},
+  { name: "human", category: "creature", rarity: 1, passives: ["versatile"], abilities: [], attributes: {"multipliers" => {"life"=>1.0, "strength"=>1.0, "dexterity"=>1.0, "intelligence"=>1.0}, "resistances"=>[], "vulnerabilities"=>[]}},
   
   # Weapons
   { name: "spear", category: "weapon", rarity: 1, attributes: {
@@ -75,6 +76,18 @@ keywords_data = [
     resistances: ["poison", "charm"],
     vulnerabilities: ["holy", "light"],
     passives: ["heartless"],
+  }},
+  { name: "large", category: "characteristic", rarity: 3, attributes: {
+    multipliers: { life: 1.1, damage: 1.1 },
+    resistances: ["blunt", "piercing"],
+    vulnerabilities: ["magic", "lightning"],
+    passives: ["towering"],
+  }},
+  { name: "agile", category: "characteristic", rarity: 3, attributes: {
+    multipliers: { dexterity: 1.1, speed: 1.1 },
+    resistances: ["slashing", "piercing"],
+    vulnerabilities: ["blunt", "magic"],
+    passives: ["nimble"], 
   }},
 ]
 

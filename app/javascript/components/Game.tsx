@@ -80,8 +80,22 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 const loadedPlayer = await PlayerService.getPlayer();
                 setPlayer(loadedPlayer);
                 
-                // Load the first boss
-                const generatedBoss = await BossService.generateBoss(['skeleton','undead']);
+                // Fetch all keywords with metadata
+                const response = await fetch('/api/bosses/keywords');
+                const allKeywords = await response.json();
+                
+                // Filter for rarity 1 creatures and characteristics
+                const rarity1Creatures = allKeywords.filter((k: any) => k.category === 'creature' && k.rarity === 1);
+                const characteristics = allKeywords.filter((k: any) => k.category === 'characteristic');
+                
+                // Randomly select one creature and one characteristic
+                const randomCreature = rarity1Creatures[Math.floor(Math.random() * rarity1Creatures.length)];
+                const randomCharacteristic = characteristics[Math.floor(Math.random() * characteristics.length)];
+                
+                const selectedKeywords = [randomCreature.name, randomCharacteristic.name];
+                
+                // Load the first boss with random keywords
+                const generatedBoss = await BossService.generateBoss(selectedKeywords);
                 setBoss(generatedBoss);
                 
                 // If image is still generating, poll for updates
