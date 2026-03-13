@@ -70,53 +70,80 @@ class BossFactory
     end
     
     def compute_stats(keywords)
-        puts "Computing stats for keywords: #{keywords.map(&:name).join(', ')}"
-        keyword_quantity = keywords.count
-      merged = {
-        resistances: [],
-        vulnerabilities: [],
-        base_stats: {life: 100 + keywords.count * 10, mana: 100 + keywords.count * 10, endurance: 100 + keywords.count * 10, damage: 10, defense: 10},
-        special: {},
-        weapons: [],
-        abilities: [],
-        passives: [],
-      }
-
-      level = keywords.count
+      puts "Computing stats for keywords: #{keywords.map(&:name).join(', ')}"
+      
+      # Start with base resource pools
+      base_life = 100
+      base_stamina = 100
+      base_mana = 100
+      
+      # Track multipliers
+      life_mult = 1.0
+      stamina_mult = 1.0
+      mana_mult = 1.0
+      
+      # Track collections
+      resistances = []
+      vulnerabilities = []
+      passives = []
+      abilities = []
+      weapons = []
       
       keywords.each do |keyword|
-        puts "Merging stats from keyword: #{keyword.name}"
+        puts "Processing keyword: #{keyword.name}"
         
-        attrs = keyword.properties.deep_symbolize_keys
+        attrs = keyword.properties || {}
         
-        # Add resistances
-        merged[:resistances] |= (attrs[:resistances] || [])
-        
-        # Add vulnerabilities
-        merged[:vulnerabilities] |= (attrs[:vulnerabilities] || [])
-        
-        # Resistances cancel out vulnerabilities
-        merged[:vulnerabilities] -= merged[:resistances]
-        
-        # Merge base stats (multiplicative)
-        (attrs[:multipliers] || {}).each do |stat, multiplier|
-          stat_key = stat.to_sym
-          if merged[:base_stats].key?(stat_key)
-            puts "  Applying multiplier to #{stat_key}: #{merged[:base_stats][stat_key]} * #{multiplier} = #{merged[:base_stats][stat_key] * multiplier}"
-            merged[:base_stats][stat_key] = (merged[:base_stats][stat_key] * multiplier).round(2)
-          else
-            puts "  Warning: stat '#{stat_key}' not found in base_stats, skipping"
-          end
+        # Apply resource multipliers
+        if attrs['multipliers']
+          life_mult *= (attrs['multipliers']['life'] || 1.0)
+          stamina_mult *= (attrs['multipliers']['stamina'] || 1.0)
+          mana_mult *= (attrs['multipliers']['mana'] || 1.0)
         end
         
-        # Merge special attributes (last one wins for conflicts)
-        merged[:special].merge!(attrs[:special] || {})
+        # Convert old resistances/vulnerabilities to damage_reduction_by_type
+        # (This is for backwards compatibility during transition)
+        if attrs['resistances']
+          resistances |= attrs['resistances']
+        end
+        
+        if attrs['vulnerabilities']
+          vulnerabilities |= attrs['vulnerabilities']
+        end
+        
+        # Track passives and abilities
+        passives |= (keyword.passives || [])
+        abilities |= (keyword.abilities || [])
         
         # Track weapons
-        merged[:weapons] << keyword.name if keyword.category == 'weapon'
+        weapons << keyword.name if keyword.category == 'weapon'
       end
       
-      merged
+      # Cancel resistances with vulnerabilities
+      vulnerabilities -= resistances
+      
+      # Calculate final resource pools
+      final_life = (base_life * life_mult).ceil
+      final_stamina = (base_stamina * stamina_mult).ceil
+      final_mana = (base_mana * mana_mult).ceil
+      
+      puts "Final stats - Life: #{final_life}, Stamina: #{final_stamina}, Mana: #{final_mana}"
+      
+      {
+        base_stats: {
+          life: final_life,
+          stamina: final_stamina,
+          mana: final_mana,
+          damage: 10,  # Legacy - will be removed when we implement abilities
+          defense: 10  # Legacy - will be removed when we implement abilities
+        },
+        resistances: resistances,
+        vulnerabilities: vulnerabilities,
+        passives: passives,
+        abilities: abilities,
+        weapons: weapons,
+        special: {}
+      }
     end
   end
 end

@@ -164,22 +164,23 @@ class GameController < ApplicationController
   end
   
   def attack(game_status, action_taker = 'player', target = 'boss')
-    # Get action_taker's damage stat (handle different structures for player vs boss)
-    action_taker_data = game_status[action_taker]
+    # Basic attack has physical damage
+    ability_damage = { 'physical' => 10 }
     
-    # Player has flat structure with 'damage' at top level
-    # Boss has nested structure with stats.base_stats.damage
-    if action_taker == 'boss' && action_taker_data['stats'] && action_taker_data['stats']['base_stats']
-      damage = action_taker_data['stats']['base_stats']['damage']
-    else
-      # For player, damage is at the top level
-      damage = action_taker_data['damage']
-    end
+    # Get attacker and defender data
+    attacker_data = game_status[action_taker]
+    defender_data = game_status[target]
     
-    # Deal damage to target's life
-    life_key = "#{target}Life"
-    game_status[life_key] -= damage
-    game_status[life_key] = 0 if game_status[life_key] < 0
+    # Calculate damage using the typed damage system
+    damage_result = DamageCalculator.calculate_damage(attacker_data, defender_data, ability_damage)
+    
+    total_damage = damage_result[:total_damage]
+    life_resource = damage_result[:life_resource]
+    
+    # Apply damage to the appropriate resource
+    resource_key = "#{target}#{life_resource.capitalize}"
+    game_status[resource_key] -= total_damage
+    game_status[resource_key] = 0 if game_status[resource_key] < 0
     
     game_status
   end

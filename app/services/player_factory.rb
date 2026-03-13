@@ -64,22 +64,30 @@ class PlayerFactory
   
   # Recalculate all stats based on keywords
   def self.recalculate_stats(player)
-    # Start with base damage
-    total_damage = BASE_DAMAGE
+    # Start with base values
+    total_life_mult = 1.0
+    total_stamina_mult = 1.0
+    total_mana_mult = 1.0
     
-    # Apply keyword bonuses
+    # Apply keyword multipliers
     player['keywords'].each do |keyword|
       keyword_data = BossKeyword.find_by(name: keyword)
       next unless keyword_data
       
-      # Parse properties JSON if it exists
-      if keyword_data.properties
-        props = keyword_data.properties
-        total_damage += props['damage_bonus'].to_i if props['damage_bonus']
+      # Get multipliers from properties
+      if keyword_data.properties && keyword_data.properties['multipliers']
+        mults = keyword_data.properties['multipliers']
+        total_life_mult *= (mults['life'] || 1.0)
+        total_stamina_mult *= (mults['stamina'] || 1.0)
+        total_mana_mult *= (mults['mana'] || 1.0)
       end
     end
     
-    player['damage'] = total_damage
+    # Apply multipliers to max stats
+    player['max_life'] = (BASE_LIFE * total_life_mult).ceil
+    player['max_stamina'] = (BASE_STAMINA * total_stamina_mult).ceil
+    player['max_mana'] = (BASE_MANA * total_mana_mult).ceil
+    
     player
   end
   

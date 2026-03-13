@@ -4,91 +4,316 @@
 # Boss Keywords
 keywords_data = [
   # Creatures
-  { name: "skeleton", category: "creature", rarity: 1, passives: ["armoured","fragile"], abilities: [], attributes: {"multipliers" => {"life"=>0.8, "dexterity"=>0.8, "endurance"=>0.8, "mana"=>1.5, "phys_armor"=>1.4}, "resistances"=>["piercing", "dark", "mind"], "vulnerabilities"=>["blunt", "light", "holy"]}},
-  { name: "octopus", category: "creature", rarity: 2, passives: ["mindshield"], abilities: [], attributes: {"multipliers" => {"life"=>1.2, "dexterity"=>1.3, "intelligence"=>1.5}, "resistances"=>["blunt", "charm"], "vulnerabilities"=>["fire", "lightning"]}},
-  { name: "dragon", category: "creature", rarity: 3, passives: ["amplify"], abilities: [], attributes: {"multipliers" => {"life"=>2.0, "strength"=>1.8, "phys_armor"=>1.5, "mag_armor"=>1.3, "speed"=>0.7}, "resistances"=>["fire", "piercing"], "vulnerabilities"=>["ice"]}},
-  { name: "golem", category: "creature", rarity: 2, passives: ["armoured","squishy"], abilities: [], attributes: {"multipliers" => {"life"=>1.5, "phys_armor"=>2.0, "dexterity"=>0.5, "speed"=>0.9}, "resistances"=>["piercing", "slashing", "blunt"], "vulnerabilities"=>["magic", "lightning"]}},
-  { name: "ghost", category: "creature", rarity: 2, passives: ["ethereal"], abilities: [], attributes: {"multipliers" => {"life"=>0.6, "dexterity"=>1.6, "mag_armor"=>1.2}, "resistances"=>["physical"], "vulnerabilities"=>["holy", "light"]}},
-  { name: "vampire", category: "creature", rarity: 3, passives: ["leech"], abilities: ["bite"], attributes: {"multipliers" => {"life"=>1.3, "strength"=>1.2, "dexterity"=>1.3, "mana" => 1.2}, "resistances"=>["charm", "fear", "dark"], "vulnerabilities"=>["holy", "fire", "light"]}},
-  { name: "goat", category: "creature", rarity: 1, passives: ["lucky"], abilities: [], attributes: {"multipliers" => {"life"=>1.0, "endurance"=>1.2, "strength"=>0.9}, "resistances"=>["charm"], "vulnerabilities"=>["slashing"]}},
-  { name: "human", category: "creature", rarity: 1, passives: ["versatile"], abilities: [], attributes: {"multipliers" => {"life"=>1.0, "strength"=>1.0, "dexterity"=>1.0, "intelligence"=>1.0}, "resistances"=>[], "vulnerabilities"=>[]}},
+  { 
+    name: "skeleton", 
+    category: "creature", 
+    rarity: 1, 
+    passives: ["armoured","fragile"], 
+    abilities: [], 
+    attributes: {
+      "multipliers" => { "life" => 0.8, "stamina" => 0.8, "mana" => 1.5 },
+      "damage_output_by_type" => { "physical" => 0.9 },
+      "damage_amplification" => 1.0,
+      "damage_reduction_by_type" => {
+        "piercing" => 0.5,
+        "dark" => 0.5,
+        "blunt" => 1.5,
+        "light" => 1.5,
+        "holy" => 1.5
+      }
+    }
+  },
+  { 
+    name: "octopus", 
+    category: "creature", 
+    rarity: 2, 
+    passives: ["mindshield"], 
+    abilities: [], 
+    attributes: {
+      "multipliers" => { "life" => 1.2, "stamina" => 1.0, "mana" => 1.5 },
+      "damage_output_by_type" => { "physical" => 1.3 },
+      "damage_amplification" => 1.0,
+      "damage_reduction_by_type" => {
+        "blunt" => 0.5,
+        "fire" => 1.5,
+        "lightning" => 1.5
+      }
+    }
+  },
+  { 
+    name: "dragon", 
+    category: "creature", 
+    rarity: 3, 
+    passives: ["amplify"], 
+    abilities: [], 
+    attributes: {
+      "multipliers" => { "life" => 2.0, "stamina" => 1.5, "mana" => 1.3 },
+      "damage_output_by_type" => { "physical" => 1.8, "fire" => 1.5 },
+      "damage_amplification" => 1.2,
+      "damage_reduction_by_type" => {
+        "physical" => 0.7,
+        "fire" => 0.2,
+        "piercing" => 0.5,
+        "ice" => 1.5
+      }
+    }
+  },
+  { 
+    name: "golem", 
+    category: "creature", 
+    rarity: 2, 
+    passives: ["armoured","squishy"], 
+    abilities: [], 
+    attributes: {
+      "multipliers" => { "life" => 1.5, "stamina" => 0.9, "mana" => 0.5 },
+      "damage_output_by_type" => { "physical" => 1.2, "blunt" => 1.3 },
+      "damage_amplification" => 1.0,
+      "damage_reduction_by_type" => {
+        "piercing" => 0.3,
+        "slashing" => 0.3,
+        "blunt" => 0.4,
+        "magic" => 1.5,
+        "lightning" => 1.5
+      }
+    }
+  },
+  { 
+    name: "ghost", 
+    category: "creature", 
+    rarity: 2, 
+    passives: ["ethereal"], 
+    abilities: [],
+    attributes: {
+      "life_resource" => "mana",
+      "multipliers" => { "life" => 0.0, "stamina" => 0.6, "mana" => 3.0 },
+      "damage_output_by_type" => { "physical" => 0.1, "dark" => 1.5, "magic" => 1.3 },
+      "damage_amplification" => 1.0,
+      "damage_reduction_by_type" => {
+        "physical" => 0.1,
+        "holy" => 2.0,
+        "light" => 1.8
+      }
+    }
+  },
+  { 
+    name: "vampire", 
+    category: "creature", 
+    rarity: 3, 
+    passives: ["leech"], 
+    abilities: ["bite"], 
+    attributes: {
+      "multipliers" => { "life" => 1.3, "stamina" => 1.3, "mana" => 1.2 },
+      "damage_output_by_type" => { "physical" => 1.2, "dark" => 1.4 },
+      "damage_amplification" => 1.1,
+      "damage_reduction_by_type" => {
+        "dark" => 0.3,
+        "holy" => 2.0,
+        "fire" => 1.5,
+        "light" => 1.5
+      }
+    }
+  },
+  { 
+    name: "goat", 
+    category: "creature", 
+    rarity: 1, 
+    passives: ["lucky"], 
+    abilities: [], 
+    attributes: {
+      "multipliers" => { "life" => 1.0, "stamina" => 1.2, "mana" => 0.8 },
+      "damage_output_by_type" => { "physical" => 0.9, "blunt" => 1.1 },
+      "damage_amplification" => 1.0,
+      "damage_reduction_by_type" => {
+        "slashing" => 1.3
+      }
+    }
+  },
+  { 
+    name: "human", 
+    category: "creature", 
+    rarity: 1, 
+    passives: ["versatile"], 
+    abilities: [], 
+    attributes: {
+      "multipliers" => { "life" => 1.0, "stamina" => 1.0, "mana" => 1.0 },
+      "damage_output_by_type" => { "physical" => 1.0 },
+      "damage_amplification" => 1.0,
+      "damage_reduction_by_type" => {}
+    }
+  },
   
   # Weapons
-  { name: "spear", category: "weapon", rarity: 1, attributes: {
-    weapon_type: "piercing",
+  { 
+    name: "spear", 
+    category: "weapon", 
+    rarity: 1, 
     abilities: ["stab"],
-    base_stats: { damage: 5, range: 2 }
-  }},
-  { name: "sword", category: "weapon", rarity: 1, attributes: {
-    weapon_type: "slashing",
+    attributes: {
+      "base_damage_by_type" => { "piercing" => 5 },
+      "applies_to" => ["physical", "piercing"],
+      "damage_multiplier" => 1.2
+    }
+  },
+  { 
+    name: "sword", 
+    category: "weapon", 
+    rarity: 1, 
     abilities: ["whirlwind"],
-    base_stats: { damage: 6, range: 1 }
-  }},
-  { name: "axe", category: "weapon", rarity: 1, attributes: {
-    weapon_type: "slashing",
+    attributes: {
+      "base_damage_by_type" => { "slashing" => 6 },
+      "applies_to" => ["physical", "slashing"],
+      "damage_multiplier" => 1.3
+    }
+  },
+  { 
+    name: "axe", 
+    category: "weapon", 
+    rarity: 1, 
     abilities: ["cleave"],
-    base_stats: { damage: 8, range: 1 }
-  }},
-  { name: "bow", category: "weapon", rarity: 1, attributes: {
-    weapon_type: "piercing",
-    abilities: ["piercing arrow"],
-    base_stats: { damage: 4, range: 5 }
-  }},
-  { name: "mace", category: "weapon", rarity: 1, attributes: {
-    weapon_type: "blunt",
+    attributes: {
+      "base_damage_by_type" => { "slashing" => 8 },
+      "applies_to" => ["physical", "slashing"],
+      "damage_multiplier" => 1.4
+    }
+  },
+  { 
+    name: "bow", 
+    category: "weapon", 
+    rarity: 1, 
+    abilities: ["piercing_arrow"],
+    attributes: {
+      "base_damage_by_type" => { "piercing" => 4 },
+      "applies_to" => ["physical", "piercing"],
+      "damage_multiplier" => 1.1
+    }
+  },
+  { 
+    name: "mace", 
+    category: "weapon", 
+    rarity: 1, 
     abilities: ["smash"],
-    base_stats: { damage: 7, range: 1 }
-  }},
-  { name: "wizard staff", category: "weapon", rarity: 2, attributes: {
-    weapon_type: "magic",
-    abilities: ["cast", "magic missile"],
-    base_stats: { damage: 5, range: 4}
-  }},
-  { name: "shield", category: "weapon", rarity: 2, attributes: {
-    weapon_type: "defensive",
+    attributes: {
+      "base_damage_by_type" => { "blunt" => 7 },
+      "applies_to" => ["physical", "blunt"],
+      "damage_multiplier" => 1.3
+    }
+  },
+  { 
+    name: "wizard_staff", 
+    category: "weapon", 
+    rarity: 2, 
+    abilities: ["cast", "magic_missile"],
+    attributes: {
+      "base_damage_by_type" => { "magic" => 5 },
+      "applies_to" => ["magic", "arcane", "fire", "ice", "lightning"],
+      "damage_multiplier" => 1.5
+    }
+  },
+  { 
+    name: "shield", 
+    category: "weapon", 
+    rarity: 2, 
     passives: ["block"],
-    base_stats: { damage: 0, range: 0, defense: 5 }
-  }},
+    attributes: {
+      "base_damage_by_type" => { "blunt" => 2 },
+      "applies_to" => ["physical", "blunt"],
+      "damage_multiplier" => 1.0,
+      "damage_reduction_by_type" => { "physical" => 0.8 }
+    }
+  },
 
   # Elements
-  { name: "fire", category: "element", rarity: 2, attributes: {
-    resistances: ["fire", "light"],
-    vulnerabilities: ["water", "ice"],
+  { 
+    name: "fire", 
+    category: "element", 
+    rarity: 2, 
     passives: ["burn"],
-    base_stats: { attack: 3 }
-  }},
-  { name: "ice", category: "element", rarity: 2, attributes: {
-    resistances: ["water", "ice"],
-    vulnerabilities: ["lightning", "blunt"],
+    attributes: {
+      "damage_output_by_type" => { "fire" => 1.5 },
+      "damage_reduction_by_type" => {
+        "fire" => 0.3,
+        "light" => 0.7,
+        "water" => 1.5,
+        "ice" => 1.8
+      }
+    }
+  },
+  { 
+    name: "ice", 
+    category: "element", 
+    rarity: 2, 
     passives: ["chill"],
-    base_stats: { defense: 2 }
-  }},
-  { name: "lightning", category: "element", rarity: 2, attributes: {
-    resistances: ["air", "dark"],
-    vulnerabilities: ["earth", "water"],
+    attributes: {
+      "damage_output_by_type" => { "ice" => 1.5 },
+      "damage_reduction_by_type" => {
+        "water" => 0.5,
+        "ice" => 0.3,
+        "lightning" => 1.5,
+        "blunt" => 1.3,
+        "fire" => 1.8
+      }
+    }
+  },
+  { 
+    name: "lightning", 
+    category: "element", 
+    rarity: 2, 
     passives: ["shock"],
-    base_stats: { speed: 3, attack: 4 }
-  }},
+    attributes: {
+      "damage_output_by_type" => { "lightning" => 1.6 },
+      "damage_reduction_by_type" => {
+        "dark" => 0.7,
+        "water" => 1.5
+      }
+    }
+  },
 
   # Characteristics
-  { name: "undead", category: "characteristic", rarity: 3, attributes: {
-    multipliers: { life: 0.8, mana: 1.2 },
-    resistances: ["poison", "charm"],
-    vulnerabilities: ["holy", "light"],
+  { 
+    name: "undead", 
+    category: "characteristic", 
+    rarity: 3, 
     passives: ["heartless"],
-  }},
-  { name: "large", category: "characteristic", rarity: 3, attributes: {
-    multipliers: { life: 1.1, damage: 1.1 },
-    resistances: ["blunt", "piercing"],
-    vulnerabilities: ["magic", "lightning"],
+    attributes: {
+      "multipliers" => { "life" => 0.8, "mana" => 1.2 },
+      "damage_reduction_by_type" => {
+        "poison" => 0.0,
+        "holy" => 1.8,
+        "light" => 1.5
+      }
+    }
+  },
+  { 
+    name: "large", 
+    category: "characteristic", 
+    rarity: 3, 
     passives: ["towering"],
-  }},
-  { name: "agile", category: "characteristic", rarity: 3, attributes: {
-    multipliers: { dexterity: 1.1, speed: 1.1 },
-    resistances: ["slashing", "piercing"],
-    vulnerabilities: ["blunt", "magic"],
-    passives: ["nimble"], 
-  }},
+    attributes: {
+      "multipliers" => { "life" => 1.2, "stamina" => 1.1 },
+      "damage_amplification" => 1.15,
+      "damage_reduction_by_type" => {
+        "blunt" => 0.8,
+        "piercing" => 0.8,
+        "magic" => 1.2,
+        "lightning" => 1.3
+      }
+    }
+  },
+  { 
+    name: "agile", 
+    category: "characteristic", 
+    rarity: 3, 
+    passives: ["nimble"],
+    attributes: {
+      "multipliers" => { "stamina" => 1.2 },
+      "damage_output_by_type" => { "piercing" => 1.2, "slashing" => 1.1 },
+      "damage_reduction_by_type" => {
+        "slashing" => 0.8,
+        "piercing" => 0.8,
+        "blunt" => 1.2
+      }
+    }
+  },
 ]
 
 puts "Seeding keywords..."
