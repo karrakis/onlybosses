@@ -42,7 +42,7 @@ export const BossService = {
     const bossWithStats = {
       ...boss,
       life: Math.ceil(boss.stats.base_stats.life),
-      stamina: Math.ceil(boss.stats.base_stats.endurance),
+      stamina: Math.ceil(boss.stats.base_stats.stamina),
       mana: Math.ceil(boss.stats.base_stats.mana)
     };
     
@@ -61,7 +61,7 @@ export const BossService = {
         boss: {
           ...boss,
           life: Math.ceil(boss.stats.base_stats.life),
-          stamina: Math.ceil(boss.stats.base_stats.endurance),
+          stamina: Math.ceil(boss.stats.base_stats.stamina),
           mana: Math.ceil(boss.stats.base_stats.mana)
         }
       })
@@ -80,7 +80,15 @@ export const BossService = {
       throw new Error('Failed to fetch boss');
     }
     
-    return response.json();
+    const boss = await response.json();
+    
+    // Add computed life/stamina/mana fields if they're not already present
+    return {
+      ...boss,
+      life: boss.life !== undefined ? boss.life : Math.ceil(boss.stats.base_stats.life),
+      stamina: boss.stamina !== undefined ? boss.stamina : Math.ceil(boss.stats.base_stats.stamina),
+      mana: boss.mana !== undefined ? boss.mana : Math.ceil(boss.stats.base_stats.mana)
+    };
   },
   
   // Get all bosses
