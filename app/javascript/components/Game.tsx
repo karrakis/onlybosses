@@ -329,9 +329,9 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         // Weapon attributes
         if (attrs.base_damage_by_type) {
             const damages = Object.entries(attrs.base_damage_by_type)
-                .map(([type, value]) => `${value} ${type}`)
+                .map(([type, value]) => `+${value} ${type} damage`)
                 .join(', ');
-            parts.push(`Base: ${damages}`);
+            parts.push(damages);
         }
         
         if (attrs.damage_multiplier && attrs.damage_multiplier !== 1.0) {
