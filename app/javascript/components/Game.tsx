@@ -25,6 +25,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const [grassHeight, setGrassHeight] = useState<number>(50);
     const [bossKeywords, setBossKeywords] = useState<string[]>(['skeleton']);
     const [showKeywordSelection, setShowKeywordSelection] = useState<boolean>(false);
+    const [descendClicked, setDescendClicked] = useState<boolean>(false);
     const [availableKeywords] = useState<string[]>(initialAvailableKeywords);
     
     // Initial keyword selection state
@@ -125,7 +126,8 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     }, []);
 
     const handleDescend = () => {
-        if (boss && boss.life !== undefined && boss.life <= 0) {
+        if (boss && boss.life !== undefined && boss.life <= 0 && !descendClicked) {
+            setDescendClicked(true);
             setShowKeywordSelection(true);
         }
     };
@@ -560,7 +562,11 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                     <div id="action-bar" className="flex items-center gap-2 w-full">
                         {boss && boss.life !== undefined && boss.life <= 0 ? (
                             <div 
-                                className="w-64 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer bg-green-800 hover:bg-green-700 active:bg-green-600"
+                                className={`w-64 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center ${
+                                    descendClicked 
+                                        ? 'bg-gray-900 text-gray-600 cursor-not-allowed' 
+                                        : 'cursor-pointer bg-green-800 hover:bg-green-700 active:bg-green-600'
+                                }`}
                                 onClick={handleDescend}
                             >
                                 Descend
