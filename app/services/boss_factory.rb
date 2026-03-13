@@ -112,8 +112,8 @@ class BossFactory
         end
         
         # Track passives and abilities
-        passives |= (keyword.passives || [])
-        abilities |= (keyword.abilities || [])
+        passives |= (attrs['passives'] || [])
+        abilities |= (attrs['abilities'] || [])
         
         # Track weapons
         weapons << keyword.name if keyword.category == 'weapon'

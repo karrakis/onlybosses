@@ -326,18 +326,67 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         const attrs = keyword.properties || {};
         const parts: string[] = [];
         
+        // Weapon attributes
+        if (attrs.base_damage_by_type) {
+            const damages = Object.entries(attrs.base_damage_by_type)
+                .map(([type, value]) => `${value} ${type}`)
+                .join(', ');
+            parts.push(`Base: ${damages}`);
+        }
+        
+        if (attrs.damage_multiplier && attrs.damage_multiplier !== 1.0) {
+            parts.push(`${attrs.damage_multiplier}x damage`);
+        }
+        
+        if (attrs.applies_to && attrs.applies_to.length > 0) {
+            parts.push(`Applies to: ${attrs.applies_to.join(', ')}`);
+        }
+        
+        // Multipliers
         if (attrs.multipliers) {
             const mults = attrs.multipliers;
             Object.entries(mults).forEach(([key, value]) => {
                 const num = value as number;
                 if (num > 1) {
                     parts.push(`+${((num - 1) * 100).toFixed(0)}% ${key}`);
-                } else if (num < 1) {
+                } else if (num < 1 && num > 0) {
                     parts.push(`${((num - 1) * 100).toFixed(0)}% ${key}`);
                 }
             });
         }
         
+        // Damage output modifiers
+        if (attrs.damage_output_by_type) {
+            const outputs = Object.entries(attrs.damage_output_by_type)
+                .filter(([_, value]) => (value as number) !== 1.0)
+                .map(([type, value]) => {
+                    const num = value as number;
+                    return `${num > 1 ? '+' : ''}${((num - 1) * 100).toFixed(0)}% ${type} dmg`;
+                });
+            if (outputs.length > 0) {
+                parts.push(outputs.join(', '));
+            }
+        }
+        
+        // Damage reduction (new format)
+        if (attrs.damage_reduction_by_type) {
+            const reductions = Object.entries(attrs.damage_reduction_by_type)
+                .map(([type, value]) => {
+                    const num = value as number;
+                    if (num < 1) {
+                        return `${type}: ${((1 - num) * 100).toFixed(0)}% resist`;
+                    } else if (num > 1) {
+                        return `${type}: +${((num - 1) * 100).toFixed(0)}% vuln`;
+                    }
+                    return null;
+                })
+                .filter(Boolean);
+            if (reductions.length > 0) {
+                parts.push(reductions.join(', '));
+            }
+        }
+        
+        // Legacy format support
         if (attrs.resistances && attrs.resistances.length > 0) {
             parts.push(`Resist: ${attrs.resistances.join(', ')}`);
         }
