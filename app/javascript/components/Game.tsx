@@ -4,6 +4,8 @@ import { PlayerService, Player } from '../services/PlayerService';
 import playerImage from '../images/player.png';
 import takeAction from '../actions/takeAction';
 import ShakeAnimation from './ShakeAnimation';
+import Tooltip from './Tooltip';
+import { getPassiveDescription } from '../data/passiveDescriptions';
 
 interface GameProps {
     onExit: () => void;
@@ -451,6 +453,108 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         
         return parts.join(' • ') || 'No special attributes';
     };
+
+    // Render keyword attributes with tooltips for passives
+    const renderKeywordAttributes = (keyword: any): React.ReactNode => {
+        const attrs = keyword.properties || {};
+        const parts: React.ReactNode[] = [];
+        
+        // Weapon attributes
+        if (attrs.base_damage_by_type) {
+            const damages = Object.entries(attrs.base_damage_by_type)
+                .map(([type, value]) => `+${value} ${type} damage`)
+                .join(', ');
+            parts.push(damages);
+        }
+        
+        if (attrs.damage_multiplier && attrs.damage_multiplier !== 1.0) {
+            parts.push(`${attrs.damage_multiplier}x damage`);
+        }
+        
+        if (attrs.applies_to && attrs.applies_to.length > 0) {
+            parts.push(`Applies to: ${attrs.applies_to.join(', ')}`);
+        }
+        
+        // Multipliers
+        if (attrs.multipliers) {
+            const mults = attrs.multipliers;
+            Object.entries(mults).forEach(([key, value]) => {
+                const num = value as number;
+                if (num > 1) {
+                    parts.push(`+${((num - 1) * 100).toFixed(0)}% ${key}`);
+                } else if (num < 1 && num > 0) {
+                    parts.push(`${((num - 1) * 100).toFixed(0)}% ${key}`);
+                }
+            });
+        }
+        
+        // Damage output modifiers
+        if (attrs.damage_output_by_type) {
+            const outputs = Object.entries(attrs.damage_output_by_type)
+                .filter(([_, value]) => (value as number) !== 1.0)
+                .map(([type, value]) => {
+                    const num = value as number;
+                    return `${num > 1 ? '+' : ''}${((num - 1) * 100).toFixed(0)}% ${type} dmg`;
+                });
+            if (outputs.length > 0) {
+                parts.push(outputs.join(', '));
+            }
+        }
+        
+        // Damage reduction (new format)
+        if (attrs.damage_reduction_by_type) {
+            const reductions = Object.entries(attrs.damage_reduction_by_type)
+                .map(([type, value]) => {
+                    const num = value as number;
+                    if (num < 1) {
+                        return `${type}: ${((1 - num) * 100).toFixed(0)}% resist`;
+                    } else if (num > 1) {
+                        return `${type}: +${((num - 1) * 100).toFixed(0)}% vuln`;
+                    }
+                    return null;
+                })
+                .filter(Boolean);
+            if (reductions.length > 0) {
+                parts.push(reductions.join(', '));
+            }
+        }
+        
+        // Legacy format support
+        if (attrs.resistances && attrs.resistances.length > 0) {
+            parts.push(`Resist: ${attrs.resistances.join(', ')}`);
+        }
+        
+        if (attrs.vulnerabilities && attrs.vulnerabilities.length > 0) {
+            parts.push(`Weak: ${attrs.vulnerabilities.join(', ')}`);
+        }
+        
+        // Passives with tooltips
+        if (attrs.passives && attrs.passives.length > 0) {
+            const passiveElements = attrs.passives.map((passive: string, idx: number) => (
+                <Tooltip key={`passive-${idx}`} text={getPassiveDescription(passive)}>
+                    <span className="underline decoration-dotted cursor-help">{passive}</span>
+                </Tooltip>
+            ));
+            
+            parts.push(
+                <span key="passives">
+                    Passive: {passiveElements.reduce((acc: React.ReactNode[], elem: React.ReactNode, idx: number) => {
+                        if (idx > 0) acc.push(', ');
+                        acc.push(elem);
+                        return acc;
+                    }, [])}
+                </span>
+            );
+        }
+        
+        if (parts.length === 0) return 'No special attributes';
+        
+        return parts.reduce((acc: React.ReactNode[], part, idx) => {
+            if (idx > 0) acc.push(' • ');
+            acc.push(part);
+            return acc;
+        }, []);
+    };
     
     // Show initial keyword selection screen
     if (showInitialKeywordSelection) {
@@ -480,7 +584,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                             {keyword.category} • Rarity {keyword.rarity}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-gray-300">{formatKeywordAttributes(keyword)}</p>
+                                    <p className="text-sm text-gray-300">{renderKeywordAttributes(keyword)}</p>
                                 </button>
                             );
                         })}
@@ -651,7 +755,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                     >
                                         <div className="text-xl font-semibold capitalize mb-2">{keywordName}</div>
                                         {keywordData && (
-                                            <p className="text-sm text-gray-300">{formatKeywordAttributes(keywordData)}</p>
+                                            <p className="text-sm text-gray-300">{renderKeywordAttributes(keywordData)}</p>
                                         )}
                                     </button>
                                 );
