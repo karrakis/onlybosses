@@ -10,6 +10,28 @@ interface GameProps {
     availableKeywords: string[];
 }
 
+// Helper function to get the life resource value for an entity
+const getLifeResourceValue = (entity: Player | Boss | null, keywords: any[]): number => {
+    if (!entity) return 0;
+    
+    // Check if entity has ghost keyword (or any keyword with life_resource)
+    const lifeResource = keywords.find(kw => kw.properties?.life_resource)?.properties?.life_resource;
+    
+    if (lifeResource === 'mana') {
+        return entity.mana || 0;
+    } else if (lifeResource === 'stamina') {
+        return entity.stamina || 0;
+    }
+    
+    // Default to life
+    return entity.life || 0;
+};
+
+// Helper to check if entity is dead
+const isDead = (entity: Player | Boss | null, keywords: any[]): boolean => {
+    return getLifeResourceValue(entity, keywords) <= 0;
+};
+
 const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailableKeywords }) => {
     const [boss, setBoss] = useState<Boss | null>(null);
     const [player, setPlayer] = useState<Player | null>(null);
@@ -28,6 +50,11 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const [descendClicked, setDescendClicked] = useState<boolean>(false);
     const [availableKeywords] = useState<string[]>(initialAvailableKeywords);
     
+    // Keyword data for death checks
+    const [allKeywordsData, setAllKeywordsData] = useState<any[]>([]);
+    const [playerKeywordData, setPlayerKeywordData] = useState<any[]>([]);
+    const [bossKeywordData, setBossKeywordData] = useState<any[]>([]);
+    
     // Initial keyword selection state
     const [showInitialKeywordSelection, setShowInitialKeywordSelection] = useState<boolean>(true);
     const [initialKeywordOptions, setInitialKeywordOptions] = useState<any[]>([]);
@@ -38,17 +65,35 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             // Update boss keywords from loaded boss
             if (boss.keywords && boss.keywords.length > 0) {
                 setBossKeywords(boss.keywords);
+                // Update boss keyword data
+                const bossKwData = allKeywordsData.filter(kw => boss.keywords.includes(kw.name));
+                setBossKeywordData(bossKwData);
             }
         }
-    }, [boss]);
+    }, [boss, allKeywordsData]);
 
     useEffect(() => {
-        // Check if player has died
-        if (player && player.life <= 0 && !playerDead) {
-            setPlayerDead(true);
-            setActionInProgress(true); // Prevent further actions
+        // Update player keyword data when player changes
+        if (player && player.keywords) {
+            const playerKwData = allKeywordsData.filter(kw => player.keywords.includes(kw.name));
+            setPlayerKeywordData(playerKwData);
         }
-    }, [player, playerDead]);
+    }, [player, allKeywordsData]);
+
+    useEffect(() => {
+        // Check if player has died using correct life resource
+        // Only check if we have keyword data loaded AND it matches the player's keywords
+        // Also skip during initial keyword selection phase
+        if (player && player.keywords && player.keywords.length > 0 && 
+            allKeywordsData.length > 0 && 
+            playerKeywordData.length === player.keywords.length &&
+            !showInitialKeywordSelection) {
+            if (isDead(player, playerKeywordData) && !playerDead) {
+                setPlayerDead(true);
+                setActionInProgress(true); // Prevent further actions
+            }
+        }
+    }, [player, playerKeywordData, playerDead, allKeywordsData, showInitialKeywordSelection]);
 
     useEffect(() => {
         // Dynamically calculate grass height based on window width
@@ -89,6 +134,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 // Fetch all keywords for initial selection
                 const response = await fetch('/api/bosses/keywords');
                 const allKeywords = await response.json();
+                setAllKeywordsData(allKeywords);
                 
                 // Randomly select 5 keywords for the player to choose from
                 const shuffled = allKeywords.sort(() => 0.5 - Math.random());
@@ -126,7 +172,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     }, []);
 
     const handleDescend = () => {
-        if (boss && boss.life !== undefined && boss.life <= 0 && !descendClicked) {
+        if (boss && isDead(boss, bossKeywordData) && !descendClicked) {
             setDescendClicked(true);
             setShowKeywordSelection(true);
         }
@@ -285,8 +331,9 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                     setBossShaking(true);
                 }
                 
-                // Check if boss is defeated
-                if (currentState.boss.life <= 0 && !bossDying) {
+                // Check if boss is defeated using correct life resource
+                const updatedBossKwData = allKeywordsData.filter(kw => currentState.boss.keywords?.includes(kw.name));
+                if (isDead(currentState.boss, updatedBossKwData) && !bossDying) {
                     setBossDying(true);
                     setBossShaking(true);
                 }
@@ -561,7 +608,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                         </div>
                     </div>
                     <div id="action-bar" className="flex items-center gap-2 w-full">
-                        {boss && boss.life !== undefined && boss.life <= 0 ? (
+                        {boss && isDead(boss, bossKeywordData) ? (
                             <div 
                                 className={`w-64 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center ${
                                     descendClicked 

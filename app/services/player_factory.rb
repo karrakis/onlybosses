@@ -88,6 +88,11 @@ class PlayerFactory
     player['max_stamina'] = (BASE_STAMINA * total_stamina_mult).ceil
     player['max_mana'] = (BASE_MANA * total_mana_mult).ceil
     
+    # Sync current resources with max values (cap at new max if exceeded)
+    player['life'] = [player['life'], player['max_life']].min
+    player['stamina'] = [player['stamina'], player['max_stamina']].min
+    player['mana'] = [player['mana'], player['max_mana']].min
+    
     player
   end
   
