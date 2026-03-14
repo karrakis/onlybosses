@@ -641,15 +641,21 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                     <div className="bg-gray-800 border-4 border-gray-400 rounded-lg p-8 max-w-2xl">
                         <h2 className="text-3xl font-bold mb-6 text-center">Choose a Power to Absorb</h2>
                         <div className="grid grid-cols-2 gap-4">
-                            {boss.keywords && boss.keywords.map((keyword: string) => (
-                                <button
-                                    key={keyword}
-                                    onClick={() => handleKeywordSelection(keyword)}
-                                    className="bg-gray-700 hover:bg-gray-600 border-2 border-gray-500 rounded-lg p-4 text-xl font-semibold capitalize transition-colors"
-                                >
-                                    {keyword}
-                                </button>
-                            ))}
+                            {boss.keywords && boss.keywords.map((keywordName: string) => {
+                                const keywordData = allKeywordsData.find(kw => kw.name === keywordName);
+                                return (
+                                    <button
+                                        key={keywordName}
+                                        onClick={() => handleKeywordSelection(keywordName)}
+                                        className="bg-gray-700 hover:bg-gray-600 border-2 border-gray-500 rounded-lg p-4 text-left transition-colors"
+                                    >
+                                        <div className="text-xl font-semibold capitalize mb-2">{keywordName}</div>
+                                        {keywordData && (
+                                            <p className="text-sm text-gray-300">{formatKeywordAttributes(keywordData)}</p>
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </div>
                         {player && player.keywords.length > 0 && (
                             <div className="mt-6 pt-4 border-t-2 border-gray-600">
