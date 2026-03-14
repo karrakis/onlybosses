@@ -584,7 +584,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                             {keyword.category} • Rarity {keyword.rarity}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-gray-300">{renderKeywordAttributes(keyword)}</p>
+                                    <div className="text-sm text-gray-300">{renderKeywordAttributes(keyword)}</div>
                                 </button>
                             );
                         })}
@@ -755,7 +755,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                     >
                                         <div className="text-xl font-semibold capitalize mb-2">{keywordName}</div>
                                         {keywordData && (
-                                            <p className="text-sm text-gray-300">{renderKeywordAttributes(keywordData)}</p>
+                                            <div className="text-sm text-gray-300">{renderKeywordAttributes(keywordData)}</div>
                                         )}
                                     </button>
                                 );
