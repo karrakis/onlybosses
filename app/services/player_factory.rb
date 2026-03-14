@@ -42,6 +42,17 @@ class PlayerFactory
     return player if player['keywords'].include?(keyword)
     
     player['keywords'] << keyword
+    
+    # Also add any passive keywords associated with this keyword
+    keyword_obj = BossKeyword.find_by(name: keyword)
+    if keyword_obj && keyword_obj.properties && keyword_obj.properties['passives']
+      keyword_obj.properties['passives'].each do |passive_name|
+        unless player['keywords'].include?(passive_name)
+          player['keywords'] << passive_name
+        end
+      end
+    end
+    
     recalculate_stats(player)
   end
   

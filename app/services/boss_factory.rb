@@ -48,13 +48,17 @@ class BossFactory
     end
     
     def create_boss_with_keywords(keywords)
-        puts "Creating boss with keywords: #{keywords.map(&:name).join(', ')}"
+      puts "Creating boss with keywords: #{keywords.map(&:name).join(', ')}"
+      
+      # Expand keywords to include passives
+      expanded_keywords = expand_keywords_with_passives(keywords)
+      
       boss = Boss.create!(
-        name: generate_name(keywords),
-        computed_stats: compute_stats(keywords)
+        name: generate_name(keywords),  # Use original keywords for name
+        computed_stats: compute_stats(expanded_keywords)  # Use expanded keywords for stats
       )
       
-      keywords.each_with_index do |keyword, index|
+      expanded_keywords.each_with_index do |keyword, index|
         BossKeywordAssociation.create!(
           boss: boss,
           boss_keyword: keyword,
@@ -63,6 +67,34 @@ class BossFactory
       end
       
       boss
+    end
+    
+    def expand_keywords_with_passives(keywords)
+      expanded = []
+      seen = Set.new
+      
+      keywords.each do |keyword|
+        # Add the main keyword
+        unless seen.include?(keyword.name)
+          expanded << keyword
+          seen.add(keyword.name)
+        end
+        
+        # Add passive keywords
+        if keyword.properties && keyword.properties['passives']
+          keyword.properties['passives'].each do |passive_name|
+            unless seen.include?(passive_name)
+              passive_keyword = BossKeyword.find_by(name: passive_name)
+              if passive_keyword
+                expanded << passive_keyword
+                seen.add(passive_name)
+              end
+            end
+          end
+        end
+      end
+      
+      expanded
     end
     
     def generate_name(keywords)
