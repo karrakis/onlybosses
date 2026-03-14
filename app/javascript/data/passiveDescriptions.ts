@@ -6,7 +6,7 @@ export const passiveDescriptions: Record<string, string> = {
     mindshield: "Reduces magic damage taken by 50% and dark damage taken by 30%.",
     amplify: "Increases all damage dealt by 3%.",
     squishy: "Increases piercing damage taken by 30% and slashing damage taken by 20%.",
-    leech: "Increases max life by 10%.",
+    leech: "Heals you for 20% of damage dealt to your life resource.",
     lucky: "Increases all damage dealt by 2%.",
     versatile: "Increases max life, stamina, and mana by 5%.",
     block: "Reduces physical damage taken by 10%.",

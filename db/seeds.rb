@@ -21,4 +21,3 @@ keywords_data.each do |data|
 end
 
 puts "\nSeeded #{BossKeyword.count} keywords!"
-

@@ -318,11 +318,14 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             const bossAction = response.bossAction;
             const newTurnToken = response.turnToken;
             
-            // Save old player state before any updates
-            const oldPlayerLife = player?.life || 100;
-            const playerBeforeBossAttack = player;
-            
             // PHASE 1: Show player action result immediately
+            // Update player with state after their action (includes lifesteal)
+            let playerLifeAfterPlayerAction = player?.life || 100;
+            if (currentState.playerAfterPlayerAction) {
+                playerLifeAfterPlayerAction = currentState.playerAfterPlayerAction.life;
+                setPlayer(currentState.playerAfterPlayerAction);
+            }
+            
             // Update boss from backend (player's attack result)
             if (currentState.boss) {
                 const oldBossLife = boss?.life || 100;
@@ -349,10 +352,11 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             // PHASE 2: Show boss reaction after a delay
             if (bossAction) {
                 setTimeout(() => {
-                    // Update player from backend (boss's attack result)
+                    // Update player with final state (after boss action)
                     if (currentState.player) {
                         setPlayer(currentState.player);
-                        if (currentState.player.life < oldPlayerLife) {
+                        // Check if boss damaged player (compare to state after player's action)
+                        if (currentState.player.life < playerLifeAfterPlayerAction) {
                             setPlayerShaking(true);
                         }
                     }
@@ -361,10 +365,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                     setActionInProgress(false);
                 }, 800); // Boss reacts after 800ms
             } else {
-                // No boss action (boss is dead), update player immediately
-                if (currentState.player) {
-                    setPlayer(currentState.player);
-                }
+                // No boss action (boss is dead)
                 setActionInProgress(false);
             }
         } catch (err) {

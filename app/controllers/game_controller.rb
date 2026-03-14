@@ -87,6 +87,9 @@ class GameController < ApplicationController
       boss['stamina'] = game_status['bossStamina']
       boss['mana'] = game_status['bossMana']
       
+      # Capture player state after player's action (for showing lifesteal)
+      player_after_player_action = player.deep_dup
+      
       # Determine which resource is the boss's life resource
       boss_life_resource = 'life'
       if boss['keywords']
@@ -121,6 +124,7 @@ class GameController < ApplicationController
         
         # Update game_status with latest data (player needs symbol keys for frontend)
         game_status['player'] = player
+        game_status['playerAfterPlayerAction'] = player_after_player_action
         game_status['boss'] = boss
         
         # Generate new token for next turn
@@ -196,6 +200,45 @@ class GameController < ApplicationController
     resource_key = "#{target}#{life_resource.capitalize}"
     game_status[resource_key] -= total_damage
     game_status[resource_key] = 0 if game_status[resource_key] < 0
+    
+    # Check for lifesteal on attacker
+    lifesteal_amount = 0
+    if attacker_data['keywords']
+      attacker_data['keywords'].each do |keyword_name|
+        keyword = BossKeyword.find_by(name: keyword_name)
+        if keyword && keyword.properties && keyword.properties['lifesteal']
+          lifesteal_amount += keyword.properties['lifesteal']
+        end
+      end
+    end
+    
+    # Apply lifesteal healing if attacker has it
+    if lifesteal_amount > 0
+      healing = (total_damage * lifesteal_amount).ceil
+      
+      # Determine attacker's life resource
+      attacker_life_resource = 'life'
+      if attacker_data['keywords']
+        attacker_data['keywords'].each do |keyword_name|
+          keyword = BossKeyword.find_by(name: keyword_name)
+          if keyword && keyword.properties['life_resource']
+            attacker_life_resource = keyword.properties['life_resource']
+            break
+          end
+        end
+      end
+      
+      # Apply healing to attacker's life resource
+      attacker_resource_key = "#{action_taker}#{attacker_life_resource.capitalize}"
+      attacker_max_key = "max_#{attacker_life_resource}"
+      
+      game_status[attacker_resource_key] += healing
+      
+      # Cap at max resource value
+      if attacker_data[attacker_max_key]
+        game_status[attacker_resource_key] = [game_status[attacker_resource_key], attacker_data[attacker_max_key]].min
+      end
+    end
     
     game_status
   end
