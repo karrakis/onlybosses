@@ -51,6 +51,11 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const [showKeywordSelection, setShowKeywordSelection] = useState<boolean>(false);
     const [descendClicked, setDescendClicked] = useState<boolean>(false);
     const [availableKeywords] = useState<string[]>(initialAvailableKeywords);
+
+    const [showCastMenu, setShowCastMenu] = useState<boolean>(false);
+    const [spellSearch, setSpellSearch] = useState<string>('');
+    const [favoriteSpells, setFavoriteSpells] = useState<string[]>([]);
+    const [actionBarSpells, setActionBarSpells] = useState<string[]>([]);
     
     // Keyword data for death checks
     const [allKeywordsData, setAllKeywordsData] = useState<any[]>([]);
@@ -81,6 +86,38 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             setPlayerKeywordData(playerKwData);
         }
     }, [player, allKeywordsData]);
+
+    const getPlayerAbilities = (keywords: any[]): string[] => {
+        const abilities = new Set<string>();
+        keywords.forEach((keyword) => {
+            const keywordAbilities = keyword?.properties?.abilities || [];
+            keywordAbilities.forEach((ability: string) => abilities.add(ability));
+        });
+        return Array.from(abilities);
+    };
+
+    const formatSpellName = (spell: string): string => {
+        return spell
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (char) => char.toUpperCase());
+    };
+
+    const playerAbilities = getPlayerAbilities(playerKeywordData);
+    const canCast = playerAbilities.includes('cast');
+    const collectedSpells = playerAbilities.filter((ability) => ability !== 'cast');
+    const visibleActionBarSpells = canCast
+        ? actionBarSpells.filter((spell) => collectedSpells.includes(spell))
+        : [];
+    const filteredSpells = collectedSpells.filter((spell) =>
+        formatSpellName(spell).toLowerCase().includes(spellSearch.toLowerCase())
+    );
+    const sortedSpells = [...filteredSpells].sort((a, b) => {
+        const aFav = favoriteSpells.includes(a);
+        const bFav = favoriteSpells.includes(b);
+        if (aFav && !bFav) return -1;
+        if (!aFav && bFav) return 1;
+        return formatSpellName(a).localeCompare(formatSpellName(b));
+    });
 
     useEffect(() => {
         // Check if player has died using correct life resource
@@ -373,6 +410,16 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             setError(err instanceof Error ? err.message : 'Failed to take action');
             setActionInProgress(false); // Clear on error
         }
+    };
+
+    const toggleFavoriteSpell = (spell: string) => {
+        setFavoriteSpells((prev) =>
+            prev.includes(spell) ? prev.filter((s) => s !== spell) : [...prev, spell]
+        );
+    };
+
+    const addSpellToActionBar = (spell: string) => {
+        setActionBarSpells((prev) => (prev.includes(spell) ? prev : [...prev, spell]));
     };
     
     const formatKeywordAttributes = (keyword: any): string => {
@@ -725,21 +772,106 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                 Descend
                             </div>
                         ) : (
-                            <div 
-                                className={`w-64 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
-                                    actionInProgress || bossDying 
-                                        ? 'bg-gray-900 text-gray-600 cursor-not-allowed' 
-                                        : 'bg-gray-800 hover:bg-gray-700 active:bg-gray-600'
-                                }`}
-                                onClick={() => !actionInProgress && !bossDying && handleAction('attack')}
-                            >
-                                Attack
-                            </div>
+                            <>
+                                <div 
+                                    className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
+                                        actionInProgress || bossDying 
+                                            ? 'bg-gray-900 text-gray-600 cursor-not-allowed' 
+                                            : 'bg-gray-800 hover:bg-gray-700 active:bg-gray-600'
+                                    }`}
+                                    onClick={() => !actionInProgress && !bossDying && handleAction('attack')}
+                                >
+                                    Attack
+                                </div>
+                                {canCast && (
+                                    <div
+                                        className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
+                                            actionInProgress || bossDying 
+                                                ? 'bg-gray-900 text-gray-600 cursor-not-allowed'
+                                                : 'bg-purple-800 hover:bg-purple-700 active:bg-purple-600'
+                                        }`}
+                                        onClick={() => !actionInProgress && !bossDying && setShowCastMenu(true)}
+                                    >
+                                        Cast
+                                    </div>
+                                )}
+                                {visibleActionBarSpells.map((spell) => (
+                                    <div
+                                        key={spell}
+                                        className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
+                                            actionInProgress || bossDying 
+                                                ? 'bg-gray-900 text-gray-600 cursor-not-allowed'
+                                                : 'bg-blue-800 hover:bg-blue-700 active:bg-blue-600'
+                                        }`}
+                                        onClick={() => !actionInProgress && !bossDying && handleAction(`cast:${spell}`)}
+                                    >
+                                        {formatSpellName(spell)}
+                                    </div>
+                                ))}
+                            </>
                         )}
                     </div>
                 </div>
             </div>
             
+            {/* Cast Menu Modal */}
+            {showCastMenu && (
+                <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                    <div className="bg-gray-800 border-4 border-purple-500 rounded-lg p-8 w-full max-w-3xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-3xl font-bold">Cast</h2>
+                            <button
+                                onClick={() => setShowCastMenu(false)}
+                                className="text-gray-300 hover:text-white text-2xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search spells..."
+                            value={spellSearch}
+                            onChange={(e) => setSpellSearch(e.target.value)}
+                            className="w-full mb-4 px-4 py-2 rounded bg-gray-900 border border-gray-600 text-white"
+                        />
+                        {sortedSpells.length === 0 ? (
+                            <div className="text-gray-400 text-center py-8">No spells found.</div>
+                        ) : (
+                            <div className="max-h-80 overflow-y-auto space-y-2">
+                                {sortedSpells.map((spell) => (
+                                    <div
+                                        key={spell}
+                                        className="flex items-center justify-between bg-gray-700 border border-gray-600 rounded-lg px-4 py-3"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={() => toggleFavoriteSpell(spell)}
+                                                className={`text-xl ${favoriteSpells.includes(spell) ? 'text-yellow-400' : 'text-gray-400'}`}
+                                                aria-label="Favorite spell"
+                                            >
+                                                {favoriteSpells.includes(spell) ? '★' : '☆'}
+                                            </button>
+                                            <div className="text-lg font-semibold">{formatSpellName(spell)}</div>
+                                        </div>
+                                        <button
+                                            onClick={() => addSpellToActionBar(spell)}
+                                            disabled={actionBarSpells.includes(spell)}
+                                            className={`px-4 py-2 rounded border ${
+                                                actionBarSpells.includes(spell)
+                                                    ? 'bg-gray-600 border-gray-500 text-gray-300 cursor-not-allowed'
+                                                    : 'bg-purple-700 border-purple-500 hover:bg-purple-600'
+                                            }`}
+                                        >
+                                            {actionBarSpells.includes(spell) ? 'Added' : 'Add to bar'}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* Keyword Selection Modal */}
             {showKeywordSelection && boss && (
                 <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">

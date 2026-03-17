@@ -1,0 +1,5 @@
+{"name":"firebolt","category":"spell","rarity":2,"attributes":{"abilities":["cast","firebolt"],"base_damage_by_type":{"fire":2},"applies_to":["magic","fire"],"damage_multiplier":1.03}}
+{"name":"ice_shard","category":"spell","rarity":2,"attributes":{"abilities":["cast","ice_shard"],"base_damage_by_type":{"ice":2},"applies_to":["magic","ice"],"damage_multiplier":1.02}}
+{"name":"lightning_strike","category":"spell","rarity":3,"attributes":{"abilities":["cast","lightning_strike"],"base_damage_by_type":{"lightning":3},"applies_to":["magic","lightning"],"damage_multiplier":1.04}}
+{"name":"light_bolt","category":"spell","rarity":2,"attributes":{"abilities":["cast","light_bolt"],"base_damage_by_type":{"holy":2},"applies_to":["magic","light"],"damage_multiplier":1.01}}
+{"name":"arcane_blast","category":"spell","rarity":3,"attributes":{"abilities":["cast","arcane_blast"],"base_damage_by_type":{"arcane":3},"applies_to":["magic","arcane"],"damage_multiplier":1.05}}

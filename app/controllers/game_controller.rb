@@ -46,7 +46,8 @@ class GameController < ApplicationController
   
   # POST /take_action
   def take_action
-    action_name = params[:game_action]
+    action_name = params[:game_action].to_s
+    base_action, action_payload = action_name.split(':', 2)
     
     # Load player and boss from session
     player = PlayerFactory.get_player(session)
@@ -74,8 +75,12 @@ class GameController < ApplicationController
     }
     
     # Process player action
-    if respond_to?(action_name, true)
-      game_status = send(action_name, game_status, 'player', 'boss')
+    if respond_to?(base_action, true)
+      if base_action == 'cast'
+        game_status = send(base_action, game_status, 'player', 'boss', action_payload)
+      else
+        game_status = send(base_action, game_status, 'player', 'boss')
+      end
       
       # Update player state in session after player action
       player['life'] = game_status['playerLife']
@@ -240,6 +245,46 @@ class GameController < ApplicationController
       end
     end
     
+    game_status
+  end
+
+  def cast(game_status, action_taker = 'player', target = 'boss', spell_name = nil)
+    # Basic cast uses magic damage and mana cost
+    base_damage = 12
+    if spell_name.present?
+      case spell_name
+      when 'magic_missile'
+        base_damage = 12
+      when 'firebolt', 'fire_bolt'
+        base_damage = 14
+      when 'lightning_strike'
+        base_damage = 15
+      else
+        base_damage = 12
+      end
+    end
+
+    mana_cost = 10
+    mana_key = "#{action_taker}Mana"
+    if game_status[mana_key].nil? || game_status[mana_key] < mana_cost
+      return game_status
+    end
+
+    game_status[mana_key] -= mana_cost
+
+    ability_damage = { 'magic' => base_damage }
+
+    attacker_data = game_status[action_taker]
+    defender_data = game_status[target]
+
+    damage_result = DamageCalculator.calculate_damage(attacker_data, defender_data, ability_damage)
+    total_damage = damage_result[:total_damage].ceil
+    life_resource = damage_result[:life_resource]
+
+    resource_key = "#{target}#{life_resource.capitalize}"
+    game_status[resource_key] -= total_damage
+    game_status[resource_key] = 0 if game_status[resource_key] < 0
+
     game_status
   end
 
