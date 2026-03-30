@@ -21,6 +21,8 @@ class PlayerFactory
       'name' => 'Hero',
       'keywords' => [],
       'bosses_defeated' => 0,
+      'turns_since_mana_cost' => 0,
+      'turns_since_stamina_cost' => 0,
       'max_life' => BASE_LIFE,
       'max_stamina' => BASE_STAMINA,
       'max_mana' => BASE_MANA,

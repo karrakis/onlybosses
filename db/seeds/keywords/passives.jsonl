@@ -1,4 +1,4 @@
-{"name":"ethereal","category":"passive","rarity":2,"attributes":{"life_resource":"mana","multipliers":{"life":0.0},"damage_reduction_by_type":{"physical":0.5}}}
+{"name":"ethereal","category":"passive","rarity":2,"attributes":{"life_resource":"mana","mana_regen_multiplier":0.2,"multipliers":{"life":0.0},"damage_reduction_by_type":{"physical":0.5}}}
 {"name":"armoured","category":"passive","rarity":1,"attributes":{"damage_reduction_by_type":{"physical":0.8,"blunt":0.8,"piercing":0.8,"slashing":0.8}}}
 {"name":"fragile","category":"passive","rarity":1,"attributes":{"multipliers":{"life":0.9},"damage_reduction_by_type":{"blunt":1.2}}}
 {"name":"mindshield","category":"passive","rarity":2,"attributes":{"damage_reduction_by_type":{"magic":0.5,"dark":0.7}}}

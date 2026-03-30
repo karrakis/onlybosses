@@ -2,6 +2,8 @@ export interface Player {
     name: string;
     keywords: string[];
     bosses_defeated: number;
+    turns_since_mana_cost?: number;
+    turns_since_stamina_cost?: number;
     max_life: number;
     max_stamina: number;
     max_mana: number;

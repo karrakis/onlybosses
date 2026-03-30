@@ -30,6 +30,11 @@ class GameController < ApplicationController
   # POST /set_boss
   def set_boss
     boss_data = params[:boss]
+    if boss_data
+      boss_data = boss_data.to_unsafe_h if boss_data.is_a?(ActionController::Parameters)
+      boss_data['turns_since_mana_cost'] ||= 0
+      boss_data['turns_since_stamina_cost'] ||= 0
+    end
     save_current_boss(boss_data)
     render json: { success: true }
   end
@@ -76,11 +81,18 @@ class GameController < ApplicationController
     
     # Process player action
     if respond_to?(base_action, true)
+      player_mana_before = game_status['playerMana']
+      player_stamina_before = game_status['playerStamina']
+
       if base_action == 'cast'
         game_status = send(base_action, game_status, 'player', 'boss', action_payload)
       else
         game_status = send(base_action, game_status, 'player', 'boss')
       end
+
+      player_mana_cost = game_status['playerMana'] < player_mana_before
+      player_stamina_cost = game_status['playerStamina'] < player_stamina_before
+      game_status = apply_regeneration(game_status, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
       
       # Update player state in session after player action
       player['life'] = game_status['playerLife']
@@ -115,7 +127,12 @@ class GameController < ApplicationController
         boss_action = choose_boss_action(game_status)
         
         if respond_to?(boss_action, true)
+          boss_mana_before = game_status['bossMana']
+          boss_stamina_before = game_status['bossStamina']
           game_status = send(boss_action, game_status, 'boss', 'player')
+          boss_mana_cost = game_status['bossMana'] < boss_mana_before
+          boss_stamina_cost = game_status['bossStamina'] < boss_stamina_before
+          game_status = apply_regeneration(game_status, 'boss', mana_cost: boss_mana_cost, stamina_cost: boss_stamina_cost)
           
           # Update player state in session after boss action
           player['life'] = game_status['playerLife']
@@ -190,6 +207,13 @@ class GameController < ApplicationController
   def attack(game_status, action_taker = 'player', target = 'boss')
     # Basic attack has physical damage
     ability_damage = { 'physical' => 10 }
+
+    stamina_cost = 10
+    stamina_key = "#{action_taker}Stamina"
+    if game_status[stamina_key]
+      game_status[stamina_key] -= stamina_cost
+      game_status[stamina_key] = 0 if game_status[stamina_key] < 0
+    end
     
     # Get attacker and defender data
     attacker_data = game_status[action_taker]
@@ -286,6 +310,72 @@ class GameController < ApplicationController
     game_status[resource_key] = 0 if game_status[resource_key] < 0
 
     game_status
+  end
+
+  def apply_regeneration(game_status, entity_key, mana_cost:, stamina_cost:)
+    entity_data = game_status[entity_key]
+    return game_status unless entity_data
+
+    entity_data['turns_since_mana_cost'] ||= 0
+    entity_data['turns_since_stamina_cost'] ||= 0
+
+    if mana_cost
+      entity_data['turns_since_mana_cost'] = 0
+    else
+      entity_data['turns_since_mana_cost'] += 1
+      base_regen = [5 * entity_data['turns_since_mana_cost'], 25].min
+      regen_multiplier = mana_regen_multiplier(entity_data)
+      mana_regen = (base_regen * regen_multiplier).floor
+      if mana_regen > 0
+        mana_key = "#{entity_key}Mana"
+        max_mana = get_max_resource(entity_data, 'mana')
+        if max_mana
+          game_status[mana_key] = [game_status[mana_key] + mana_regen, max_mana].min
+        else
+          game_status[mana_key] += mana_regen
+        end
+      end
+    end
+
+    if stamina_cost
+      entity_data['turns_since_stamina_cost'] = 0
+    else
+      entity_data['turns_since_stamina_cost'] += 1
+      stamina_regen = 5 * entity_data['turns_since_stamina_cost']
+      stamina_key = "#{entity_key}Stamina"
+      max_stamina = get_max_resource(entity_data, 'stamina')
+      if max_stamina
+        game_status[stamina_key] = [game_status[stamina_key] + stamina_regen, max_stamina].min
+      else
+        game_status[stamina_key] += stamina_regen
+      end
+    end
+
+    entity_data['mana'] = game_status["#{entity_key}Mana"]
+    entity_data['stamina'] = game_status["#{entity_key}Stamina"]
+
+    game_status
+  end
+
+  def mana_regen_multiplier(entity_data)
+    keywords = entity_data['keywords'] || []
+    keywords.each do |keyword_name|
+      keyword = BossKeyword.find_by(name: keyword_name)
+      next unless keyword
+
+      attrs = keyword.properties || {}
+      return attrs['mana_regen_multiplier'].to_f if attrs['mana_regen_multiplier']
+    end
+
+    1.0
+  end
+
+  def get_max_resource(entity_data, resource_name)
+    if entity_data["max_#{resource_name}"]
+      entity_data["max_#{resource_name}"]
+    else
+      entity_data.dig('stats', 'base_stats', resource_name)
+    end
   end
 
   def heal(game_status, action_taker = 'player', target = 'player')    
