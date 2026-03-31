@@ -963,6 +963,16 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                 >
                                     Attack
                                 </div>
+                                <div
+                                    className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
+                                        actionInProgress || bossDying
+                                            ? 'bg-gray-900 text-gray-600 cursor-not-allowed'
+                                            : 'bg-yellow-900 hover:bg-yellow-800 active:bg-yellow-700'
+                                    }`}
+                                    onClick={() => !actionInProgress && !bossDying && handleAction('guard')}
+                                >
+                                    Guard
+                                </div>
                                 {canCast && (
                                     <div
                                         className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${

@@ -78,10 +78,12 @@ class GameController < ApplicationController
       'player' => player_with_string_keys,
       'boss' => boss
     }
+
+    player_mana_turn_start = game_status['playerMana']
+    boss_mana_turn_start = game_status['bossMana']
     
     # Process player action
     if respond_to?(base_action, true)
-      player_mana_before = game_status['playerMana']
       player_stamina_before = game_status['playerStamina']
 
       if base_action == 'cast'
@@ -90,7 +92,7 @@ class GameController < ApplicationController
         game_status = send(base_action, game_status, 'player', 'boss')
       end
 
-      player_mana_cost = game_status['playerMana'] < player_mana_before
+      player_mana_cost = game_status['playerMana'] < player_mana_turn_start
       player_stamina_cost = game_status['playerStamina'] < player_stamina_before
       game_status = apply_regeneration(game_status, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
       
@@ -126,11 +128,17 @@ class GameController < ApplicationController
       if boss_current_life && boss_current_life > 0
         boss_action = choose_boss_action(game_status)
         
-        if respond_to?(boss_action, true)
-          boss_mana_before = game_status['bossMana']
+        if boss_action == 'cast' || boss_action.start_with?('cast:') || respond_to?(boss_action, true)
           boss_stamina_before = game_status['bossStamina']
-          game_status = send(boss_action, game_status, 'boss', 'player')
-          boss_mana_cost = game_status['bossMana'] < boss_mana_before
+          if boss_action == 'cast'
+            game_status = send(boss_action, game_status, 'boss', 'player', nil)
+          elsif boss_action.start_with?('cast:')
+            _, boss_spell = boss_action.split(':', 2)
+            game_status = send('cast', game_status, 'boss', 'player', boss_spell)
+          else
+            game_status = send(boss_action, game_status, 'boss', 'player')
+          end
+          boss_mana_cost = game_status['bossMana'] < boss_mana_turn_start
           boss_stamina_cost = game_status['bossStamina'] < boss_stamina_before
           game_status = apply_regeneration(game_status, 'boss', mana_cost: boss_mana_cost, stamina_cost: boss_stamina_cost)
           
@@ -197,11 +205,56 @@ class GameController < ApplicationController
     session[:current_boss] = boss_data.is_a?(ActionController::Parameters) ? boss_data.to_unsafe_h : boss_data
   end
   
+  SPELL_BASE_DAMAGE = {
+    'magic_missile'    => { 'magic'     => 12 },
+    'fire_bolt'        => { 'magic'     => 14 },
+    'firebolt'         => { 'magic'     => 14 },
+    'lightning_strike' => { 'lightning' => 15 },
+    'light_bolt'       => { 'holy'      => 12 }
+  }.freeze
+
   def choose_boss_action(game_status)
-    # For now, boss only knows attack
-    # Later this can be expanded to check boss abilities
-    available_actions = ['attack']
-    available_actions.sample
+    boss_data    = game_status['boss']
+    player_data  = game_status['player']
+    boss_stamina = game_status['bossStamina'].to_f
+    boss_mana    = game_status['bossMana'].to_f
+
+    # Collect all abilities granted by boss keywords
+    boss_abilities = Set.new
+    (boss_data['keywords'] || []).each do |kw_name|
+      kw = BossKeyword.find_by(name: kw_name)
+      next unless kw
+      (kw.properties&.dig('abilities') || []).each { |a| boss_abilities.add(a) }
+    end
+
+    candidates = []
+
+    # Attack: costs 10 stamina
+    if boss_stamina >= 10
+      dmg = DamageCalculator.calculate_damage(boss_data, player_data, { 'physical' => 10 })[:total_damage]
+      candidates << { action: 'attack', damage: dmg }
+    end
+
+    # Cast spells: costs 10 mana each
+    if boss_mana >= 10 && boss_abilities.include?('cast')
+      spells = boss_abilities.reject { |a| a == 'cast' }.to_a
+
+      if spells.any?
+        spells.each do |spell|
+          base = SPELL_BASE_DAMAGE[spell] || { 'magic' => 12 }
+          dmg  = DamageCalculator.calculate_damage(boss_data, player_data, base)[:total_damage]
+          candidates << { action: "cast:#{spell}", damage: dmg }
+        end
+      else
+        # 'cast' ability present but no named spells — use magic_missile
+        dmg = DamageCalculator.calculate_damage(boss_data, player_data, { 'magic' => 12 })[:total_damage]
+        candidates << { action: 'cast', damage: dmg }
+      end
+    end
+
+    # Pick highest expected damage; fall back to guard if nothing available
+    best = candidates.max_by { |c| c[:damage] }
+    best ? best[:action] : 'guard'
   end
   
   def attack(game_status, action_taker = 'player', target = 'boss')
@@ -223,7 +276,10 @@ class GameController < ApplicationController
     
     total_damage = damage_result[:total_damage].ceil
     life_resource = damage_result[:life_resource]
-    
+
+    # Apply guard reduction after all other modifiers
+    total_damage = (total_damage * 0.5).ceil if game_status["#{target}Guarding"]
+
     # Apply damage to the appropriate resource
     resource_key = "#{target}#{life_resource.capitalize}"
     game_status[resource_key] -= total_damage
@@ -271,6 +327,13 @@ class GameController < ApplicationController
     game_status
   end
 
+  def guard(game_status, action_taker = 'player', target = 'boss')
+    # Guard costs no stamina, halves incoming damage this turn, and grants +5 stamina regen
+    game_status["#{action_taker}Guarding"] = true
+    game_status["#{action_taker}StaminaRegenBonus"] = 5
+    game_status
+  end
+
   def cast(game_status, action_taker = 'player', target = 'boss', spell_name = nil)
     # Basic cast uses magic damage and mana cost
     base_damage = 12
@@ -303,6 +366,9 @@ class GameController < ApplicationController
     damage_result = DamageCalculator.calculate_damage(attacker_data, defender_data, ability_damage)
     total_damage = damage_result[:total_damage].ceil
     life_resource = damage_result[:life_resource]
+
+    # Apply guard reduction after all other modifiers
+    total_damage = (total_damage * 0.5).ceil if game_status["#{target}Guarding"]
 
     resource_key = "#{target}#{life_resource.capitalize}"
     game_status[resource_key] -= total_damage
@@ -341,6 +407,7 @@ class GameController < ApplicationController
     else
       entity_data['turns_since_stamina_cost'] += 1
       stamina_regen = 5 * entity_data['turns_since_stamina_cost']
+      stamina_regen += game_status["#{entity_key}StaminaRegenBonus"].to_i
       stamina_key = "#{entity_key}Stamina"
       max_stamina = get_max_resource(entity_data, 'stamina')
       if max_stamina
