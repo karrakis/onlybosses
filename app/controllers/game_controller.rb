@@ -80,34 +80,22 @@ class GameController < ApplicationController
     }
 
     player_mana_turn_start = game_status['playerMana']
+    player_stamina_turn_start = game_status['playerStamina']
     boss_mana_turn_start = game_status['bossMana']
     
     # Process player action
     if respond_to?(base_action, true)
-      player_stamina_before = game_status['playerStamina']
-
       if base_action == 'cast'
         game_status = send(base_action, game_status, 'player', 'boss', action_payload)
       else
         game_status = send(base_action, game_status, 'player', 'boss')
       end
-
-      player_mana_cost = game_status['playerMana'] < player_mana_turn_start
-      player_stamina_cost = game_status['playerStamina'] < player_stamina_before
-      game_status = apply_regeneration(game_status, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
-      
-      # Update player state in session after player action
-      player['life'] = game_status['playerLife']
-      player['stamina'] = game_status['playerStamina']
-      player['mana'] = game_status['playerMana']
-      
-      # Update boss state in session after player action
-      boss['life'] = game_status['bossLife']
-      boss['stamina'] = game_status['bossStamina']
-      boss['mana'] = game_status['bossMana']
       
       # Capture player state after player's action (for showing lifesteal)
       player_after_player_action = player.deep_dup
+      player_after_player_action['life'] = game_status['playerLife']
+      player_after_player_action['stamina'] = game_status['playerStamina']
+      player_after_player_action['mana'] = game_status['playerMana']
       
       # Determine which resource is the boss's life resource
       boss_life_resource = 'life'
@@ -147,6 +135,19 @@ class GameController < ApplicationController
           player['stamina'] = game_status['playerStamina']
           player['mana'] = game_status['playerMana']
         end
+
+        # Apply player regeneration after the full turn, so incoming mana damage also interrupts it
+        player_mana_cost = game_status['playerMana'] < player_mana_turn_start
+        player_stamina_cost = game_status['playerStamina'] < player_stamina_turn_start
+        game_status = apply_regeneration(game_status, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
+
+        # Sync latest resources back to session entities
+        player['life'] = game_status['playerLife']
+        player['stamina'] = game_status['playerStamina']
+        player['mana'] = game_status['playerMana']
+        boss['life'] = game_status['bossLife']
+        boss['stamina'] = game_status['bossStamina']
+        boss['mana'] = game_status['bossMana']
         
         # Save updated states to session
         PlayerFactory.save_player(session, player)
@@ -170,6 +171,17 @@ class GameController < ApplicationController
         }
       else
         # Boss is defeated, no boss action
+        player_mana_cost = game_status['playerMana'] < player_mana_turn_start
+        player_stamina_cost = game_status['playerStamina'] < player_stamina_turn_start
+        game_status = apply_regeneration(game_status, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
+
+        player['life'] = game_status['playerLife']
+        player['stamina'] = game_status['playerStamina']
+        player['mana'] = game_status['playerMana']
+        boss['life'] = game_status['bossLife']
+        boss['stamina'] = game_status['bossStamina']
+        boss['mana'] = game_status['bossMana']
+
         PlayerFactory.save_player(session, player)
         save_current_boss(boss)
         
