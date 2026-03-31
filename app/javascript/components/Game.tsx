@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { BossService, Boss } from '../services/BossService';
 import { PlayerService, Player } from '../services/PlayerService';
 import playerImage from '../images/player.png';
@@ -35,6 +35,8 @@ const isDead = (entity: Player | Boss | null, keywords: any[]): boolean => {
 };
 
 const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailableKeywords }) => {
+    const STATUS_PAGE_SIZE = 10;
+
     const [boss, setBoss] = useState<Boss | null>(null);
     const [player, setPlayer] = useState<Player | null>(null);
     const [loading, setLoading] = useState(true);
@@ -53,6 +55,9 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const [availableKeywords] = useState<string[]>(initialAvailableKeywords);
 
     const [showCastMenu, setShowCastMenu] = useState<boolean>(false);
+    const [showPlayerStatus, setShowPlayerStatus] = useState<boolean>(false);
+    const [statusSearch, setStatusSearch] = useState<string>('');
+    const [statusPage, setStatusPage] = useState<number>(1);
     const [spellSearch, setSpellSearch] = useState<string>('');
     const [favoriteSpells, setFavoriteSpells] = useState<string[]>([]);
     const [actionBarSpells, setActionBarSpells] = useState<string[]>([]);
@@ -118,6 +123,178 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         if (!aFav && bFav) return 1;
         return formatSpellName(a).localeCompare(formatSpellName(b));
     });
+
+    const playerStatusData = useMemo(() => {
+        if (!player) {
+            return {
+                summaryRows: [] as Array<{ label: string; value: string }>,
+                detailRows: [] as Array<{ category: string; label: string; value: string }>
+            };
+        }
+
+        const resourceMultipliers: Record<string, number> = {
+            life: 1,
+            stamina: 1,
+            mana: 1
+        };
+        const damageOutputMultipliers: Record<string, number> = {};
+        const damageReductionProfile: Record<string, number> = {};
+        let damageAmplification = 1;
+
+        (playerKeywordData || []).forEach((keyword) => {
+            const attrs = keyword?.properties || {};
+
+            if (attrs.multipliers) {
+                Object.entries(attrs.multipliers).forEach(([key, value]) => {
+                    const num = value as number;
+                    if (typeof num !== 'number') return;
+                    if (!(key in resourceMultipliers)) {
+                        resourceMultipliers[key] = 1;
+                    }
+                    resourceMultipliers[key] *= num;
+                });
+            }
+
+            if (typeof attrs.damage_amplification === 'number') {
+                damageAmplification *= attrs.damage_amplification;
+            }
+
+            if (attrs.damage_output_by_type) {
+                Object.entries(attrs.damage_output_by_type).forEach(([type, value]) => {
+                    const num = value as number;
+                    if (typeof num !== 'number') return;
+                    if (!(type in damageOutputMultipliers)) {
+                        damageOutputMultipliers[type] = 1;
+                    }
+                    damageOutputMultipliers[type] *= num;
+                });
+            }
+
+            if (attrs.damage_reduction_by_type) {
+                Object.entries(attrs.damage_reduction_by_type).forEach(([type, value]) => {
+                    const num = value as number;
+                    if (typeof num !== 'number') return;
+                    if (!(type in damageReductionProfile)) {
+                        damageReductionProfile[type] = 1;
+                    }
+                    damageReductionProfile[type] *= num;
+                });
+            }
+        });
+
+        const formatResourceMultipliers = () => {
+            return Object.entries(resourceMultipliers)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([key, value]) => `${key}: x${value.toFixed(2)}`)
+                .join(' • ');
+        };
+
+        const formatTypedOutput = () => {
+            const entries = Object.entries(damageOutputMultipliers)
+                .filter(([_, value]) => Math.abs(value - 1) > 0.001)
+                .sort(([a], [b]) => a.localeCompare(b));
+
+            if (entries.length === 0) return 'None';
+
+            return entries
+                .map(([type, value]) => {
+                    const pct = ((value - 1) * 100).toFixed(0);
+                    return `${type}: ${value >= 1 ? '+' : ''}${pct}%`;
+                })
+                .join(' • ');
+        };
+
+        const formatReductionProfile = () => {
+            const entries = Object.entries(damageReductionProfile)
+                .filter(([_, value]) => Math.abs(value - 1) > 0.001)
+                .sort(([a], [b]) => a.localeCompare(b));
+
+            if (entries.length === 0) return 'None';
+
+            return entries
+                .map(([type, value]) => {
+                    if (value < 1) {
+                        return `${type}: ${((1 - value) * 100).toFixed(0)}% resist`;
+                    }
+                    return `${type}: +${((value - 1) * 100).toFixed(0)}% vuln`;
+                })
+                .join(' • ');
+        };
+
+        const summaryRows: Array<{ label: string; value: string }> = [
+            { label: 'Life', value: `${Math.round(player.life || 0)} / ${Math.round(player.max_life || 0)}` },
+            { label: 'Stamina', value: `${Math.round(player.stamina || 0)} / ${Math.round(player.max_stamina || 0)}` },
+            { label: 'Mana', value: `${Math.round(player.mana || 0)} / ${Math.round(player.max_mana || 0)}` },
+            { label: 'Base Damage', value: String(player.damage || 0) },
+            { label: 'Resource Multipliers', value: formatResourceMultipliers() },
+            { label: 'Damage Amplification', value: `x${damageAmplification.toFixed(2)}` },
+            { label: 'Damage Output Multipliers', value: formatTypedOutput() },
+            { label: 'Damage Reduction Profile', value: formatReductionProfile() },
+            { label: 'Available Actions', value: (player.actions || []).join(', ') || 'None' },
+            { label: 'Available Spells', value: collectedSpells.length ? collectedSpells.map(formatSpellName).join(', ') : 'None' }
+        ];
+
+        const rows: Array<{ category: string; label: string; value: string }> = [
+            { category: 'Core', label: 'Name', value: player.name },
+            { category: 'Progression', label: 'Bosses Defeated', value: String(player.bosses_defeated || 0) },
+            { category: 'Progression', label: 'Total Powers', value: String(player.keywords?.length || 0) },
+            { category: 'Resource', label: 'Life', value: `${Math.round(player.life || 0)} / ${Math.round(player.max_life || 0)}` },
+            { category: 'Resource', label: 'Stamina', value: `${Math.round(player.stamina || 0)} / ${Math.round(player.max_stamina || 0)}` },
+            { category: 'Resource', label: 'Mana', value: `${Math.round(player.mana || 0)} / ${Math.round(player.max_mana || 0)}` },
+            { category: 'Combat', label: 'Base Damage', value: String(player.damage || 0) },
+            { category: 'Recovery', label: 'Turns Since Mana Cost', value: String(player.turns_since_mana_cost || 0) },
+            { category: 'Recovery', label: 'Turns Since Stamina Cost', value: String(player.turns_since_stamina_cost || 0) },
+            { category: 'Combat', label: 'Actions', value: (player.actions || []).join(', ') || 'None' }
+        ];
+
+        const keywordRows = (playerKeywordData || []).map((keyword) => ({
+            category: 'Power',
+            label: keyword.name,
+            value: formatKeywordAttributes(keyword)
+        }));
+
+        return {
+            summaryRows,
+            detailRows: [...rows, ...keywordRows]
+        };
+    }, [player, playerKeywordData, collectedSpells]);
+
+    const filteredSummaryRows = useMemo(() => {
+        const term = statusSearch.trim().toLowerCase();
+        const summaryRows = playerStatusData.summaryRows;
+        if (!term) return summaryRows;
+
+        return summaryRows.filter((row) =>
+            row.label.toLowerCase().includes(term) ||
+            row.value.toLowerCase().includes(term)
+        );
+    }, [playerStatusData.summaryRows, statusSearch]);
+
+    const filteredPlayerStatusRows = useMemo(() => {
+        const term = statusSearch.trim().toLowerCase();
+        const detailRows = playerStatusData.detailRows;
+        if (!term) return detailRows;
+
+        return detailRows.filter((row) =>
+            row.category.toLowerCase().includes(term) ||
+            row.label.toLowerCase().includes(term) ||
+            row.value.toLowerCase().includes(term)
+        );
+    }, [playerStatusData.detailRows, statusSearch]);
+
+    const statusTotalPages = Math.max(1, Math.ceil(filteredPlayerStatusRows.length / STATUS_PAGE_SIZE));
+    const statusPageStart = (statusPage - 1) * STATUS_PAGE_SIZE;
+    const paginatedPlayerStatusRows = filteredPlayerStatusRows.slice(statusPageStart, statusPageStart + STATUS_PAGE_SIZE);
+
+    useEffect(() => {
+        setStatusPage(1);
+    }, [statusSearch, showPlayerStatus]);
+
+    useEffect(() => {
+        if (statusPage > statusTotalPages) {
+            setStatusPage(statusTotalPages);
+        }
+    }, [statusPage, statusTotalPages]);
 
     useEffect(() => {
         // Check if player has died using correct life resource
@@ -422,7 +599,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         setActionBarSpells((prev) => (prev.includes(spell) ? prev : [...prev, spell]));
     };
     
-    const formatKeywordAttributes = (keyword: any): string => {
+    function formatKeywordAttributes(keyword: any): string {
         const attrs = keyword.properties || {};
         const parts: string[] = [];
         
@@ -500,7 +677,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         }
         
         return parts.join(' • ') || 'No special attributes';
-    };
+    }
 
     // Render keyword attributes with tooltips for passives
     const renderKeywordAttributes = (keyword: any): React.ReactNode => {
@@ -755,9 +932,12 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                         </div>
                     </div>
                     <div id="character-picture" className="flex items-center gap-2">
-                        <div className="w-24 h-24 rounded-full bg-gray-800 border-2 border-gray-400 flex items-center justify-center">
-                            CP
-                        </div>
+                        <button
+                            onClick={() => setShowPlayerStatus(true)}
+                            className="w-24 h-24 rounded-full bg-gray-800 border-2 border-gray-400 hover:bg-gray-700 transition-colors flex items-center justify-center text-xs font-bold tracking-wide"
+                        >
+                            Status
+                        </button>
                     </div>
                     <div id="action-bar" className="flex items-center gap-2 w-full">
                         {boss && isDead(boss, bossKeywordData) ? (
@@ -868,6 +1048,94 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                 ))}
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* Player Status Modal */}
+            {showPlayerStatus && (
+                <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+                    <div className="bg-gray-800 border-4 border-cyan-500 rounded-lg p-8 w-full max-w-4xl max-h-[85vh] flex flex-col">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-3xl font-bold">Player Status</h2>
+                            <button
+                                onClick={() => setShowPlayerStatus(false)}
+                                className="text-gray-300 hover:text-white text-2xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <input
+                            type="text"
+                            placeholder="Search stats, powers, effects..."
+                            value={statusSearch}
+                            onChange={(e) => setStatusSearch(e.target.value)}
+                            className="w-full mb-4 px-4 py-2 rounded bg-gray-900 border border-gray-600 text-white"
+                        />
+
+                        <div className="text-sm text-gray-300 mb-3">
+                            Showing detail entries {filteredPlayerStatusRows.length === 0 ? 0 : statusPageStart + 1}-
+                            {Math.min(statusPageStart + STATUS_PAGE_SIZE, filteredPlayerStatusRows.length)} of {filteredPlayerStatusRows.length}
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                            {filteredSummaryRows.length > 0 && (
+                                <div className="bg-gray-700 border border-cyan-500 rounded-lg px-4 py-3">
+                                    <div className="text-sm uppercase tracking-wide text-cyan-300 mb-2">Player Status</div>
+                                    <div className="space-y-1">
+                                        {filteredSummaryRows.map((row, idx) => (
+                                            <div key={`summary-${row.label}-${idx}`} className="text-sm text-gray-100 break-words">
+                                                <span className="font-semibold">{row.label}:</span> {row.value}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {paginatedPlayerStatusRows.length === 0 ? (
+                                <div className="text-gray-400 text-center py-8">No detail entries match your search.</div>
+                            ) : (
+                                paginatedPlayerStatusRows.map((row, idx) => (
+                                    <div
+                                        key={`${row.category}-${row.label}-${idx}`}
+                                        className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3"
+                                    >
+                                        <div className="text-xs uppercase tracking-wide text-cyan-300 mb-1">{row.category}</div>
+                                        <div className="text-lg font-semibold capitalize">{row.label}</div>
+                                        <div className="text-sm text-gray-200 break-words">{row.value}</div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-gray-600 flex items-center justify-between">
+                            <button
+                                onClick={() => setStatusPage((p) => Math.max(1, p - 1))}
+                                disabled={statusPage <= 1}
+                                className={`px-4 py-2 rounded border ${
+                                    statusPage <= 1
+                                        ? 'bg-gray-700 border-gray-600 text-gray-500 cursor-not-allowed'
+                                        : 'bg-gray-700 border-gray-500 hover:bg-gray-600'
+                                }`}
+                            >
+                                Previous
+                            </button>
+                            <div className="text-sm text-gray-300">
+                                Page {statusPage} / {statusTotalPages}
+                            </div>
+                            <button
+                                onClick={() => setStatusPage((p) => Math.min(statusTotalPages, p + 1))}
+                                disabled={statusPage >= statusTotalPages}
+                                className={`px-4 py-2 rounded border ${
+                                    statusPage >= statusTotalPages
+                                        ? 'bg-gray-700 border-gray-600 text-gray-500 cursor-not-allowed'
+                                        : 'bg-gray-700 border-gray-500 hover:bg-gray-600'
+                                }`}
+                            >
+                                Next
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

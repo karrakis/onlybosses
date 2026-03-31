@@ -210,11 +210,10 @@ class GameController < ApplicationController
 
     stamina_cost = 10
     stamina_key = "#{action_taker}Stamina"
-    if game_status[stamina_key]
-      game_status[stamina_key] -= stamina_cost
-      game_status[stamina_key] = 0 if game_status[stamina_key] < 0
-    end
-    
+    return game_status if game_status[stamina_key].nil? || game_status[stamina_key] < stamina_cost
+
+    game_status[stamina_key] -= stamina_cost
+
     # Get attacker and defender data
     attacker_data = game_status[action_taker]
     defender_data = game_status[target]
