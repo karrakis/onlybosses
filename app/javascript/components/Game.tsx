@@ -1194,30 +1194,32 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
 
             {/* Keyword Selection Modal */}
             {showKeywordSelection && boss && (
-                <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                    <div className="bg-gray-800 border-4 border-gray-400 rounded-lg p-8 max-w-2xl w-full">
+                <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-800 border-4 border-gray-400 rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col">
                         {!showRemoveKeywordPanel ? (
                             <>
-                                <h2 className="text-3xl font-bold mb-6 text-center">Choose a Power to Absorb</h2>
-                                <div className="grid grid-cols-2 gap-4">
-                                    {boss.keywords && boss.keywords.map((keywordName: string) => {
-                                        const keywordData = allKeywordsData.find(kw => kw.name === keywordName);
-                                        return (
-                                            <button
-                                                key={keywordName}
-                                                onClick={() => handleKeywordSelection(keywordName)}
-                                                className="bg-gray-700 hover:bg-gray-600 border-2 border-gray-500 rounded-lg p-4 text-left transition-colors"
-                                            >
-                                                <div className="text-xl font-semibold capitalize mb-2">{keywordName}</div>
-                                                {keywordData && (
-                                                    <div className="text-sm text-gray-300">{renderKeywordAttributes(keywordData)}</div>
-                                                )}
-                                            </button>
-                                        );
-                                    })}
+                                <h2 className="text-3xl font-bold pt-8 px-8 pb-4 text-center shrink-0">Choose a Power to Absorb</h2>
+                                <div className="overflow-y-auto px-8 flex-1 min-h-0">
+                                    <div className="grid grid-cols-2 gap-4 pb-4">
+                                        {boss.keywords && boss.keywords.map((keywordName: string) => {
+                                            const keywordData = allKeywordsData.find(kw => kw.name === keywordName);
+                                            return (
+                                                <button
+                                                    key={keywordName}
+                                                    onClick={() => handleKeywordSelection(keywordName)}
+                                                    className="bg-gray-700 hover:bg-gray-600 border-2 border-gray-500 rounded-lg p-4 text-left transition-colors"
+                                                >
+                                                    <div className="text-xl font-semibold capitalize mb-2">{keywordName}</div>
+                                                    {keywordData && (
+                                                        <div className="text-sm text-gray-300">{renderKeywordAttributes(keywordData)}</div>
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                                 {player && player.keywords.length > 0 && (
-                                    <div className="mt-6 pt-4 border-t-2 border-gray-600">
+                                    <div className="px-8 pb-8 pt-4 border-t-2 border-gray-600 shrink-0">
                                         <p className="text-sm text-gray-400">Your Powers: {player.keywords.join(', ')}</p>
                                         <button
                                             onClick={() => setShowRemoveKeywordPanel(true)}
@@ -1230,26 +1232,30 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                             </>
                         ) : (
                             <>
-                                <h2 className="text-3xl font-bold mb-2 text-center text-red-400">Forget a Keyword</h2>
-                                <p className="text-sm text-gray-400 text-center mb-6">Choose one of your keywords to permanently remove.</p>
-                                <div className="grid grid-cols-2 gap-4">
-                                    {player && player.keywords.map((keywordName: string) => {
-                                        const keywordData = allKeywordsData.find(kw => kw.name === keywordName);
-                                        return (
-                                            <button
-                                                key={keywordName}
-                                                onClick={() => handleRemoveKeywordSelection(keywordName)}
-                                                className="bg-gray-700 hover:bg-red-900 border-2 border-red-700 rounded-lg p-4 text-left transition-colors"
-                                            >
-                                                <div className="text-xl font-semibold capitalize mb-2">{keywordName}</div>
-                                                {keywordData && (
-                                                    <div className="text-sm text-gray-300">{renderKeywordAttributes(keywordData)}</div>
-                                                )}
-                                            </button>
-                                        );
-                                    })}
+                                <div className="pt-8 px-8 pb-4 shrink-0">
+                                    <h2 className="text-3xl font-bold mb-2 text-center text-red-400">Forget a Keyword</h2>
+                                    <p className="text-sm text-gray-400 text-center">Choose one of your keywords to permanently remove.</p>
                                 </div>
-                                <div className="mt-6 pt-4 border-t-2 border-gray-600 flex justify-center">
+                                <div className="overflow-y-auto px-8 flex-1 min-h-0">
+                                    <div className="grid grid-cols-2 gap-4 pb-4">
+                                        {player && player.keywords.map((keywordName: string) => {
+                                            const keywordData = allKeywordsData.find(kw => kw.name === keywordName);
+                                            return (
+                                                <button
+                                                    key={keywordName}
+                                                    onClick={() => handleRemoveKeywordSelection(keywordName)}
+                                                    className="bg-gray-700 hover:bg-red-900 border-2 border-red-700 rounded-lg p-4 text-left transition-colors"
+                                                >
+                                                    <div className="text-xl font-semibold capitalize mb-2">{keywordName}</div>
+                                                    {keywordData && (
+                                                        <div className="text-sm text-gray-300">{renderKeywordAttributes(keywordData)}</div>
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                                <div className="px-8 pb-8 pt-4 border-t-2 border-gray-600 flex justify-center shrink-0">
                                     <button
                                         onClick={() => setShowRemoveKeywordPanel(false)}
                                         className="px-6 py-2 rounded-lg border-2 border-gray-500 text-gray-300 hover:bg-gray-700 transition-colors text-sm font-semibold"
