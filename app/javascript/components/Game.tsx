@@ -51,6 +51,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const [grassHeight, setGrassHeight] = useState<number>(50);
     const [bossKeywords, setBossKeywords] = useState<string[]>(['skeleton']);
     const [showKeywordSelection, setShowKeywordSelection] = useState<boolean>(false);
+    const [showRemoveKeywordPanel, setShowRemoveKeywordPanel] = useState<boolean>(false);
     const [descendClicked, setDescendClicked] = useState<boolean>(false);
     const [availableKeywords] = useState<string[]>(initialAvailableKeywords);
 
@@ -390,6 +391,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const handleDescend = () => {
         if (boss && isDead(boss, bossKeywordData) && !descendClicked) {
             setDescendClicked(true);
+            setShowRemoveKeywordPanel(false);
             setShowKeywordSelection(true);
         }
     };
@@ -493,6 +495,46 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             setLoading(false);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to generate new boss');
+            setLoading(false);
+        }
+    };
+
+    const handleRemoveKeywordSelection = async (keywordToRemove: string) => {
+        try {
+            // Remove selected keyword from player on backend and level up
+            const updatedPlayer = await PlayerService.removeKeyword(keywordToRemove);
+            setPlayer(updatedPlayer);
+
+            // Boss keywords evolve: add 2 new keywords (nothing removed since player didn't absorb)
+            const updatedKeywords = [...bossKeywords];
+            const unusedKeywords = availableKeywords.filter(k => !updatedKeywords.includes(k));
+            for (let i = 0; i < 2 && unusedKeywords.length > 0; i++) {
+                const randomIndex = Math.floor(Math.random() * unusedKeywords.length);
+                const newKeyword = unusedKeywords.splice(randomIndex, 1)[0];
+                updatedKeywords.push(newKeyword);
+            }
+
+            setBossKeywords(updatedKeywords);
+            setShowKeywordSelection(false);
+            setShowRemoveKeywordPanel(false);
+
+            // Reset game state for new boss
+            setLoading(true);
+            setBossDying(false);
+            setBossShaking(false);
+            setDescendClicked(false);
+            setTurnToken(null);
+
+            const generatedBoss = await BossService.generateBoss(updatedKeywords);
+            setBoss(generatedBoss);
+
+            if (generatedBoss.image_status === 'pending' || generatedBoss.image_status === 'generating') {
+                pollForImage(generatedBoss.id);
+            }
+
+            setLoading(false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to remove keyword');
             setLoading(false);
         }
     };
@@ -1153,29 +1195,69 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             {/* Keyword Selection Modal */}
             {showKeywordSelection && boss && (
                 <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                    <div className="bg-gray-800 border-4 border-gray-400 rounded-lg p-8 max-w-2xl">
-                        <h2 className="text-3xl font-bold mb-6 text-center">Choose a Power to Absorb</h2>
-                        <div className="grid grid-cols-2 gap-4">
-                            {boss.keywords && boss.keywords.map((keywordName: string) => {
-                                const keywordData = allKeywordsData.find(kw => kw.name === keywordName);
-                                return (
+                    <div className="bg-gray-800 border-4 border-gray-400 rounded-lg p-8 max-w-2xl w-full">
+                        {!showRemoveKeywordPanel ? (
+                            <>
+                                <h2 className="text-3xl font-bold mb-6 text-center">Choose a Power to Absorb</h2>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {boss.keywords && boss.keywords.map((keywordName: string) => {
+                                        const keywordData = allKeywordsData.find(kw => kw.name === keywordName);
+                                        return (
+                                            <button
+                                                key={keywordName}
+                                                onClick={() => handleKeywordSelection(keywordName)}
+                                                className="bg-gray-700 hover:bg-gray-600 border-2 border-gray-500 rounded-lg p-4 text-left transition-colors"
+                                            >
+                                                <div className="text-xl font-semibold capitalize mb-2">{keywordName}</div>
+                                                {keywordData && (
+                                                    <div className="text-sm text-gray-300">{renderKeywordAttributes(keywordData)}</div>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                {player && player.keywords.length > 0 && (
+                                    <div className="mt-6 pt-4 border-t-2 border-gray-600">
+                                        <p className="text-sm text-gray-400">Your Powers: {player.keywords.join(', ')}</p>
+                                        <button
+                                            onClick={() => setShowRemoveKeywordPanel(true)}
+                                            className="mt-3 w-full py-2 rounded-lg border-2 border-red-700 text-red-400 hover:bg-red-900 hover:bg-opacity-30 transition-colors text-sm font-semibold"
+                                        >
+                                            Forget a Keyword Instead
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                <h2 className="text-3xl font-bold mb-2 text-center text-red-400">Forget a Keyword</h2>
+                                <p className="text-sm text-gray-400 text-center mb-6">Choose one of your keywords to permanently remove.</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {player && player.keywords.map((keywordName: string) => {
+                                        const keywordData = allKeywordsData.find(kw => kw.name === keywordName);
+                                        return (
+                                            <button
+                                                key={keywordName}
+                                                onClick={() => handleRemoveKeywordSelection(keywordName)}
+                                                className="bg-gray-700 hover:bg-red-900 border-2 border-red-700 rounded-lg p-4 text-left transition-colors"
+                                            >
+                                                <div className="text-xl font-semibold capitalize mb-2">{keywordName}</div>
+                                                {keywordData && (
+                                                    <div className="text-sm text-gray-300">{renderKeywordAttributes(keywordData)}</div>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <div className="mt-6 pt-4 border-t-2 border-gray-600 flex justify-center">
                                     <button
-                                        key={keywordName}
-                                        onClick={() => handleKeywordSelection(keywordName)}
-                                        className="bg-gray-700 hover:bg-gray-600 border-2 border-gray-500 rounded-lg p-4 text-left transition-colors"
+                                        onClick={() => setShowRemoveKeywordPanel(false)}
+                                        className="px-6 py-2 rounded-lg border-2 border-gray-500 text-gray-300 hover:bg-gray-700 transition-colors text-sm font-semibold"
                                     >
-                                        <div className="text-xl font-semibold capitalize mb-2">{keywordName}</div>
-                                        {keywordData && (
-                                            <div className="text-sm text-gray-300">{renderKeywordAttributes(keywordData)}</div>
-                                        )}
+                                        ← Back to Absorb
                                     </button>
-                                );
-                            })}
-                        </div>
-                        {player && player.keywords.length > 0 && (
-                            <div className="mt-6 pt-4 border-t-2 border-gray-600">
-                                <p className="text-sm text-gray-400">Your Powers: {player.keywords.join(', ')}</p>
-                            </div>
+                                </div>
+                            </>
                         )}
                     </div>
                 </div>

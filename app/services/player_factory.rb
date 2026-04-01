@@ -58,6 +58,31 @@ class PlayerFactory
     recalculate_stats(player)
   end
   
+  # Remove a keyword from the player and clean up its orphaned passives
+  def self.remove_keyword(player, keyword)
+    return player unless player['keywords'].include?(keyword)
+
+    player['keywords'].delete(keyword)
+
+    # Collect passives still needed by remaining keywords
+    needed_passives = []
+    player['keywords'].each do |kw_name|
+      kw_obj = BossKeyword.find_by(name: kw_name)
+      next unless kw_obj&.properties&.dig('passives')
+      kw_obj.properties['passives'].each { |p| needed_passives << p }
+    end
+
+    # Remove passives that were exclusively provided by the removed keyword
+    removed_kw_obj = BossKeyword.find_by(name: keyword)
+    if removed_kw_obj&.properties&.dig('passives')
+      removed_kw_obj.properties['passives'].each do |passive_name|
+        player['keywords'].delete(passive_name) unless needed_passives.include?(passive_name)
+      end
+    end
+
+    recalculate_stats(player)
+  end
+
   # Called when player defeats a boss
   def self.level_up(player)
     player['bosses_defeated'] += 1

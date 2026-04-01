@@ -6,6 +6,7 @@ Rails.application.routes.draw do
   get 'get_game_state', to: 'game#get_game_state'
   post 'reset_player', to: 'game#reset_player'
   post 'add_keyword', to: 'game#add_keyword'
+  post 'remove_keyword', to: 'game#remove_keyword'
   post 'set_boss', to: 'game#set_boss'
   
   namespace :api do

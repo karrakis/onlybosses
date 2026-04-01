@@ -48,6 +48,16 @@ class GameController < ApplicationController
     PlayerFactory.save_player(session, player)
     render json: player
   end
+
+  # POST /remove_keyword
+  def remove_keyword
+    keyword = params[:keyword]
+    player = PlayerFactory.get_player(session)
+    PlayerFactory.remove_keyword(player, keyword)
+    PlayerFactory.level_up(player)
+    PlayerFactory.save_player(session, player)
+    render json: player
+  end
   
   # POST /take_action
   def take_action

@@ -45,6 +45,22 @@ export const PlayerService = {
         
         return response.json();
     },
+
+    async removeKeyword(keyword: string): Promise<Player> {
+        const response = await fetch('/remove_keyword', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ keyword }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to remove keyword');
+        }
+
+        return response.json();
+    },
     
     async resetPlayer(): Promise<Player> {
         const response = await fetch('/reset_player', {
