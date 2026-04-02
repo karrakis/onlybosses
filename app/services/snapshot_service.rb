@@ -5,6 +5,8 @@ class SnapshotService
   # Non-numeric/structural properties to skip entirely
   SKIP_PROPERTY_KEYS = %w[passives abilities applies_to life_resource].freeze
 
+  # ── Session-based entry points ─────────────────────────────────────────────
+
   # Create or retrieve the Run record for this session.
   def self.ensure_run(session)
     run_id = session[:run_id]
@@ -17,35 +19,12 @@ class SnapshotService
   end
 
   # Write a depth snapshot capturing the player's state as they descend into `depth`.
-  # depth must be >= 1. Called after keyword selection, before the next boss fight.
+  # Called after keyword selection, before the next boss fight.
   def self.record_snapshot(session, player, boss, depth)
-    return if depth.to_i < 1
-
     run = ensure_run(session)
     return unless run
 
-    ActiveRecord::Base.transaction do
-      # Retroactively mark the previous depth as survived
-      run.depth_snapshots.find_by(depth: depth.to_i - 1)&.update!(reached_next: true)
-
-      player_kw_names = player['keywords'] || []
-      boss_kw_names   = (boss || {})['keywords'] || []
-
-      player_kw_ids = player_kw_names.any? ? BossKeyword.where(name: player_kw_names).pluck(:id) : []
-      boss_kw_ids   = boss_kw_names.any?   ? BossKeyword.where(name: boss_kw_names).pluck(:id)   : []
-
-      snapshot = run.depth_snapshots.create!(
-        depth:            depth.to_i,
-        reached_next:     false,
-        keyword_ids:      player_kw_ids,
-        boss_keyword_ids: boss_kw_ids
-      )
-
-      write_modifiers(snapshot, compute_modifiers(player_kw_names), 'player')
-      write_modifiers(snapshot, compute_modifiers(boss_kw_names),   'boss')
-
-      snapshot
-    end
+    record_snapshot_for_run(run, player, boss, depth)
   end
 
   # Close the current run with the given outcome ('died' or 'quit').
@@ -62,15 +41,52 @@ class SnapshotService
     session[:run_id] = nil
   end
 
+  # ── Run-direct entry point (used by simulation) ───────────────────────────
+
+  # Write a snapshot directly against an existing Run record.
+  # Pass `registry:` (hash of name => BossKeyword) to skip DB lookups during bulk simulation.
+  def self.record_snapshot_for_run(run, player, boss, depth, registry: nil)
+    return if depth.to_i < 1
+
+    ActiveRecord::Base.transaction do
+      # Retroactively mark the previous depth as survived
+      run.depth_snapshots.find_by(depth: depth.to_i - 1)&.update!(reached_next: true)
+
+      player_kw_names = player['keywords'] || []
+      boss_kw_names   = (boss || {})['keywords'] || []
+
+      if registry
+        player_kw_ids = player_kw_names.filter_map { |n| registry[n]&.id }
+        boss_kw_ids   = boss_kw_names.filter_map   { |n| registry[n]&.id }
+      else
+        player_kw_ids = player_kw_names.any? ? BossKeyword.where(name: player_kw_names).pluck(:id) : []
+        boss_kw_ids   = boss_kw_names.any?   ? BossKeyword.where(name: boss_kw_names).pluck(:id)   : []
+      end
+
+      snapshot = run.depth_snapshots.create!(
+        depth:            depth.to_i,
+        reached_next:     false,
+        keyword_ids:      player_kw_ids,
+        boss_keyword_ids: boss_kw_ids
+      )
+
+      write_modifiers(snapshot, compute_modifiers(player_kw_names, registry: registry), 'player')
+      write_modifiers(snapshot, compute_modifiers(boss_kw_names,   registry: registry), 'boss')
+
+      snapshot
+    end
+  end
+
   # ── private ────────────────────────────────────────────────────────────────
 
   # Walk each keyword's properties and produce a flat key → aggregated-value map.
-  def self.compute_modifiers(keyword_names)
+  # Pass `registry:` to avoid DB lookups.
+  def self.compute_modifiers(keyword_names, registry: nil)
     result = {}
     return result if keyword_names.empty?
 
     keyword_names.each do |name|
-      kw = BossKeyword.find_by(name: name)
+      kw = registry ? registry[name] : BossKeyword.find_by(name: name)
       next unless kw
 
       (kw.properties || {}).each do |prop_key, prop_val|
@@ -91,8 +107,6 @@ class SnapshotService
   end
   private_class_method :compute_modifiers
 
-  # Aggregate a value into result under flat_key using the correct strategy
-  # (additive for lifesteal/base_damage_by_type, multiplicative for everything else).
   def self.accumulate(result, flat_key, value, top_key)
     if ADDITIVE_PROPERTY_KEYS.include?(top_key)
       result[flat_key] = (result[flat_key] || 0.0) + value

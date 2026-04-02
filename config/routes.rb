@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
   root 'components#index'
+  get  'admin', to: 'admin#index'
   
   post 'take_action', to: 'game#take_action'
   get 'get_player', to: 'game#get_player'
@@ -9,6 +10,7 @@ Rails.application.routes.draw do
   post 'remove_keyword', to: 'game#remove_keyword'
   post 'record_snapshot', to: 'game#record_snapshot'
   post 'set_boss', to: 'game#set_boss'
+  get  'simulate_runs', to: 'simulation#run'
   
   namespace :api do
     resources :bosses, only: [:show, :index] do
