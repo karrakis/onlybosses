@@ -5,11 +5,16 @@ class AdminController < ApplicationController
     @sections = []
     @error    = nil
 
-    script  = Rails.root.join('analysis', 'analyze.py')
-    min_depth = (params[:depth] || 1).to_i.clamp(1, 50)
-    use_tree  = params[:tree] == '1'
+    script    = Rails.root.join('analysis', 'analyze.py')
+    min_depth  = (params[:depth]     || 1).to_i.clamp(1, 50)
+    min_support = (params[:support]  || 15).to_i.clamp(1, 999)
+    delta_thr   = (params[:threshold] || 0.15).to_f.clamp(0.0, 1.0)
+    use_tree   = params[:tree] == '1'
 
-    args = ["python3", script.to_s, "--depth", min_depth.to_s]
+    args = ["python3", script.to_s,
+            "--depth", min_depth.to_s,
+            "--support", min_support.to_s,
+            "--threshold", delta_thr.to_s]
     args << "--tree" if use_tree
 
     stdout, stderr, status = Open3.capture3(*args)
@@ -20,9 +25,11 @@ class AdminController < ApplicationController
       @error = stderr.presence || "Analysis script exited with status #{status.exitstatus}"
     end
 
-    @min_depth = min_depth
-    @use_tree  = use_tree
-    @run_count = Run.count
+    @min_depth   = min_depth
+    @min_support = min_support
+    @delta_thr   = delta_thr
+    @use_tree    = use_tree
+    @run_count   = Run.count
     @snapshot_count = DepthSnapshot.count
   end
 

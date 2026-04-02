@@ -155,6 +155,72 @@ def modifier_correlation(df: pd.DataFrame, context: str = 'player') -> pd.DataFr
     ])
     return out.sort_values('correlation', ascending=False).reset_index(drop=True)
 
+def combo_synergies(
+    df: pd.DataFrame,
+    context: str = 'player',
+    n: int = 2,
+    min_support: int = 15,
+    delta_threshold: float = 0.15,
+) -> tuple:
+    """
+    Find keyword combinations of size `n` whose combined survival rate differs
+    from the mean of their individual rates by more than `delta_threshold`.
+
+    Returns (synergies_df, antisynergies_df), each sorted by |conditional_delta|.
+
+    conditional_delta = combo_rate - mean(individual_rates)
+      > 0  → synergy   (together they outperform expectations)
+      < 0  → anti-synergy (together they underperform)
+    """
+    from itertools import combinations
+
+    prefix  = f"{context}_kw_"
+    kw_cols = [c for c in df.columns if c.startswith(prefix)]
+
+    # Pre-compute individual survival rates for baseline
+    individual = {}
+    for col in kw_cols:
+        sub = df[df[col] == 1]
+        if len(sub) >= 1:
+            individual[col] = sub['reached_next'].mean()
+
+    records = []
+    for combo in combinations(kw_cols, n):
+        # Only rows where ALL keywords in the combo are present
+        mask = df[list(combo)].all(axis=1)
+        support = int(mask.sum())
+        if support < min_support:
+            continue
+
+        combo_rate     = df.loc[mask, 'reached_next'].mean()
+        baseline       = np.mean([individual.get(c, combo_rate) for c in combo])
+        cond_delta     = combo_rate - baseline
+
+        if abs(cond_delta) < delta_threshold:
+            continue
+
+        names = ' + '.join(c[len(prefix):] for c in combo)
+        records.append({
+            'keywords':        names,
+            'support':         support,
+            'combo_rate':      round(combo_rate, 3),
+            'baseline':        round(baseline,   3),
+            'conditional_delta': round(cond_delta, 3),
+        })
+
+    if not records:
+        return pd.DataFrame(), pd.DataFrame()
+
+    result = pd.DataFrame(records)
+    synergies     = (result[result['conditional_delta'] >  0]
+                     .sort_values('conditional_delta', ascending=False)
+                     .reset_index(drop=True))
+    antisynergies = (result[result['conditional_delta'] <  0]
+                     .sort_values('conditional_delta', ascending=True)
+                     .reset_index(drop=True))
+    return synergies, antisynergies
+
+
 def fit_tree(df: pd.DataFrame):
     """
     Fit a gradient-boosted tree on the feature matrix.
@@ -189,7 +255,8 @@ def hr(label=''):
     else:
         print('─' * width)
 
-def print_report(df: pd.DataFrame, run_tree: bool = False):
+def print_report(df: pd.DataFrame, run_tree: bool = False,
+                 min_support: int = 15, delta_threshold: float = 0.15):
     print(f"\nOnly Bosses — Balance Analysis")
     print(f"Dataset: {len(df)} snapshots across depths {df['depth'].min()}–{df['depth'].max()}")
 
@@ -213,6 +280,27 @@ def print_report(df: pd.DataFrame, run_tree: bool = False):
     mc = modifier_correlation(df, 'player')
     print(mc.to_string(index=False))
 
+    # ── Combo synergy sections ─────────────────────────────────────────────
+    for ctx_label, ctx in (('Player', 'player'), ('Boss', 'boss')):
+        for n, label in ((2, 'pairs'), (3, 'triples')):
+            syn, anti = combo_synergies(
+                df, context=ctx, n=n,
+                min_support=min_support, delta_threshold=delta_threshold
+            )
+            params = f"min_support={min_support}, |delta|>={delta_threshold}"
+
+            hr(f"{ctx_label} {label} — synergies ({params})")
+            if syn.empty:
+                print("  (none above threshold)")
+            else:
+                print(syn.to_string(index=False))
+
+            hr(f"{ctx_label} {label} — anti-synergies ({params})")
+            if anti.empty:
+                print("  (none above threshold)")
+            else:
+                print(anti.to_string(index=False))
+
     if run_tree:
         if len(df) < 50:
             print("\n[tree] Insufficient data for a reliable model (need >= 50 rows).")
@@ -233,6 +321,10 @@ if __name__ == '__main__':
                         help='Only include snapshots at this depth or deeper (default: 1)')
     parser.add_argument('--tree', action='store_true',
                         help='Fit a gradient-boosted tree and print feature importances')
+    parser.add_argument('--support', type=int, default=15,
+                        help='Minimum co-occurrence count for combo analysis (default: 15)')
+    parser.add_argument('--threshold', type=float, default=0.15,
+                        help='Minimum |conditional_delta| to report a combo (default: 0.15)')
     parser.add_argument('--out', type=str, default=None,
                         help='Write report to this file instead of stdout')
     args = parser.parse_args()
@@ -244,10 +336,12 @@ if __name__ == '__main__':
         buf = io.StringIO()
         _stdout = sys.stdout
         sys.stdout = buf
-        print_report(df, run_tree=args.tree)
+        print_report(df, run_tree=args.tree,
+                     min_support=args.support, delta_threshold=args.threshold)
         sys.stdout = _stdout
         with open(args.out, 'w') as f:
             f.write(buf.getvalue())
         print(f"Wrote report to {args.out}")
     else:
-        print_report(df, run_tree=args.tree)
+        print_report(df, run_tree=args.tree,
+                     min_support=args.support, delta_threshold=args.threshold)

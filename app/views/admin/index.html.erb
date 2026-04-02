@@ -28,6 +28,16 @@
         <%= f.number_field :depth, value: @min_depth, min: 1, max: 50,
               class: "w-20 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" %>
       </div>
+      <div class="flex flex-col gap-1">
+        <%= f.label :support, "Min support", class: "text-xs text-gray-400" %>
+        <%= f.number_field :support, value: @min_support, min: 1, max: 999,
+              class: "w-20 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" %>
+      </div>
+      <div class="flex flex-col gap-1">
+        <%= f.label :threshold, "|Δ| threshold", class: "text-xs text-gray-400" %>
+        <%= f.number_field :threshold, value: @delta_thr, min: 0.0, max: 1.0, step: 0.01,
+              class: "w-24 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" %>
+      </div>
       <div class="flex items-center gap-2 self-end mb-0.5">
         <%= f.check_box :tree, { checked: @use_tree, class: "accent-orange-500" }, "1", "0" %>
         <%= f.label :tree, "Include tree importances", class: "text-xs text-gray-300 cursor-pointer" %>
