@@ -13,3 +13,12 @@
     transform: translateX(var(--shake-intensity, 10px));
   }
 }
+
+@keyframes depthFlicker {
+  0%   { opacity: 1;    text-shadow: inherit; }
+  20%  { opacity: 0.92; filter: brightness(1.1); }
+  40%  { opacity: 1;    filter: brightness(0.95); }
+  60%  { opacity: 0.88; filter: brightness(1.2); }
+  80%  { opacity: 1;    filter: brightness(1.0); }
+  100% { opacity: 0.94; filter: brightness(1.15); }
+}

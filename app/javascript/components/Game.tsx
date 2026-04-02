@@ -53,6 +53,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const [showKeywordSelection, setShowKeywordSelection] = useState<boolean>(false);
     const [showRemoveKeywordPanel, setShowRemoveKeywordPanel] = useState<boolean>(false);
     const [descendClicked, setDescendClicked] = useState<boolean>(false);
+    const [depth, setDepth] = useState<number>(1);
     const [availableKeywords] = useState<string[]>(initialAvailableKeywords);
 
     const [showCastMenu, setShowCastMenu] = useState<boolean>(false);
@@ -448,6 +449,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             
             setBossKeywords(updatedKeywords);
             setShowKeywordSelection(false);
+            setDepth((d) => d + 1);
             
             // Reset game state for new boss
             setLoading(true);
@@ -455,7 +457,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             setBossShaking(false);
             setDescendClicked(false);
             setTurnToken(null);
-            
+
             // Generate new boss with updated keywords
             const generatedBoss = await BossService.generateBoss(updatedKeywords);
             setBoss(generatedBoss);
@@ -490,6 +492,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             setBossKeywords(updatedKeywords);
             setShowKeywordSelection(false);
             setShowRemoveKeywordPanel(false);
+            setDepth((d) => d + 1);
 
             // Reset game state for new boss
             setLoading(true);
@@ -850,6 +853,42 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
 
     return (<div className="w-screen h-screen flex flex-col items-center justify-center bg-transparent text-white relative">
             <button className="z-10 absolute top-4 right-4 border border-white rounded px-4 py-2" onClick={onExit}>Surrender</button>
+
+            {/* Depth counter */}
+            {player && (() => {
+                const t = Math.min((depth - 1) / 9, 1);
+                const orange = Math.round(255 * t);
+                const red = Math.round(180 * t);
+                const glowSpread = Math.round(4 + t * 20);
+                const glowBlur = Math.round(8 + t * 32);
+                const flickerAnim = t > 0.3 ? 'depth-flicker' : undefined;
+                return (
+                    <div
+                        className="z-10 absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center select-none pointer-events-none"
+                        style={{
+                            textShadow: t > 0
+                                ? `0 0 ${glowBlur / 2}px rgba(255,${255 - orange},0,${0.6 + t * 0.4}), 0 0 ${glowBlur}px rgba(255,${100 - red},0,${0.4 + t * 0.4}), 0 0 ${glowSpread * 2}px rgba(200,0,0,${t * 0.5})`
+                                : undefined,
+                            animation: flickerAnim ? 'depthFlicker 1.8s ease-in-out infinite alternate' : undefined,
+                        }}
+                    >
+                        <span
+                            className="text-xs uppercase tracking-widest font-semibold"
+                            style={{ color: `rgba(255, ${Math.round(200 - orange * 0.6)}, ${Math.round(180 - orange)}, 0.85)` }}
+                        >
+                            Depth
+                        </span>
+                        <span
+                            className="text-4xl font-black leading-none"
+                            style={{
+                                color: `rgb(255, ${Math.round(220 - orange * 0.8)}, ${Math.round(80 - 80 * t)})`,
+                            }}
+                        >
+                            {depth}
+                        </span>
+                    </div>
+                );
+            })()}
             <div className="w-3/4 h-3/4 border-4 border-dashed border-gray-400 flex flex-col">
             <div className="h-full flex items-center justify-center relative">
                 <div id="game-background" className="absolute inset-0 -z-1 flex flex-col">
