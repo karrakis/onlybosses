@@ -17,12 +17,13 @@ type AnalysisResult = {
 // ─── AnalysisView ─────────────────────────────────────────────────────────────
 
 type AnalysisViewProps = {
-  onNavigate: (v: View) => void;
-  result:     AnalysisResult | null;
-  setResult:  React.Dispatch<React.SetStateAction<AnalysisResult | null>>;
+  onNavigate:     (v: View) => void;
+  result:         AnalysisResult | null;
+  setResult:      React.Dispatch<React.SetStateAction<AnalysisResult | null>>;
+  onNavigateHome: () => void;
 };
 
-function AnalysisView({ onNavigate, result, setResult }: AnalysisViewProps) {
+function AnalysisView({ onNavigate, result, setResult, onNavigateHome }: AnalysisViewProps) {
   const [minDepth,        setMinDepth]        = React.useState(1);
   const [minSupport,      setMinSupport]      = React.useState(15);
   const [deltaThreshold,  setDeltaThreshold]  = React.useState(0.15);
@@ -62,19 +63,19 @@ function AnalysisView({ onNavigate, result, setResult }: AnalysisViewProps) {
               </p>
             )}
           </div>
-          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
             <button
               onClick={() => onNavigate("synergy_chart")}
               className="text-orange-400 hover:text-orange-300 border border-orange-700 rounded px-3 py-1 text-sm"
             >
               Synergy Chart →
             </button>
-            <a
-              href="/"
+            <button
+              onClick={onNavigateHome}
               className="text-gray-400 hover:text-white border border-gray-600 rounded px-3 py-1 text-sm"
             >
               ← Home
-            </a>
+            </button>
           </div>
         </div>
 
@@ -161,7 +162,7 @@ function AnalysisView({ onNavigate, result, setResult }: AnalysisViewProps) {
 
 // ─── Root Admin component ─────────────────────────────────────────────────────
 
-export default function Admin() {
+export default function Admin({ onNavigateHome = () => { history.pushState({}, "", "/"); location.reload(); } }: { onNavigateHome?: () => void }) {
   const pathToView = (): View =>
     window.location.pathname.includes("synergy_chart") ? "synergy_chart" : "analysis";
 
@@ -183,5 +184,5 @@ export default function Admin() {
   if (view === "synergy_chart") {
     return <SynergyChart onBack={() => navigate("analysis")} analysisResult={result} />;
   }
-  return <AnalysisView onNavigate={navigate} result={result} setResult={setResult} />;
+  return <AnalysisView onNavigate={navigate} result={result} setResult={setResult} onNavigateHome={onNavigateHome} />;
 }

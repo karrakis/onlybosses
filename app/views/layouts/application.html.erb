@@ -11,6 +11,6 @@
   </head>
 
   <body>
-    <%= yield %>
+    <div id="root" data-available-keywords="<%= @available_keywords.to_json.gsub('"', '&quot;') %>"></div>
   </body>
 </html>

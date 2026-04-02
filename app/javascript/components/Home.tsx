@@ -10,6 +10,7 @@ const StartButton: React.FC<{message: string, onClick: () => void}> = ({message,
 
 interface HomeProps {
     availableKeywords: string[];
+    onNavigate?: (to: string) => void;
 }
 
 interface SimProgress {
@@ -18,7 +19,7 @@ interface SimProgress {
     total: number;
 }
 
-const Home: React.FC<HomeProps> = ({ availableKeywords }) => {
+const Home: React.FC<HomeProps> = ({ availableKeywords, onNavigate }) => {
     const [activeGame, setActiveGame] = useState<boolean>(false);
 
     const [simCount, setSimCount] = useState<number>(10);
@@ -91,12 +92,12 @@ const Home: React.FC<HomeProps> = ({ availableKeywords }) => {
 
             {/* Admin link — lower right, only on home screen */}
             {!activeGame && (
-                <a
-                    href="/admin"
+                <button
+                    onClick={() => onNavigate?.("admin")}
                     className="absolute bottom-4 right-4 z-10 text-xs text-gray-500 hover:text-gray-300 border border-gray-700 hover:border-gray-500 rounded px-2 py-1 bg-black/40 transition-colors"
                 >
                     Admin
-                </a>
+                </button>
             )}
         </div>
     );
