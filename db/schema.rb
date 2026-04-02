@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_12_06_172822) do
+ActiveRecord::Schema[7.0].define(version: 2026_04_01_000005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -71,6 +71,22 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_06_172822) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "depth_snapshots", force: :cascade do |t|
+    t.bigint "run_id", null: false
+    t.integer "depth", null: false
+    t.boolean "reached_next", default: false, null: false
+    t.integer "keyword_ids", default: [], null: false, array: true
+    t.integer "boss_keyword_ids", default: [], null: false, array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["boss_keyword_ids"], name: "index_depth_snapshots_on_boss_keyword_ids", using: :gin
+    t.index ["depth"], name: "index_depth_snapshots_on_depth"
+    t.index ["keyword_ids"], name: "index_depth_snapshots_on_keyword_ids", using: :gin
+    t.index ["reached_next"], name: "index_depth_snapshots_on_reached_next"
+    t.index ["run_id", "depth"], name: "index_depth_snapshots_on_run_id_and_depth", unique: true
+    t.index ["run_id"], name: "index_depth_snapshots_on_run_id"
+  end
+
   create_table "keywords", force: :cascade do |t|
     t.string "name"
     t.string "category"
@@ -80,8 +96,42 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_06_172822) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "modifier_keys", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "category"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_modifier_keys_on_key", unique: true
+  end
+
+  create_table "runs", force: :cascade do |t|
+    t.string "session_id", null: false
+    t.datetime "started_at", default: -> { "now()" }, null: false
+    t.datetime "ended_at"
+    t.integer "final_depth"
+    t.string "outcome"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["session_id"], name: "index_runs_on_session_id"
+    t.check_constraint "outcome::text = ANY (ARRAY['died'::character varying, 'quit'::character varying]::text[])", name: "check_runs_outcome"
+  end
+
+  create_table "snapshot_modifiers", force: :cascade do |t|
+    t.bigint "depth_snapshot_id", null: false
+    t.bigint "modifier_key_id", null: false
+    t.decimal "value", precision: 10, scale: 6, null: false
+    t.string "context", default: "player", null: false
+    t.index ["depth_snapshot_id", "modifier_key_id", "context"], name: "index_snapshot_modifiers_uniqueness", unique: true
+    t.index ["depth_snapshot_id"], name: "index_snapshot_modifiers_on_depth_snapshot_id"
+    t.index ["modifier_key_id"], name: "index_snapshot_modifiers_on_modifier_key_id"
+    t.check_constraint "context::text = ANY (ARRAY['player'::character varying, 'boss'::character varying]::text[])", name: "check_snapshot_modifiers_context"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "boss_keyword_associations", "boss_keywords"
   add_foreign_key "boss_keyword_associations", "bosses"
+  add_foreign_key "depth_snapshots", "runs"
+  add_foreign_key "snapshot_modifiers", "depth_snapshots"
+  add_foreign_key "snapshot_modifiers", "modifier_keys"
 end
