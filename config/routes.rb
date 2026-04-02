@@ -1,6 +1,9 @@
 Rails.application.routes.draw do
   root 'components#index'
-  get  'admin', to: 'admin#index'
+  get  'admin',                  to: 'admin#index'
+  get  'admin/synergy_chart',    to: 'admin#index'
+  get  'admin/analysis_data',    to: 'admin#analysis_data'
+  get  'admin/combo_data',       to: 'admin#combo_data'
   
   post 'take_action', to: 'game#take_action'
   get 'get_player', to: 'game#get_player'

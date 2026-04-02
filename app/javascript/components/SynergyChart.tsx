@@ -1,0 +1,592 @@
+import * as React from "react";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type Section    = { title: string; lines: string[] };
+type SidebarRow = { name: string; delta: number };
+
+type DataPoint = {
+  depth: number; delta: number; support: number; combo_rate: number; baseline: number;
+};
+
+type ComboLine = {
+  id: string; keywords: string[]; context: "player" | "boss";
+  label: string; color: string; data: DataPoint[];
+};
+
+type TooltipState = {
+  svgX: number; svgY: number; line: ComboLine; point: DataPoint;
+};
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const COLORS = [
+  "#f97316", "#3b82f6", "#22c55e", "#a855f7",
+  "#ec4899", "#eab308", "#06b6d4", "#f43f5e",
+];
+
+const SVG_W = 720;
+const SVG_H = 310;
+const M     = { top: 24, right: 24, bottom: 48, left: 66 };
+const CW    = SVG_W - M.left - M.right;
+const CH    = SVG_H - M.top  - M.bottom;
+
+// ─── Scale helpers ────────────────────────────────────────────────────────────
+
+function xPos(depth: number, dMin: number, dMax: number) {
+  if (dMax === dMin) return 0;
+  return ((depth - dMin) / (dMax - dMin)) * CW;
+}
+
+function yPos(delta: number, yMin: number, yMax: number) {
+  if (yMax === yMin) return CH / 2;
+  return CH - ((delta - yMin) / (yMax - yMin)) * CH;
+}
+
+function niceYTicks(yMin: number, yMax: number): number[] {
+  const range = yMax - yMin;
+  const step  = range <= 0.3 ? 0.05 : range <= 0.6 ? 0.1
+              : range <= 1.2 ? 0.2  : range <= 2.0  ? 0.5 : 1.0;
+  const ticks: number[] = [];
+  const start = Math.ceil(yMin / step) * step;
+  for (let v = start; v <= yMax + 1e-9; v = Math.round((v + step) * 10000) / 10000)
+    ticks.push(parseFloat(v.toFixed(4)));
+  return ticks;
+}
+
+function xTicks(dMin: number, dMax: number): number[] {
+  const range = dMax - dMin;
+  const step  = range <= 10 ? 1 : range <= 20 ? 2 : range <= 40 ? 5 : 10;
+  const ticks: number[] = [];
+  for (let v = dMin; v <= dMax; v += step) ticks.push(v);
+  if (ticks[ticks.length - 1] !== dMax) ticks.push(dMax);
+  return ticks;
+}
+
+// ─── Sidebar helpers ──────────────────────────────────────────────────────────
+
+// Parse pandas to_string() rows — columns are separated by 2+ spaces.
+// Combo names may contain " + " (single spaces), so we split on \s{2,}.
+function parseSidebarRows(lines: string[]): SidebarRow[] {
+  return lines.flatMap((line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("keywords") || trimmed.startsWith("(")) return [];
+    const parts = trimmed.split(/\s{2,}/);
+    if (parts.length < 2) return [];
+    const name  = parts[0].trim();
+    const delta = parseFloat(parts[parts.length - 1]);
+    if (!name || isNaN(delta)) return [];
+    return [{ name, delta }];
+  });
+}
+
+function filterSections(
+  sections: Section[],
+  context: "player" | "boss",
+  kind: "synergy" | "anti",
+): Section[] {
+  return sections.filter((s) => {
+    const t      = s.title.toLowerCase();
+    const isAnti = t.includes("anti");
+    return t.includes(context) && t.includes("synerg") && (kind === "anti" ? isAnti : !isAnti);
+  });
+}
+
+function parseCombo(raw: string): string[] {
+  return raw.split(/[+,]/).map((s) => s.trim().toLowerCase()).filter(Boolean);
+}
+
+// ─── CollapsibleSection ───────────────────────────────────────────────────────
+
+function CollapsibleSection({
+  section, onAddCombo, activeKeyNames,
+}: {
+  section: Section;
+  onAddCombo: (name: string) => void;
+  activeKeyNames: Set<string>;
+}) {
+  const [open, setOpen] = React.useState(true);
+  const rows = parseSidebarRows(section.lines);
+
+  // "Player pairs — synergies (…)" → "pairs"
+  const shortTitle = section.title
+    .replace(/\s*\(.*\)/, "")
+    .replace(/^(player|boss)\s*/i, "")
+    .replace(/\s*—.*/, "")
+    .trim() || section.title;
+
+  return (
+    <div className="border border-gray-700 rounded overflow-hidden mb-2 last:mb-0">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-3 py-2 bg-gray-800 hover:bg-gray-700 text-left"
+      >
+        <span className="text-xs font-bold uppercase tracking-wide text-gray-300">
+          {shortTitle}
+        </span>
+        <span className="text-gray-500 text-xs">{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div className="divide-y divide-gray-800/60">
+          {rows.length === 0 ? (
+            <p className="text-gray-600 text-xs px-3 py-2 italic">(none above threshold)</p>
+          ) : (
+            rows.map((row, i) => {
+              const active = activeKeyNames.has(row.name);
+              return (
+                <button
+                  key={i}
+                  onClick={() => onAddCombo(row.name)}
+                  disabled={active}
+                  title={active ? "Already on chart" : `Add "${row.name}" to chart`}
+                  className={`w-full text-left px-3 py-1.5 flex items-center justify-between gap-2
+                    text-xs transition-colors
+                    ${active ? "opacity-40 cursor-default" : "hover:bg-gray-800 cursor-pointer"}`}
+                >
+                  <span className="text-gray-300 truncate">{row.name}</span>
+                  <span className={`shrink-0 font-mono font-bold tabular-nums
+                    ${row.delta >= 0 ? "text-green-400" : "text-red-400"}`}>
+                    {row.delta >= 0 ? "+" : ""}{row.delta.toFixed(3)}
+                  </span>
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── SidebarPanel ─────────────────────────────────────────────────────────────
+
+function SidebarPanel({
+  label, accentColor, sections, onAddCombo, activeKeyNames,
+}: {
+  label: string;
+  accentColor: string;
+  sections: Section[];
+  onAddCombo: (name: string) => void;
+  activeKeyNames: Set<string>;
+}) {
+  return (
+    <div className="bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
+      <div className="px-3 py-2 bg-gray-800 border-b border-gray-700">
+        <span className={`text-xs font-bold uppercase tracking-wide ${accentColor}`}>{label}</span>
+        {sections.length > 0 && (
+          <p className="text-gray-600 text-xs mt-0.5">click row to add to chart</p>
+        )}
+      </div>
+      <div className="p-2 overflow-y-auto max-h-[560px]">
+        {sections.length === 0 ? (
+          <p className="text-gray-600 text-xs px-1 py-4 text-center italic">
+            Run analysis to populate
+          </p>
+        ) : (
+          sections.map((s, i) => (
+            <CollapsibleSection
+              key={i}
+              section={s}
+              onAddCombo={onAddCombo}
+              activeKeyNames={activeKeyNames}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export default function SynergyChart({
+  onBack,
+  analysisResult,
+}: {
+  onBack?: () => void;
+  analysisResult?: { sections: Section[] } | null;
+} = {}) {
+  const [lines,      setLines]      = React.useState<ComboLine[]>([]);
+  const [input,      setInput]      = React.useState("");
+  const [depthMin,   setDepthMin]   = React.useState(1);
+  const [depthMax,   setDepthMax]   = React.useState(20);
+  const [context,    setContext]    = React.useState<"player" | "boss">("player");
+  const [minSupport, setMinSupport] = React.useState(3);
+  const [loading,    setLoading]    = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [error,      setError]      = React.useState<string | null>(null);
+  const [tooltip,    setTooltip]    = React.useState<TooltipState | null>(null);
+
+  const colorIdx = React.useRef(0);
+
+  // Sidebar sections derived from passed-in analysis result, filtered by current context
+  const allSections         = analysisResult?.sections ?? [];
+  const synergySections     = filterSections(allSections, context, "synergy");
+  const antiSynergySections = filterSections(allSections, context, "anti");
+
+  // Combo names already on the chart — used to disable sidebar buttons
+  const activeKeyNames = React.useMemo(
+    () => new Set(lines.map((l) => l.keywords.join(" + "))),
+    [lines],
+  );
+
+  // ── Fetch ──────────────────────────────────────────────────────────────────
+  async function fetchComboData(
+    keywords: string[], ctx: "player" | "boss",
+    dMin: number, dMax: number, support: number,
+  ): Promise<DataPoint[]> {
+    const p = new URLSearchParams();
+    p.append("combos[]", keywords.join(","));
+    p.set("depth_min",   String(dMin));
+    p.set("depth_max",   String(dMax));
+    p.set("context",     ctx);
+    p.set("min_support", String(support));
+    const res  = await fetch(`/admin/combo_data?${p}`);
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+    const json: Array<{ combo: string; data: DataPoint[]; error?: string }> = await res.json();
+    if (!json.length) return [];
+    if (json[0].error) throw new Error(json[0].error);
+    return json[0].data;
+  }
+
+  // ── Add combo — accepts an optional name override for sidebar clicks ───────
+  async function addCombo(overrideName?: string) {
+    const keywords = parseCombo(overrideName ?? input);
+    if (!keywords.length) return;
+    const label = keywords.join(" + ") + ` [${context}]`;
+
+    if (lines.find((l) => l.label === label)) {
+      if (!overrideName) setError(`"${label}" is already on the chart.`);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchComboData(keywords, context, depthMin, depthMax, minSupport);
+      if (!data.length) {
+        setError(
+          `No data for "${keywords.join(" + ")}" ` +
+          `(depth ${depthMin}–${depthMax}, min support ${minSupport}). ` +
+          `Try lowering min support or broadening the depth range.`,
+        );
+        return;
+      }
+      const color = COLORS[colorIdx.current % COLORS.length];
+      colorIdx.current++;
+      setLines((prev) => [
+        ...prev,
+        { id: `${label}:${Date.now()}`, keywords, context, label, color, data },
+      ]);
+      if (!overrideName) setInput("");
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Refresh all ────────────────────────────────────────────────────────────
+  async function refreshAll() {
+    if (!lines.length) return;
+    setRefreshing(true);
+    setError(null);
+    try {
+      const updated = await Promise.all(
+        lines.map(async (line) => ({
+          ...line,
+          data: await fetchComboData(line.keywords, line.context, depthMin, depthMax, minSupport),
+        })),
+      );
+      setLines(updated);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  function removeLine(id: string) {
+    setLines((prev) => prev.filter((l) => l.id !== id));
+  }
+
+  // ── Y domain ───────────────────────────────────────────────────────────────
+  const allDeltas = lines.flatMap((l) => l.data.map((d) => d.delta));
+  const rawYMin   = allDeltas.length ? Math.min(0, ...allDeltas) : -0.4;
+  const rawYMax   = allDeltas.length ? Math.max(0, ...allDeltas) :  0.4;
+  const pad       = Math.max(0.04, (rawYMax - rawYMin) * 0.08);
+  const yMin      = Math.floor((rawYMin - pad) * 100) / 100;
+  const yMax      = Math.ceil( (rawYMax + pad) * 100) / 100;
+  const zeroY     = yPos(0, yMin, yMax);
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  return (
+    <div className="min-h-screen bg-gray-950 text-gray-100 font-mono text-sm p-6">
+      <div className="max-w-screen-xl mx-auto">
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Synergy Chart</h1>
+            <p className="text-gray-500 mt-1 text-xs">
+              conditional delta = combo survival rate − mean(individual rates)
+            </p>
+          </div>
+          {onBack ? (
+            <button
+              onClick={onBack}
+              className="text-gray-400 hover:text-white border border-gray-600 rounded px-3 py-1 text-sm"
+            >
+              ← Admin
+            </button>
+          ) : (
+            <a
+              href="/admin"
+              className="text-gray-400 hover:text-white border border-gray-600 rounded px-3 py-1 text-sm"
+            >
+              ← Admin
+            </a>
+          )}
+        </div>
+
+        {/* Controls */}
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-3 mb-2 flex flex-wrap gap-4 items-end">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-400">Context</label>
+            <select
+              value={context}
+              onChange={(e) => setContext(e.target.value as "player" | "boss")}
+              className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm"
+            >
+              <option value="player">Player keywords</option>
+              <option value="boss">Boss keywords</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-400">Depth min</label>
+            <input type="number" min={1} max={50} value={depthMin}
+              onChange={(e) => setDepthMin(Math.max(1, Number(e.target.value)))}
+              className="w-20 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-400">Depth max</label>
+            <input type="number" min={1} max={50} value={depthMax}
+              onChange={(e) => setDepthMax(Math.min(50, Math.max(1, Number(e.target.value))))}
+              className="w-20 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-400">Min support</label>
+            <input type="number" min={1} max={999} value={minSupport}
+              onChange={(e) => setMinSupport(Math.max(1, Number(e.target.value)))}
+              className="w-20 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm" />
+          </div>
+          {lines.length > 0 && (
+            <button
+              onClick={refreshAll} disabled={refreshing}
+              className="self-end bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white rounded px-3 py-1 text-sm"
+            >
+              {refreshing ? "Refreshing…" : "↺ Refresh all"}
+            </button>
+          )}
+        </div>
+
+        {/* Add combo row */}
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-3 mb-3 flex gap-3 items-center">
+          <input
+            type="text"
+            placeholder="e.g.  spear + lucky   or   skeleton, vampire"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && !loading && addCombo()}
+            className="flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-1.5 text-white text-sm
+                       placeholder-gray-500 focus:outline-none focus:border-orange-500"
+          />
+          <button
+            onClick={() => addCombo()} disabled={loading || !input.trim()}
+            className="bg-orange-600 hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed
+                       text-white rounded px-4 py-1.5 text-sm whitespace-nowrap"
+          >
+            {loading ? "Loading…" : "Add to chart"}
+          </button>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="bg-red-950 border border-red-700 rounded-lg p-3 mb-3 text-red-300 text-xs">
+            {error}
+          </div>
+        )}
+
+        {/* ── Three-column layout ──────────────────────────────────────────── */}
+        {/* xl+  : [synergies] | [chart] | [anti-synergies]                   */}
+        {/* <xl   : [chart], then [synergies] and [anti-synergies] below       */}
+        <div className="flex flex-col xl:flex-row gap-4 items-start">
+
+          {/* Left — synergies (pushed below chart on <xl via order) */}
+          <div className="w-full xl:w-56 2xl:w-64 shrink-0 order-2 xl:order-1">
+            <SidebarPanel
+              label="Synergies"
+              accentColor="text-green-400"
+              sections={synergySections}
+              onAddCombo={(name) => addCombo(name)}
+              activeKeyNames={activeKeyNames}
+            />
+          </div>
+
+          {/* Center — chart + legend */}
+          <div className="flex-1 min-w-0 order-1 xl:order-2">
+            <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 mb-3 overflow-x-auto">
+              {lines.length === 0 ? (
+                <p className="text-gray-500 text-center py-16 text-sm">
+                  Add a combination above, or click a row in the sidebars.
+                </p>
+              ) : (
+                <div className="relative" style={{ width: SVG_W, userSelect: "none" }}>
+                  <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} width={SVG_W} height={SVG_H}
+                    style={{ display: "block", overflow: "visible" }}>
+                    <g transform={`translate(${M.left},${M.top})`}>
+
+                      {/* Y grid + axis labels */}
+                      {niceYTicks(yMin, yMax).map((v) => {
+                        const y = yPos(v, yMin, yMax);
+                        const isZero = Math.abs(v) < 1e-9;
+                        return (
+                          <g key={v}>
+                            <line x1={0} y1={y} x2={CW} y2={y}
+                              stroke={isZero ? "#6b7280" : "#1f2937"}
+                              strokeWidth={isZero ? 1.5 : 1}
+                              strokeDasharray={isZero ? undefined : "4,3"} />
+                            <text x={-8} y={y + 4} textAnchor="end" fontSize={10} fill="#6b7280">
+                              {v >= 0 ? "+" : ""}{v.toFixed(2)}
+                            </text>
+                          </g>
+                        );
+                      })}
+
+                      {/* X ticks */}
+                      {xTicks(depthMin, depthMax).map((v) => {
+                        const x = xPos(v, depthMin, depthMax);
+                        return (
+                          <g key={v}>
+                            <line x1={x} y1={CH} x2={x} y2={CH + 5} stroke="#4b5563" strokeWidth={1} />
+                            <text x={x} y={CH + 16} textAnchor="middle" fontSize={10} fill="#6b7280">{v}</text>
+                          </g>
+                        );
+                      })}
+
+                      <rect x={0} y={0} width={CW} height={CH} fill="none" stroke="#374151" strokeWidth={1} />
+                      <text x={CW / 2} y={CH + 38} textAnchor="middle" fontSize={11} fill="#4b5563">depth</text>
+                      <text transform="rotate(-90)" x={-CH / 2} y={-52}
+                        textAnchor="middle" fontSize={11} fill="#4b5563">conditional delta</text>
+                      <text x={CW + 4} y={zeroY + 4} fontSize={9} fill="#6b7280">0</text>
+
+                      {/* Lines */}
+                      {lines.map((line) => {
+                        if (!line.data.length) return null;
+                        const pts = line.data.map((d) =>
+                          `${xPos(d.depth, depthMin, depthMax).toFixed(1)},${yPos(d.delta, yMin, yMax).toFixed(1)}`
+                        ).join(" ");
+                        return (
+                          <polyline key={line.id} points={pts} fill="none" stroke={line.color}
+                            strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.9} />
+                        );
+                      })}
+
+                      {/* Dots */}
+                      {lines.map((line) =>
+                        line.data.map((d) => {
+                          const cx = xPos(d.depth, depthMin, depthMax);
+                          const cy = yPos(d.delta, yMin, yMax);
+                          return (
+                            <circle key={`${line.id}-${d.depth}`}
+                              cx={cx} cy={cy} r={4}
+                              fill={line.color} stroke="#111827" strokeWidth={1.5}
+                              style={{ cursor: "crosshair" }}
+                              onMouseEnter={() =>
+                                setTooltip({ svgX: M.left + cx, svgY: M.top + cy, line, point: d })
+                              }
+                              onMouseLeave={() => setTooltip(null)}
+                            />
+                          );
+                        })
+                      )}
+                    </g>
+                  </svg>
+
+                  {/* Tooltip */}
+                  {tooltip && (() => {
+                    const flipX = tooltip.svgX > SVG_W * 0.62;
+                    const flipY = tooltip.svgY < 90;
+                    return (
+                      <div
+                        className="absolute bg-gray-800 border border-gray-600 rounded p-2.5 text-xs
+                                   pointer-events-none z-20 shadow-xl"
+                        style={{
+                          left:      flipX ? tooltip.svgX - 14 : tooltip.svgX + 14,
+                          top:       flipY ? tooltip.svgY + 10 : tooltip.svgY - 10,
+                          transform: `${flipX ? "translateX(-100%)" : ""} ${flipY ? "" : "translateY(-100%)"}`,
+                          minWidth:  160,
+                        }}
+                      >
+                        <div className="text-orange-400 font-bold mb-1.5 truncate max-w-[180px]">
+                          {tooltip.line.label}
+                        </div>
+                        <div className="flex flex-col gap-0.5 text-gray-300">
+                          <span>depth: <span className="text-white">{tooltip.point.depth}</span></span>
+                          <span>Δ:{" "}
+                            <span className={tooltip.point.delta >= 0 ? "text-green-400 font-bold" : "text-red-400 font-bold"}>
+                              {tooltip.point.delta >= 0 ? "+" : ""}{tooltip.point.delta.toFixed(3)}
+                            </span>
+                          </span>
+                          <span>combo rate: <span className="text-white">{(tooltip.point.combo_rate * 100).toFixed(1)}%</span></span>
+                          <span>baseline:   <span className="text-white">{(tooltip.point.baseline   * 100).toFixed(1)}%</span></span>
+                          <span>support:    <span className="text-white">{tooltip.point.support}</span></span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+
+            {/* Legend */}
+            {lines.length > 0 && (
+              <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                <div className="text-xs text-gray-500 uppercase tracking-wide mb-3">Active combinations</div>
+                <div className="flex flex-col gap-2">
+                  {lines.map((line) => (
+                    <div key={line.id} className="flex items-center gap-3 group">
+                      <svg width={24} height={12} style={{ flexShrink: 0 }}>
+                        <line x1={0} y1={6} x2={24} y2={6} stroke={line.color} strokeWidth={2.5} strokeLinecap="round" />
+                        <circle cx={12} cy={6} r={3.5} fill={line.color} stroke="#111827" strokeWidth={1} />
+                      </svg>
+                      <span className="text-gray-200 flex-1 text-xs">{line.label}</span>
+                      <span className="text-gray-600 text-xs">{line.data.length} depth{line.data.length !== 1 ? "s" : ""}</span>
+                      <button
+                        onClick={() => removeLine(line.id)}
+                        className="text-gray-600 hover:text-red-400 text-xs ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Remove"
+                      >✕</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right — anti-synergies */}
+          <div className="w-full xl:w-56 2xl:w-64 shrink-0 order-3">
+            <SidebarPanel
+              label="Anti-synergies"
+              accentColor="text-red-400"
+              sections={antiSynergySections}
+              onAddCombo={(name) => addCombo(name)}
+              activeKeyNames={activeKeyNames}
+            />
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
