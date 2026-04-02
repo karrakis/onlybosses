@@ -129,7 +129,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         if (!player) {
             return {
                 summaryRows: [] as Array<{ label: string; value: string }>,
-                detailRows: [] as Array<{ category: string; label: string; value: string }>
+                keywordRows: [] as Array<{ label: string; value: string }>
             };
         }
 
@@ -235,57 +235,30 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             { label: 'Available Spells', value: collectedSpells.length ? collectedSpells.map(formatSpellName).join(', ') : 'None' }
         ];
 
-        const rows: Array<{ category: string; label: string; value: string }> = [
-            { category: 'Core', label: 'Name', value: player.name },
-            { category: 'Progression', label: 'Bosses Defeated', value: String(player.bosses_defeated || 0) },
-            { category: 'Progression', label: 'Total Powers', value: String(player.keywords?.length || 0) },
-            { category: 'Resource', label: 'Life', value: `${Math.round(player.life || 0)} / ${Math.round(player.max_life || 0)}` },
-            { category: 'Resource', label: 'Stamina', value: `${Math.round(player.stamina || 0)} / ${Math.round(player.max_stamina || 0)}` },
-            { category: 'Resource', label: 'Mana', value: `${Math.round(player.mana || 0)} / ${Math.round(player.max_mana || 0)}` },
-            { category: 'Combat', label: 'Base Damage', value: String(player.damage || 0) },
-            { category: 'Recovery', label: 'Turns Since Mana Cost', value: String(player.turns_since_mana_cost || 0) },
-            { category: 'Recovery', label: 'Turns Since Stamina Cost', value: String(player.turns_since_stamina_cost || 0) },
-            { category: 'Combat', label: 'Actions', value: (player.actions || []).join(', ') || 'None' }
-        ];
-
         const keywordRows = (playerKeywordData || []).map((keyword) => ({
-            category: 'Power',
             label: keyword.name,
             value: formatKeywordAttributes(keyword)
         }));
 
         return {
             summaryRows,
-            detailRows: [...rows, ...keywordRows]
+            keywordRows
         };
     }, [player, playerKeywordData, collectedSpells]);
 
-    const filteredSummaryRows = useMemo(() => {
+    const filteredKeywordRows = useMemo(() => {
         const term = statusSearch.trim().toLowerCase();
-        const summaryRows = playerStatusData.summaryRows;
-        if (!term) return summaryRows;
-
-        return summaryRows.filter((row) =>
+        const keywordRows = playerStatusData.keywordRows;
+        if (!term) return keywordRows;
+        return keywordRows.filter((row) =>
             row.label.toLowerCase().includes(term) ||
             row.value.toLowerCase().includes(term)
         );
-    }, [playerStatusData.summaryRows, statusSearch]);
+    }, [playerStatusData.keywordRows, statusSearch]);
 
-    const filteredPlayerStatusRows = useMemo(() => {
-        const term = statusSearch.trim().toLowerCase();
-        const detailRows = playerStatusData.detailRows;
-        if (!term) return detailRows;
-
-        return detailRows.filter((row) =>
-            row.category.toLowerCase().includes(term) ||
-            row.label.toLowerCase().includes(term) ||
-            row.value.toLowerCase().includes(term)
-        );
-    }, [playerStatusData.detailRows, statusSearch]);
-
-    const statusTotalPages = Math.max(1, Math.ceil(filteredPlayerStatusRows.length / STATUS_PAGE_SIZE));
-    const statusPageStart = (statusPage - 1) * STATUS_PAGE_SIZE;
-    const paginatedPlayerStatusRows = filteredPlayerStatusRows.slice(statusPageStart, statusPageStart + STATUS_PAGE_SIZE);
+    const statusTotalPages = Math.max(1, Math.ceil(filteredKeywordRows.length / STATUS_PAGE_SIZE));
+    const keywordPageStart = (statusPage - 1) * STATUS_PAGE_SIZE;
+    const paginatedKeywordRows = filteredKeywordRows.slice(keywordPageStart, keywordPageStart + STATUS_PAGE_SIZE);
 
     useEffect(() => {
         setStatusPage(1);
@@ -1120,74 +1093,73 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
 
                         <input
                             type="text"
-                            placeholder="Search stats, powers, effects..."
+                            placeholder="Search powers..."
                             value={statusSearch}
                             onChange={(e) => setStatusSearch(e.target.value)}
                             className="w-full mb-4 px-4 py-2 rounded bg-gray-900 border border-gray-600 text-white"
                         />
 
-                        <div className="text-sm text-gray-300 mb-3">
-                            Showing detail entries {filteredPlayerStatusRows.length === 0 ? 0 : statusPageStart + 1}-
-                            {Math.min(statusPageStart + STATUS_PAGE_SIZE, filteredPlayerStatusRows.length)} of {filteredPlayerStatusRows.length}
-                        </div>
-
                         <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-                            {filteredSummaryRows.length > 0 && (
-                                <div className="bg-gray-700 border border-cyan-500 rounded-lg px-4 py-3">
-                                    <div className="text-sm uppercase tracking-wide text-cyan-300 mb-2">Player Status</div>
-                                    <div className="space-y-1">
-                                        {filteredSummaryRows.map((row, idx) => (
-                                            <div key={`summary-${row.label}-${idx}`} className="text-sm text-gray-100 break-words">
-                                                <span className="font-semibold">{row.label}:</span> {row.value}
-                                            </div>
-                                        ))}
-                                    </div>
+                            {/* Summary — always shown on page 1, hidden when searching/paginating into keywords */}
+                            {statusPage === 1 && !statusSearch && (
+                                <div className="bg-gray-700 border border-cyan-700 rounded-lg px-4 py-3 space-y-2">
+                                    {playerStatusData.summaryRows.map((row, idx) => (
+                                        <div
+                                            key={`summary-${row.label}-${idx}`}
+                                            className="flex justify-between gap-4"
+                                        >
+                                            <span className="font-semibold text-cyan-300 shrink-0">{row.label}</span>
+                                            <span className="text-gray-100 text-right break-words">{row.value}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
 
-                            {paginatedPlayerStatusRows.length === 0 ? (
-                                <div className="text-gray-400 text-center py-8">No detail entries match your search.</div>
+                            {/* Keywords */}
+                            {paginatedKeywordRows.length === 0 && filteredKeywordRows.length === 0 && statusSearch ? (
+                                <div className="text-gray-400 text-center py-8">No powers match your search.</div>
                             ) : (
-                                paginatedPlayerStatusRows.map((row, idx) => (
+                                paginatedKeywordRows.map((row, idx) => (
                                     <div
-                                        key={`${row.category}-${row.label}-${idx}`}
+                                        key={`keyword-${row.label}-${idx}`}
                                         className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3"
                                     >
-                                        <div className="text-xs uppercase tracking-wide text-cyan-300 mb-1">{row.category}</div>
-                                        <div className="text-lg font-semibold capitalize">{row.label}</div>
+                                        <div className="text-lg font-semibold capitalize mb-1">{row.label}</div>
                                         <div className="text-sm text-gray-200 break-words">{row.value}</div>
                                     </div>
                                 ))
                             )}
                         </div>
 
-                        <div className="mt-4 pt-4 border-t border-gray-600 flex items-center justify-between">
-                            <button
-                                onClick={() => setStatusPage((p) => Math.max(1, p - 1))}
-                                disabled={statusPage <= 1}
-                                className={`px-4 py-2 rounded border ${
-                                    statusPage <= 1
-                                        ? 'bg-gray-700 border-gray-600 text-gray-500 cursor-not-allowed'
-                                        : 'bg-gray-700 border-gray-500 hover:bg-gray-600'
-                                }`}
-                            >
-                                Previous
-                            </button>
-                            <div className="text-sm text-gray-300">
-                                Page {statusPage} / {statusTotalPages}
+                        {statusTotalPages > 1 && (
+                            <div className="mt-4 pt-4 border-t border-gray-600 flex items-center justify-between">
+                                <button
+                                    onClick={() => setStatusPage((p) => Math.max(1, p - 1))}
+                                    disabled={statusPage <= 1}
+                                    className={`px-4 py-2 rounded border ${
+                                        statusPage <= 1
+                                            ? 'bg-gray-700 border-gray-600 text-gray-500 cursor-not-allowed'
+                                            : 'bg-gray-700 border-gray-500 hover:bg-gray-600'
+                                    }`}
+                                >
+                                    Previous
+                                </button>
+                                <div className="text-sm text-gray-300">
+                                    Page {statusPage} / {statusTotalPages}
+                                </div>
+                                <button
+                                    onClick={() => setStatusPage((p) => Math.min(statusTotalPages, p + 1))}
+                                    disabled={statusPage >= statusTotalPages}
+                                    className={`px-4 py-2 rounded border ${
+                                        statusPage >= statusTotalPages
+                                            ? 'bg-gray-700 border-gray-600 text-gray-500 cursor-not-allowed'
+                                            : 'bg-gray-700 border-gray-500 hover:bg-gray-600'
+                                    }`}
+                                >
+                                    Next
+                                </button>
                             </div>
-                            <button
-                                onClick={() => setStatusPage((p) => Math.min(statusTotalPages, p + 1))}
-                                disabled={statusPage >= statusTotalPages}
-                                className={`px-4 py-2 rounded border ${
-                                    statusPage >= statusTotalPages
-                                        ? 'bg-gray-700 border-gray-600 text-gray-500 cursor-not-allowed'
-                                        : 'bg-gray-700 border-gray-500 hover:bg-gray-600'
-                                }`}
-                            >
-                                Next
-                            </button>
-                        </div>
+                        )}
                     </div>
                 </div>
             )}
