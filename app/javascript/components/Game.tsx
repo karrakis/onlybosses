@@ -453,11 +453,9 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             const updatedKeywords = bossKeywords.filter(k => k !== selectedKeyword);
 
             // Add two new random keywords from available keywords (excluding boss's current keywords)
-            const unusedKeywords = availableKeywords.filter(k => {
-                if (updatedKeywords.includes(k)) return false;
-                const kData = allKeywordsData.find(kw => kw.name === k);
-                return !kData || kData.rarity <= nextDepth;
-            });
+            const unusedKeywords = allKeywordsData
+                .filter(kw => !updatedKeywords.includes(kw.name) && kw.rarity <= nextDepth)
+                .map(kw => kw.name);
             
             // Add 2 random new keywords
             for (let i = 0; i < 2 && unusedKeywords.length > 0; i++) {
@@ -504,11 +502,9 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             // Boss keywords evolve: add 2 new keywords (nothing removed since player didn't absorb)
             // Rarity cap = next depth
             const updatedKeywords = [...bossKeywords];
-            const unusedKeywords = availableKeywords.filter(k => {
-                if (updatedKeywords.includes(k)) return false;
-                const kData = allKeywordsData.find(kw => kw.name === k);
-                return !kData || kData.rarity <= nextDepth;
-            });
+            const unusedKeywords = allKeywordsData
+                .filter(kw => !updatedKeywords.includes(kw.name) && kw.rarity <= nextDepth)
+                .map(kw => kw.name);
             for (let i = 0; i < 2 && unusedKeywords.length > 0; i++) {
                 const randomIndex = Math.floor(Math.random() * unusedKeywords.length);
                 const newKeyword = unusedKeywords.splice(randomIndex, 1)[0];
