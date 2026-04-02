@@ -30,13 +30,13 @@ export const PlayerService = {
         return response.json();
     },
     
-    async addKeyword(keyword: string): Promise<Player> {
+    async addKeyword(keyword: string, depth?: number): Promise<Player> {
         const response = await fetch('/add_keyword', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ keyword }),
+            body: JSON.stringify({ keyword, depth }),
         });
         
         if (!response.ok) {
@@ -46,13 +46,13 @@ export const PlayerService = {
         return response.json();
     },
 
-    async removeKeyword(keyword: string): Promise<Player> {
+    async removeKeyword(keyword: string, depth?: number): Promise<Player> {
         const response = await fetch('/remove_keyword', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ keyword }),
+            body: JSON.stringify({ keyword, depth }),
         });
 
         if (!response.ok) {
@@ -62,12 +62,21 @@ export const PlayerService = {
         return response.json();
     },
     
-    async resetPlayer(): Promise<Player> {
+    async recordSnapshot(depth: number): Promise<void> {
+        await fetch('/record_snapshot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ depth }),
+        });
+    },
+
+    async resetPlayer(outcome?: string): Promise<Player> {
         const response = await fetch('/reset_player', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
+            body: JSON.stringify({ outcome }),
         });
         
         if (!response.ok) {

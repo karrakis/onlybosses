@@ -7,6 +7,7 @@ Rails.application.routes.draw do
   post 'reset_player', to: 'game#reset_player'
   post 'add_keyword', to: 'game#add_keyword'
   post 'remove_keyword', to: 'game#remove_keyword'
+  post 'record_snapshot', to: 'game#record_snapshot'
   post 'set_boss', to: 'game#set_boss'
   
   namespace :api do

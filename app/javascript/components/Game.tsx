@@ -372,8 +372,8 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     };
 
     const handlePlayerDeath = async () => {
-        // Reset player on backend
-        await PlayerService.resetPlayer();
+        // Reset player on backend, recording the run outcome
+        await PlayerService.resetPlayer('died');
         onExit();
     };
     
@@ -413,8 +413,20 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             
             // Load the first boss with random keywords
             const generatedBoss = await BossService.generateBoss(selectedKeywords);
+
+            // Store the boss in the session before recording the snapshot so
+            // record_snapshot can read boss keyword IDs from get_current_boss
+            await fetch('/set_boss', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ boss: generatedBoss }),
+            });
+
+            // Record depth-1 snapshot now that player keywords and boss are both known
+            await PlayerService.recordSnapshot(1);
+
             setBoss(generatedBoss);
-            
+
             // If image is still generating, poll for updates
             if (generatedBoss.image_status === 'pending' || generatedBoss.image_status === 'generating') {
                 pollForImage(generatedBoss.id);
@@ -432,15 +444,15 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const handleKeywordSelection = async (selectedKeyword: string) => {
         try {
             // Add selected keyword to player on backend and level up
-            const updatedPlayer = await PlayerService.addKeyword(selectedKeyword);
+            // Pass nextDepth so the backend records a descent snapshot
+            const nextDepth = depth + 1;
+            const updatedPlayer = await PlayerService.addKeyword(selectedKeyword, nextDepth);
             setPlayer(updatedPlayer);
-            
+
             // Remove selected keyword from boss keywords
             const updatedKeywords = bossKeywords.filter(k => k !== selectedKeyword);
-            
+
             // Add two new random keywords from available keywords (excluding boss's current keywords)
-            // Rarity cap = next depth (depth + 1 because we're about to increment)
-            const nextDepth = depth + 1;
             const unusedKeywords = availableKeywords.filter(k => {
                 if (updatedKeywords.includes(k)) return false;
                 const kData = allKeywordsData.find(kw => kw.name === k);
@@ -484,12 +496,13 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const handleRemoveKeywordSelection = async (keywordToRemove: string) => {
         try {
             // Remove selected keyword from player on backend and level up
-            const updatedPlayer = await PlayerService.removeKeyword(keywordToRemove);
+            // Pass nextDepth so the backend records a descent snapshot
+            const nextDepth = depth + 1;
+            const updatedPlayer = await PlayerService.removeKeyword(keywordToRemove, nextDepth);
             setPlayer(updatedPlayer);
 
             // Boss keywords evolve: add 2 new keywords (nothing removed since player didn't absorb)
             // Rarity cap = next depth
-            const nextDepth = depth + 1;
             const updatedKeywords = [...bossKeywords];
             const unusedKeywords = availableKeywords.filter(k => {
                 if (updatedKeywords.includes(k)) return false;
@@ -865,7 +878,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     }
 
     return (<div className="w-screen h-screen flex flex-col items-center justify-center bg-transparent text-white relative">
-            <button className="z-10 absolute top-4 right-4 border border-white rounded px-4 py-2" onClick={onExit}>Surrender</button>
+            <button className="z-10 absolute top-4 right-4 border border-white rounded px-4 py-2" onClick={async () => { await PlayerService.resetPlayer('quit'); onExit(); }}>Surrender</button>
 
             {/* Depth counter */}
             {player && (() => {

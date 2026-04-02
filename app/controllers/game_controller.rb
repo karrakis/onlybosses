@@ -21,8 +21,10 @@ class GameController < ApplicationController
   
   # POST /reset_player
   def reset_player
+    outcome = params[:outcome]
+    SnapshotService.close_run(session, outcome || 'quit') if session[:run_id]
     PlayerFactory.reset_player(session)
-    session[:current_boss] = nil  # Clear boss from session
+    session[:current_boss] = nil
     player = PlayerFactory.get_player(session)
     render json: player
   end
@@ -42,21 +44,33 @@ class GameController < ApplicationController
   # POST /add_keyword
   def add_keyword
     keyword = params[:keyword]
-    player = PlayerFactory.get_player(session)
+    depth   = params[:depth].to_i
+    player  = PlayerFactory.get_player(session)
     PlayerFactory.add_keyword(player, keyword)
     PlayerFactory.level_up(player)
     PlayerFactory.save_player(session, player)
+    SnapshotService.record_snapshot(session, player, get_current_boss, depth) if depth > 0
     render json: player
   end
 
   # POST /remove_keyword
   def remove_keyword
     keyword = params[:keyword]
-    player = PlayerFactory.get_player(session)
+    depth   = params[:depth].to_i
+    player  = PlayerFactory.get_player(session)
     PlayerFactory.remove_keyword(player, keyword)
     PlayerFactory.level_up(player)
     PlayerFactory.save_player(session, player)
+    SnapshotService.record_snapshot(session, player, get_current_boss, depth) if depth > 0
     render json: player
+  end
+
+  # POST /record_snapshot
+  def record_snapshot
+    depth  = params[:depth].to_i
+    player = PlayerFactory.get_player(session)
+    SnapshotService.record_snapshot(session, player, get_current_boss, depth) if depth > 0
+    render json: { success: true }
   end
   
   # POST /take_action
