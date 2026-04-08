@@ -74,6 +74,11 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const [initialKeywordOptions, setInitialKeywordOptions] = useState<any[]>([]);
     const [selectedInitialKeywords, setSelectedInitialKeywords] = useState<string[]>([]);
 
+    // Pre-rolled keywords that are guaranteed to appear on the boss at TIER_UP_DEPTH.
+    // Excluded from normal rotation until then so the player can plan around them.
+    const [tieredKeywords, setTieredKeywords] = useState<string[]>([]);
+    const TIER_UP_DEPTH = 5;
+
     useEffect(() => {
         if (boss) {
             // Update boss keywords from loaded boss
@@ -332,7 +337,31 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 const shuffled = rarity1Keywords.sort(() => 0.5 - Math.random());
                 const selectedOptions = shuffled.slice(0, 5);
                 setInitialKeywordOptions(selectedOptions);
-                
+
+                // Pre-roll the 2 keywords destined for TIER_UP_DEPTH using the same
+                // rarity-budget logic applied at descent time, so the pair respects
+                // the additive cap (max(2, 2*floor(D/5)+1) — at depth 5 that's 3,
+                // meaning e.g. R2+R1 but not R2+R2).
+                const tierMaxRarity = Math.floor(TIER_UP_DEPTH / 5) + 1;
+                const tierRarityCap = Math.max(2, 2 * Math.floor(TIER_UP_DEPTH / 5) + 1);
+                const tierPool = [...allKeywords]
+                    .filter((k: any) =>
+                        (k.rarity - 1) * 5 <= TIER_UP_DEPTH &&
+                        k.rarity <= tierMaxRarity
+                    )
+                    .sort(() => 0.5 - Math.random());
+
+                const rolledTiered: string[] = [];
+                let tierBudget = tierRarityCap;
+                for (const k of tierPool) {
+                    if (rolledTiered.length >= 2) break;
+                    if (k.rarity <= tierBudget) {
+                        rolledTiered.push(k.name);
+                        tierBudget -= k.rarity;
+                    }
+                }
+                setTieredKeywords(rolledTiered);
+
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load game');
             } finally {
@@ -452,16 +481,44 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             // Remove selected keyword from boss keywords
             const updatedKeywords = bossKeywords.filter(k => k !== selectedKeyword);
 
-            // Add two new random keywords from available keywords (excluding boss's current keywords)
-            const unusedKeywords = allKeywordsData
-                .filter(kw => !updatedKeywords.includes(kw.name) && kw.rarity <= nextDepth)
-                .map(kw => kw.name);
-            
-            // Add 2 random new keywords
-            for (let i = 0; i < 2 && unusedKeywords.length > 0; i++) {
-                const randomIndex = Math.floor(Math.random() * unusedKeywords.length);
-                const newKeyword = unusedKeywords.splice(randomIndex, 1)[0];
-                updatedKeywords.push(newKeyword);
+            // At tier-up depth, inject the pre-rolled tiered keywords instead of random rolls.
+            // Otherwise, roll new keywords respecting the tier threshold and additive rarity cap.
+            let addedCount = 0;
+            if (nextDepth >= TIER_UP_DEPTH && tieredKeywords.length > 0) {
+                for (const kw of tieredKeywords) {
+                    if (!updatedKeywords.includes(kw)) {
+                        updatedKeywords.push(kw);
+                        addedCount++;
+                    }
+                }
+                setTieredKeywords([]);
+            }
+
+            if (addedCount < 2) {
+                // Tier threshold: rarity R unlocks at depth (R-1)*5
+                const maxRarity = Math.floor(nextDepth / 5) + 1;
+                // Additive rarity cap: combined rarity of the 2 new keywords cannot exceed this
+                const rarityCap = Math.max(2, 2 * Math.floor(nextDepth / 5) + 1);
+
+                const candidatePool = allKeywordsData
+                    .filter(kw =>
+                        !updatedKeywords.includes(kw.name) &&
+                        !tieredKeywords.includes(kw.name) &&
+                        (kw.rarity - 1) * 5 <= nextDepth &&
+                        kw.rarity <= maxRarity
+                    )
+                    .sort(() => 0.5 - Math.random());
+
+                let rarityBudget = rarityCap;
+                while (addedCount < 2 && candidatePool.length > 0) {
+                    const eligible = candidatePool.filter(kw => kw.rarity <= rarityBudget);
+                    if (eligible.length === 0) break;
+                    const chosen = eligible[0];
+                    candidatePool.splice(candidatePool.indexOf(chosen), 1);
+                    updatedKeywords.push(chosen.name);
+                    rarityBudget -= chosen.rarity;
+                    addedCount++;
+                }
             }
             
             setBossKeywords(updatedKeywords);
@@ -499,16 +556,44 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             const updatedPlayer = await PlayerService.removeKeyword(keywordToRemove, nextDepth);
             setPlayer(updatedPlayer);
 
-            // Boss keywords evolve: add 2 new keywords (nothing removed since player didn't absorb)
-            // Rarity cap = next depth
+            // Boss keywords evolve: add new keywords (nothing removed since player didn't absorb).
+            // At tier-up depth, inject pre-rolled tiered keywords; otherwise use rarity-capped rolling.
             const updatedKeywords = [...bossKeywords];
-            const unusedKeywords = allKeywordsData
-                .filter(kw => !updatedKeywords.includes(kw.name) && kw.rarity <= nextDepth)
-                .map(kw => kw.name);
-            for (let i = 0; i < 2 && unusedKeywords.length > 0; i++) {
-                const randomIndex = Math.floor(Math.random() * unusedKeywords.length);
-                const newKeyword = unusedKeywords.splice(randomIndex, 1)[0];
-                updatedKeywords.push(newKeyword);
+            let addedCount = 0;
+
+            if (nextDepth >= TIER_UP_DEPTH && tieredKeywords.length > 0) {
+                for (const kw of tieredKeywords) {
+                    if (!updatedKeywords.includes(kw)) {
+                        updatedKeywords.push(kw);
+                        addedCount++;
+                    }
+                }
+                setTieredKeywords([]);
+            }
+
+            if (addedCount < 2) {
+                const maxRarity = Math.floor(nextDepth / 5) + 1;
+                const rarityCap = Math.max(2, 2 * Math.floor(nextDepth / 5) + 1);
+
+                const candidatePool = allKeywordsData
+                    .filter(kw =>
+                        !updatedKeywords.includes(kw.name) &&
+                        !tieredKeywords.includes(kw.name) &&
+                        (kw.rarity - 1) * 5 <= nextDepth &&
+                        kw.rarity <= maxRarity
+                    )
+                    .sort(() => 0.5 - Math.random());
+
+                let rarityBudget = rarityCap;
+                while (addedCount < 2 && candidatePool.length > 0) {
+                    const eligible = candidatePool.filter(kw => kw.rarity <= rarityBudget);
+                    if (eligible.length === 0) break;
+                    const chosen = eligible[0];
+                    candidatePool.splice(candidatePool.indexOf(chosen), 1);
+                    updatedKeywords.push(chosen.name);
+                    rarityBudget -= chosen.rarity;
+                    addedCount++;
+                }
             }
 
             setBossKeywords(updatedKeywords);
@@ -855,6 +940,27 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                         })}
                     </div>
                     
+                    {tieredKeywords.length > 0 && (
+                        <div className="mb-8 p-4 border border-yellow-700 bg-yellow-900 bg-opacity-20 rounded-lg">
+                            <h3 className="text-lg font-bold text-yellow-400 mb-1">Destined for Depth {TIER_UP_DEPTH}</h3>
+                            <p className="text-sm text-gray-400 mb-3">
+                                These keywords are pre-ordained to join the boss at depth {TIER_UP_DEPTH}. They will not appear before then — use that time to prepare.
+                            </p>
+                            <div className="grid grid-cols-2 gap-3">
+                                {tieredKeywords.map(kwName => {
+                                    const kw = allKeywordsData.find((k: any) => k.name === kwName);
+                                    return kw ? (
+                                        <div key={kwName} className="p-3 border border-yellow-700 rounded bg-gray-800">
+                                            <div className="font-bold capitalize">{kw.name}</div>
+                                            <div className="text-xs text-gray-400">{kw.category} · Rarity {kw.rarity}</div>
+                                            <div className="text-xs text-gray-300 mt-1">{formatKeywordAttributes(kw)}</div>
+                                        </div>
+                                    ) : null;
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="flex justify-center">
                         <button
                             onClick={handleInitialKeywordConfirm}
@@ -936,7 +1042,20 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                     </div>
                     <div id="center-panel" className="flex-1 min-w-0 h-full flex flex-col items-center justify-center">
                     </div>
-                    <div id="right-panel" className="flex-[2] min-w-0 h-full flex flex-col items-center justify-end p-4">
+                    <div id="right-panel" className="flex-[2] min-w-0 h-full flex flex-col items-center justify-end p-4 relative">
+                        {/* Tier-up countdown — upper right of boss area */}
+                        {tieredKeywords.length > 0 && (
+                            <div className="absolute top-2 right-2 text-right text-sm border border-yellow-700 bg-gray-900 bg-opacity-90 rounded-lg px-3 py-2 max-w-[190px] z-10">
+                                <div className="text-yellow-400 font-semibold mb-1">
+                                    {depth < TIER_UP_DEPTH
+                                        ? `${TIER_UP_DEPTH - depth} descent${TIER_UP_DEPTH - depth === 1 ? '' : 's'} until:`
+                                        : 'Arriving now:'}
+                                </div>
+                                {tieredKeywords.map(kw => (
+                                    <div key={kw} className="text-gray-200 capitalize">{kw}</div>
+                                ))}
+                            </div>
+                        )}
                         {loading && <div className="text-gray-400">Loading boss...</div>}
                         {error && <div className="text-red-400">Error: {error}</div>}
                         {boss && (
