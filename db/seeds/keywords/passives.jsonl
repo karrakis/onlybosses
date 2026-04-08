@@ -8,9 +8,9 @@
 {"name":"lucky","category":"passive","rarity":1,"attributes":{"damage_amplification":1.02}}
 {"name":"versatile","category":"passive","rarity":1,"attributes":{"multipliers":{"life":1.05,"stamina":1.05,"mana":1.05}}}
 {"name":"block","category":"passive","rarity":1,"attributes":{"damage_reduction_by_type":{"physical":0.9}}}
-{"name":"burn","category":"passive","rarity":2,"attributes":{"damage_output_by_type":{"fire":1.03}}}
-{"name":"chill","category":"passive","rarity":2,"attributes":{"damage_output_by_type":{"ice":1.03}}}
-{"name":"shock","category":"passive","rarity":2,"attributes":{"damage_output_by_type":{"lightning":1.03}}}
+{"name":"burn","category":"passive","rarity":2,"attributes":{"damage_output_by_type":{"fire":1.15}}}
+{"name":"chill","category":"passive","rarity":2,"attributes":{"damage_output_by_type":{"ice":1.15}}}
+{"name":"shock","category":"passive","rarity":2,"attributes":{"damage_output_by_type":{"lightning":1.15}}}
 {"name":"heartless","category":"passive","rarity":2,"attributes":{"damage_reduction_by_type":{"physical":0.9}}}
 {"name":"towering","category":"passive","rarity":2,"attributes":{"multipliers":{"life":1.1}}}
-{"name":"nimble","category":"passive","rarity":2,"attributes":{"multipliers":{"stamina":1.1},"damage_output_by_type":{"physical":1.02}}}
+{"name":"nimble","category":"passive","rarity":2,"attributes":{"multipliers":{"stamina":1.1},"damage_output_by_type":{"physical":1.2}}}

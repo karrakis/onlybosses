@@ -246,7 +246,7 @@ class GameController < ApplicationController
     'fire_bolt'        => { 'magic'     => 14 },
     'firebolt'         => { 'magic'     => 14 },
     'lightning_strike' => { 'lightning' => 15 },
-    'light_bolt'       => { 'holy'      => 12 }
+    'light_bolt'       => { 'light'     => 12 }
   }.freeze
 
   def choose_boss_action(game_status)
@@ -381,6 +381,8 @@ class GameController < ApplicationController
         base_damage = 14
       when 'lightning_strike'
         base_damage = 15
+      when 'light_bolt'
+        base_damage = 12
       else
         base_damage = 12
       end
@@ -394,7 +396,7 @@ class GameController < ApplicationController
 
     game_status[mana_key] -= mana_cost
 
-    ability_damage = { 'magic' => base_damage }
+    ability_damage = spell_name == 'light_bolt' ? { 'light' => base_damage } : { 'magic' => base_damage }
 
     attacker_data = game_status[action_taker]
     defender_data = game_status[target]
