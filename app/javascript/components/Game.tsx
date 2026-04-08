@@ -800,6 +800,22 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         if (attrs.passives && attrs.passives.length > 0) {
             parts.push(`Passive: ${attrs.passives.join(', ')}`);
         }
+
+        if (typeof attrs.damage_amplification === 'number' && attrs.damage_amplification !== 1.0) {
+            parts.push(`+${((attrs.damage_amplification - 1) * 100).toFixed(0)}% all damage dealt`);
+        }
+
+        if (typeof attrs.lifesteal === 'number') {
+            parts.push(`${(attrs.lifesteal * 100).toFixed(0)}% lifesteal`);
+        }
+
+        if (attrs.life_resource) {
+            parts.push(`Life resource: ${attrs.life_resource}`);
+        }
+
+        if (typeof attrs.mana_regen_multiplier === 'number') {
+            parts.push(`${(attrs.mana_regen_multiplier * 100).toFixed(0)}% mana regen`);
+        }
         
         return parts.join(' • ') || 'No special attributes';
     }
@@ -895,6 +911,22 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                     }, [])}
                 </span>
             );
+        }
+
+        if (typeof attrs.damage_amplification === 'number' && attrs.damage_amplification !== 1.0) {
+            parts.push(`+${((attrs.damage_amplification - 1) * 100).toFixed(0)}% all damage dealt`);
+        }
+
+        if (typeof attrs.lifesteal === 'number') {
+            parts.push(`${(attrs.lifesteal * 100).toFixed(0)}% lifesteal`);
+        }
+
+        if (attrs.life_resource) {
+            parts.push(`Life resource: ${attrs.life_resource}`);
+        }
+
+        if (typeof attrs.mana_regen_multiplier === 'number') {
+            parts.push(`${(attrs.mana_regen_multiplier * 100).toFixed(0)}% mana regen`);
         }
         
         if (parts.length === 0) return 'No special attributes';
