@@ -106,7 +106,13 @@ class GameController < ApplicationController
     player_mana_turn_start = game_status['playerMana']
     player_stamina_turn_start = game_status['playerStamina']
     boss_mana_turn_start = game_status['bossMana']
-    
+
+    # Override player action if previous turn set a forced follow-up (e.g. smash → guard)
+    if session[:player_forced_next_action]
+      base_action    = session.delete(:player_forced_next_action)
+      action_payload = nil
+    end
+
     # Process player action
     if respond_to?(base_action, true)
       if base_action == 'cast'
@@ -114,7 +120,12 @@ class GameController < ApplicationController
       else
         game_status = send(base_action, game_status, 'player', 'boss')
       end
-      
+
+      # Persist forced next action to session if the player action set one
+      if game_status['playerForcedNextAction']
+        session[:player_forced_next_action] = game_status.delete('playerForcedNextAction')
+      end
+
       # Capture player state after player's action (for showing lifesteal)
       player_after_player_action = player.deep_dup
       player_after_player_action['life'] = game_status['playerLife']
@@ -138,7 +149,11 @@ class GameController < ApplicationController
       
       # Boss takes a turn in response (if boss is still alive)
       if boss_current_life && boss_current_life > 0
-        boss_action = choose_boss_action(game_status)
+        boss_action = if session[:boss_forced_next_action]
+          session.delete(:boss_forced_next_action)
+        else
+          choose_boss_action(game_status)
+        end
         
         if boss_action == 'cast' || boss_action.start_with?('cast:') || respond_to?(boss_action, true)
           boss_stamina_before = game_status['bossStamina']
@@ -153,7 +168,12 @@ class GameController < ApplicationController
           boss_mana_cost = game_status['bossMana'] < boss_mana_turn_start
           boss_stamina_cost = game_status['bossStamina'] < boss_stamina_before
           game_status = apply_regeneration(game_status, 'boss', mana_cost: boss_mana_cost, stamina_cost: boss_stamina_cost)
-          
+
+          # Persist boss forced next action if set
+          if game_status['bossForcedNextAction']
+            session[:boss_forced_next_action] = game_status.delete('bossForcedNextAction')
+          end
+
           # Update player state in session after boss action
           player['life'] = game_status['playerLife']
           player['stamina'] = game_status['playerStamina']
@@ -191,7 +211,8 @@ class GameController < ApplicationController
           playerAction: action_name,
           bossAction: boss_action,
           gameState: game_status,
-          turnToken: new_token
+          turnToken: new_token,
+          forcedPlayerAction: session[:player_forced_next_action]
         }
       else
         # Boss is defeated, no boss action
@@ -208,19 +229,23 @@ class GameController < ApplicationController
 
         PlayerFactory.save_player(session, player)
         save_current_boss(boss)
-        
+
+        # Boss died — the cost of smash is absorbed, no combat turn to guard against
+        session.delete(:player_forced_next_action)
+
         # Update game_status with latest data (player needs symbol keys for frontend)
         game_status['player'] = player
         game_status['boss'] = boss
-        
+
         new_token = SecureRandom.uuid
         session[:turn_token] = new_token
-        
+
         result = {
           playerAction: action_name,
           bossAction: nil,
           gameState: game_status,
-          turnToken: new_token
+          turnToken: new_token,
+          forcedPlayerAction: nil
         }
       end
       
@@ -286,6 +311,21 @@ class GameController < ApplicationController
         dmg = DamageCalculator.calculate_damage(boss_data, player_data, { 'magic' => 12 })[:total_damage]
         candidates << { action: 'cast', damage: dmg }
       end
+    end
+
+    # Physical special abilities (whirlwind, smash, stab, cleave, piercing_arrow, etc.)
+    # Looked up dynamically so any future creature with these abilities is handled automatically.
+    boss_abilities.each do |ability|
+      next if %w[cast attack guard].include?(ability)
+      attack_kw = BossKeyword.find_by(name: ability, category: 'attack')
+      next unless attack_kw
+      attrs          = attack_kw.properties || {}
+      stamina_needed = (attrs['stamina_cost'] || 10).to_f
+      next unless boss_stamina >= stamina_needed
+      hit_count = (attrs['hit_count'] || 1).to_i
+      base_dmg  = attrs['base_damage_by_type'] || { 'physical' => 10 }
+      single_dmg = DamageCalculator.calculate_damage(boss_data, player_data, base_dmg)[:total_damage]
+      candidates << { action: ability, damage: single_dmg * hit_count }
     end
 
     # Pick highest expected damage; fall back to guard if nothing available
@@ -367,6 +407,82 @@ class GameController < ApplicationController
     # Guard costs no stamina, halves incoming damage this turn, and grants +5 stamina regen
     game_status["#{action_taker}Guarding"] = true
     game_status["#{action_taker}StaminaRegenBonus"] = 5
+    game_status
+  end
+
+  def stab(game_status, action_taker = 'player', target = 'boss')
+    execute_physical_attack(game_status, action_taker, target, 'stab')
+  end
+
+  def whirlwind(game_status, action_taker = 'player', target = 'boss')
+    execute_physical_attack(game_status, action_taker, target, 'whirlwind')
+  end
+
+  def cleave(game_status, action_taker = 'player', target = 'boss')
+    execute_physical_attack(game_status, action_taker, target, 'cleave')
+  end
+
+  def smash(game_status, action_taker = 'player', target = 'boss')
+    execute_physical_attack(game_status, action_taker, target, 'smash')
+  end
+
+  def piercing_arrow(game_status, action_taker = 'player', target = 'boss')
+    execute_physical_attack(game_status, action_taker, target, 'piercing_arrow')
+  end
+
+  # Data-driven physical attack: reads hit_count, base_damage_by_type, stamina_cost, and
+  # force_next_action from the attack-category keyword entry in the database.
+  def execute_physical_attack(game_status, action_taker, target, ability_name)
+    attack_kw = BossKeyword.find_by(name: ability_name, category: 'attack')
+    return game_status unless attack_kw
+
+    attrs        = attack_kw.properties || {}
+    stamina_cost = (attrs['stamina_cost'] || 10).to_i
+    hit_count    = (attrs['hit_count']    || 1).to_i
+    base_damage  = attrs['base_damage_by_type'] || { 'physical' => 10 }
+    force_next   = attrs['force_next_action']
+
+    stamina_key = "#{action_taker}Stamina"
+    return game_status if game_status[stamina_key].nil? || game_status[stamina_key] < stamina_cost
+
+    game_status[stamina_key] -= stamina_cost
+
+    attacker_data = game_status[action_taker]
+    defender_data = game_status[target]
+
+    # Resolve lifesteal and attacker life resource once; shared across all hits
+    lifesteal_amount       = 0
+    attacker_life_resource = 'life'
+    (attacker_data['keywords'] || []).each do |kw_name|
+      kw = BossKeyword.find_by(name: kw_name)
+      next unless kw
+      lifesteal_amount       += kw.properties['lifesteal'].to_f if kw.properties['lifesteal']
+      attacker_life_resource  = kw.properties['life_resource']  if kw.properties['life_resource']
+    end
+
+    hit_count.times do
+      damage_result = DamageCalculator.calculate_damage(attacker_data, defender_data, base_damage.dup)
+      hit_damage    = damage_result[:total_damage].ceil
+      life_resource = damage_result[:life_resource]
+
+      hit_damage = (hit_damage * 0.5).ceil if game_status["#{target}Guarding"]
+
+      resource_key = "#{target}#{life_resource.capitalize}"
+      game_status[resource_key] = [game_status[resource_key] - hit_damage, 0].max
+
+      next unless lifesteal_amount > 0
+
+      healing               = (hit_damage * lifesteal_amount).ceil
+      attacker_resource_key = "#{action_taker}#{attacker_life_resource.capitalize}"
+      attacker_max_key      = "max_#{attacker_life_resource}"
+      game_status[attacker_resource_key] += healing
+      if attacker_data[attacker_max_key]
+        game_status[attacker_resource_key] = [game_status[attacker_resource_key], attacker_data[attacker_max_key]].min
+      end
+    end
+
+    game_status["#{action_taker}ForcedNextAction"] = force_next if force_next
+
     game_status
   end
 

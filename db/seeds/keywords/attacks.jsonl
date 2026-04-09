@@ -1,0 +1,5 @@
+{"name":"stab","category":"attack","rarity":1,"attributes":{"stamina_cost":8,"base_damage_by_type":{"piercing":9},"hit_count":1}}
+{"name":"whirlwind","category":"attack","rarity":1,"attributes":{"stamina_cost":15,"base_damage_by_type":{"physical":5},"hit_count":4}}
+{"name":"cleave","category":"attack","rarity":1,"attributes":{"stamina_cost":12,"base_damage_by_type":{"slashing":12},"hit_count":1}}
+{"name":"smash","category":"attack","rarity":2,"attributes":{"stamina_cost":20,"base_damage_by_type":{"blunt":30},"hit_count":1,"force_next_action":"guard"}}
+{"name":"piercing_arrow","category":"attack","rarity":1,"attributes":{"stamina_cost":10,"base_damage_by_type":{"piercing":10},"hit_count":1}}

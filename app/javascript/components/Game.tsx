@@ -63,6 +63,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const [spellSearch, setSpellSearch] = useState<string>('');
     const [favoriteSpells, setFavoriteSpells] = useState<string[]>([]);
     const [actionBarSpells, setActionBarSpells] = useState<string[]>([]);
+    const [forcedPlayerAction, setForcedPlayerAction] = useState<string | null>(null);
     
     // Keyword data for death checks
     const [allKeywordsData, setAllKeywordsData] = useState<any[]>([]);
@@ -116,7 +117,16 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
 
     const playerAbilities = getPlayerAbilities(playerKeywordData);
     const canCast = playerAbilities.includes('cast');
-    const collectedSpells = playerAbilities.filter((ability) => ability !== 'cast');
+    // Only abilities from spell-category keywords are spells (dispatched via cast:)
+    const collectedSpells = playerKeywordData
+        .filter((kw: any) => kw.category === 'spell')
+        .flatMap((kw: any) => (kw.properties?.abilities || []).filter((a: string) => a !== 'cast'));
+    // Abilities from weapon/attack-category keywords are direct physical actions
+    const physicalAbilities = [...new Set<string>(
+        playerKeywordData
+            .filter((kw: any) => kw.category === 'weapon' || kw.category === 'attack')
+            .flatMap((kw: any) => (kw.properties?.abilities || []).filter((a: string) => a !== 'cast'))
+    )];
     const visibleActionBarSpells = canCast
         ? actionBarSpells.filter((spell) => collectedSpells.includes(spell))
         : [];
@@ -687,6 +697,9 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             if (newTurnToken) {
                 setTurnToken(newTurnToken);
             }
+
+            // Sync forced-action state from server
+            setForcedPlayerAction(response.forcedPlayerAction ?? null);
             
             // PHASE 2: Show boss reaction after a delay
             if (bossAction) {
@@ -1180,6 +1193,12 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                             </div>
                         ) : (
                             <>
+                                {forcedPlayerAction && (
+                                    <div className="shrink-0 px-3 h-24 rounded-lg border-2 border-yellow-500 bg-yellow-900 bg-opacity-40 flex flex-col items-center justify-center text-yellow-300 text-xs font-semibold gap-1">
+                                        <span className="uppercase tracking-widest text-yellow-500" style={{fontSize:'0.6rem'}}>Forced</span>
+                                        <span className="text-sm capitalize">{forcedPlayerAction}</span>
+                                    </div>
+                                )}
                                 <div 
                                     className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
                                         actionInProgress || bossDying 
@@ -1200,6 +1219,19 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                 >
                                     Guard
                                 </div>
+                                {physicalAbilities.map((ability) => (
+                                    <div
+                                        key={ability}
+                                        className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
+                                            actionInProgress || bossDying
+                                                ? 'bg-gray-900 text-gray-600 cursor-not-allowed'
+                                                : 'bg-orange-900 hover:bg-orange-800 active:bg-orange-700'
+                                        }`}
+                                        onClick={() => !actionInProgress && !bossDying && handleAction(ability)}
+                                    >
+                                        {formatSpellName(ability)}
+                                    </div>
+                                ))}
                                 {canCast && (
                                     <div
                                         className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
