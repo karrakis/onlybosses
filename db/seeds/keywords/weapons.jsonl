@@ -5,3 +5,14 @@
 {"name":"mace","category":"weapon","rarity":1,"attributes":{"abilities":["smash"],"base_damage_by_type":{"blunt":1},"applies_to":["physical","blunt"],"damage_multiplier":1.3}}
 {"name":"wizard_staff","category":"weapon","rarity":2,"attributes":{"abilities":["cast","magic_missile"],"base_damage_by_type":{"magic":2},"applies_to":["magic","arcane","fire","ice","lightning"],"damage_multiplier":1.5}}
 {"name":"shield","category":"weapon","rarity":2,"attributes":{"passives":["block"],"damage_multiplier":1.0,"damage_reduction_by_type":{"physical":0.8}}}
+{"name":"dagger","category":"weapon","rarity":1,"attributes":{"abilities":["stab"],"base_damage_by_type":{"piercing":1},"applies_to":["physical","piercing"],"damage_multiplier":1.15}}
+{"name":"crossbow","category":"weapon","rarity":2,"attributes":{"abilities":["piercing_arrow"],"base_damage_by_type":{"piercing":2},"applies_to":["physical","piercing"],"damage_multiplier":1.25}}
+{"name":"warhammer","category":"weapon","rarity":2,"attributes":{"abilities":["smash"],"base_damage_by_type":{"blunt":2},"applies_to":["physical","blunt"],"damage_multiplier":1.35}}
+{"name":"staff_of_fire","category":"weapon","rarity":3,"attributes":{"abilities":["cast","firebolt"],"base_damage_by_type":{"fire":3},"applies_to":["magic","fire"],"damage_multiplier":1.6}}
+{"name":"staff_of_ice","category":"weapon","rarity":3,"attributes":{"abilities":["cast","ice_shard"],"base_damage_by_type":{"ice":3},"applies_to":["magic","ice"],"damage_multiplier":1.6}}
+{"name":"staff_of_lightning","category":"weapon","rarity":3,"attributes":{"abilities":["cast","lightning_strike"],"base_damage_by_type":{"lightning":3},"applies_to":["magic","lightning"],"damage_multiplier":1.6}}
+{"name":"staff_of_arcane","category":"weapon","rarity":3,"attributes":{"abilities":["cast","arcane_blast"],"base_damage_by_type":{"arcane":3},"applies_to":["magic","arcane"],"damage_multiplier":1.6}}
+{"name":"holy_sword","category":"weapon","rarity":3,"attributes":{"abilities":["whirlwind"],"base_damage_by_type":{"holy":3},"applies_to":["physical","holy"],"damage_multiplier":1.5}}
+{"name":"dark_dagger","category":"weapon","rarity":3,"attributes":{"abilities":["stab"],"base_damage_by_type":{"dark":3},"applies_to":["physical","dark"],"damage_multiplier":1.5}}
+{"name":"giants_mace","category":"weapon","rarity":3,"attributes":{"abilities":["smash"],"base_damage_by_type":{"blunt":3},"applies_to":["physical","blunt"],"damage_multiplier":1.5}}
+{"name":"giants_axe","category":"weapon","rarity":3,"attributes":{"abilities":["cleave"],"base_damage_by_type":{"slashing":3},"applies_to":["physical","slashing"],"damage_multiplier":1.5}}
