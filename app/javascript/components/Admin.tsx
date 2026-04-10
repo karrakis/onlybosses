@@ -29,25 +29,88 @@ function AnalysisView({ onNavigate, result, setResult, onNavigateHome }: Analysi
   const [deltaThreshold,  setDeltaThreshold]  = React.useState(0.15);
   const [useTree,         setUseTree]         = React.useState(false);
   const [loading,         setLoading]         = React.useState(false);
+  const [streamSections,  setStreamSections]  = React.useState<Section[]>([]);
+  const [streamMeta,      setStreamMeta]      = React.useState<{ run_count: number; snapshot_count: number } | null>(null);
+  const [streamError,     setStreamError]     = React.useState<string | null>(null);
+  const sourceRef = React.useRef<EventSource | null>(null);
 
-  async function runAnalysis() {
+  const TOTAL_SECTIONS = useTree ? 13 : 12;
+
+  const SECTION_LABELS = [
+    "Survival rate by depth",
+    "Player keyword survival delta",
+    "Boss keyword survival delta",
+    "Player modifier correlation",
+    "Player pairs — synergies",
+    "Player pairs — anti-synergies",
+    "Player triples — synergies",
+    "Player triples — anti-synergies",
+    "Boss pairs — synergies",
+    "Boss pairs — anti-synergies",
+    "Boss triples — synergies",
+    "Boss triples — anti-synergies",
+    ...(useTree ? ["Gradient-boosted tree"] : []),
+  ];
+
+  function runAnalysis() {
+    if (loading) return;
+
+    // Close any existing stream
+    sourceRef.current?.close();
     setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        depth:     String(minDepth),
-        support:   String(minSupport),
-        threshold: String(deltaThreshold),
-        tree:      useTree ? "1" : "0",
-      });
-      const res  = await fetch(`/admin/analysis_data?${params}`);
-      const data = await res.json();
-      setResult(data);
-    } catch (e: any) {
-      setResult({ sections: [], error: e.message, run_count: 0, snapshot_count: 0 });
-    } finally {
+    setStreamSections([]);
+    setStreamMeta(null);
+    setStreamError(null);
+    setResult(null);
+
+    const params = new URLSearchParams({
+      depth:     String(minDepth),
+      support:   String(minSupport),
+      threshold: String(deltaThreshold),
+      tree:      useTree ? "1" : "0",
+    });
+
+    const source = new EventSource(`/admin/analysis_stream?${params}`);
+    sourceRef.current = source;
+
+    source.onmessage = (e: MessageEvent) => {
+      const data = JSON.parse(e.data);
+      if (data.type === 'meta') {
+        setStreamMeta({ run_count: data.run_count, snapshot_count: data.snapshot_count });
+      } else if (data.type === 'section') {
+        setStreamSections(prev => [...prev, { title: data.title, lines: data.lines }]);
+      } else if (data.type === 'done') {
+        source.close();
+        setLoading(false);
+        // Promote streamed sections into result for persistence
+        setStreamSections(prev => {
+          setResult(r => ({
+            sections:       prev,
+            error:          null,
+            run_count:      streamMeta?.run_count      ?? r?.run_count      ?? 0,
+            snapshot_count: streamMeta?.snapshot_count ?? r?.snapshot_count ?? 0,
+          }));
+          return prev;
+        });
+      } else if (data.type === 'error') {
+        source.close();
+        setLoading(false);
+        setStreamError(data.message);
+      }
+    };
+
+    source.onerror = () => {
+      source.close();
       setLoading(false);
-    }
+      setStreamError("Connection lost.");
+    };
   }
+
+  // Sections to display: live stream while running, committed result otherwise
+  const displaySections = loading ? streamSections : (result?.sections ?? []);
+  const displayMeta     = loading ? streamMeta      : (result ? { run_count: result.run_count, snapshot_count: result.snapshot_count } : null);
+  const displayError    = loading ? streamError     : result?.error;
+  const progress        = loading ? streamSections.length / TOTAL_SECTIONS : (result ? 1 : 0);
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 font-mono text-sm p-6">
@@ -57,9 +120,9 @@ function AnalysisView({ onNavigate, result, setResult, onNavigateHome }: Analysi
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-white">Balance Analysis</h1>
-            {result && (
+            {displayMeta && (
               <p className="text-gray-400 mt-1">
-                {result.run_count} runs &nbsp;·&nbsp; {result.snapshot_count} snapshots
+                {displayMeta.run_count} runs &nbsp;·&nbsp; {displayMeta.snapshot_count} snapshots
               </p>
             )}
           </div>
@@ -125,16 +188,36 @@ function AnalysisView({ onNavigate, result, setResult, onNavigateHome }: Analysi
           </button>
         </div>
 
+        {/* Progress bar */}
+        {(loading || progress > 0) && progress < 1 && (
+          <div className="mb-6">
+            <div className="flex justify-between text-xs text-gray-400 mb-1">
+              <span>
+                {loading && SECTION_LABELS[streamSections.length]
+                  ? <span>Processing: <span className="text-orange-300">{SECTION_LABELS[streamSections.length]}</span></span>
+                  : ""}
+              </span>
+              <span>{streamSections.length} / {TOTAL_SECTIONS} &nbsp;({Math.round(progress * 100)}%)</span>
+            </div>
+            <div className="w-full bg-gray-800 rounded-full h-2">
+              <div
+                className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${Math.round(progress * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Error */}
-        {result?.error && (
+        {displayError && (
           <div className="bg-red-950 border border-red-700 rounded-lg p-4 mb-6">
             <p className="text-red-400 font-bold mb-1">Analysis failed</p>
-            <pre className="text-red-300 text-xs whitespace-pre-wrap">{result.error}</pre>
+            <pre className="text-red-300 text-xs whitespace-pre-wrap">{displayError}</pre>
           </div>
         )}
 
         {/* Sections */}
-        {result?.sections.map((section, i) => (
+        {displaySections.map((section, i) => (
           <div key={i} className="mb-6 bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
             <div className="bg-gray-800 border-b border-gray-700 px-4 py-2">
               <h2 className="text-orange-400 font-bold text-sm uppercase tracking-wide">
@@ -149,7 +232,7 @@ function AnalysisView({ onNavigate, result, setResult, onNavigateHome }: Analysi
           </div>
         ))}
 
-        {!result && !loading && (
+        {!loading && displaySections.length === 0 && !displayError && (
           <p className="text-gray-500 text-center mt-16">
             Click "Run Analysis" to generate a report.
           </p>

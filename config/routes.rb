@@ -3,6 +3,7 @@ Rails.application.routes.draw do
   get  'admin',                  to: 'admin#index'
   get  'admin/synergy_chart',    to: 'admin#index'
   get  'admin/analysis_data',    to: 'admin#analysis_data'
+  get  'admin/analysis_stream',  to: 'admin#analysis_stream'
   get  'admin/combo_data',       to: 'admin#combo_data'
   
   post 'take_action', to: 'game#take_action'

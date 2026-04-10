@@ -6,6 +6,7 @@ Usage:
   python3 analysis/analyze.py              # full report to stdout
   python3 analysis/analyze.py --depth 5   # only snapshots at depth >= 5
   python3 analysis/analyze.py --tree      # also print feature importances from a fitted tree
+  python3 analysis/analyze.py --stream    # emit SECTION_START/SECTION_END markers for SSE
 """
 
 import argparse
@@ -255,30 +256,53 @@ def hr(label=''):
     else:
         print('─' * width)
 
+
+class SectionWriter:
+    """Context manager that wraps a section in SECTION_START/SECTION_END markers
+    when streaming=True, or just prints a heading when streaming=False."""
+
+    def __init__(self, title: str, streaming: bool):
+        self.title     = title
+        self.streaming = streaming
+
+    def __enter__(self):
+        if self.streaming:
+            print(f"SECTION_START:{self.title}", flush=True)
+        else:
+            hr(self.title)
+        return self
+
+    def __exit__(self, *_):
+        if self.streaming:
+            print("SECTION_END", flush=True)
+
+
 def print_report(df: pd.DataFrame, run_tree: bool = False,
-                 min_support: int = 15, delta_threshold: float = 0.15):
-    print(f"\nOnly Bosses — Balance Analysis")
-    print(f"Dataset: {len(df)} snapshots across depths {df['depth'].min()}–{df['depth'].max()}")
+                 min_support: int = 15, delta_threshold: float = 0.15,
+                 streaming: bool = False):
 
-    hr("Survival rate by depth")
-    sr = survival_rates(df)
-    print(sr.to_string())
+    if not streaming:
+        print(f"\nOnly Bosses — Balance Analysis")
+        print(f"Dataset: {len(df)} snapshots across depths {df['depth'].min()}–{df['depth'].max()}")
 
-    hr("Player keyword survival delta (sorted by impact)")
-    ks = keyword_survival(df, 'player')
-    print(ks.to_string(index=False))
+    with SectionWriter("Survival rate by depth", streaming):
+        sr = survival_rates(df)
+        print(sr.to_string())
 
-    hr("Boss keyword survival delta (what boss keywords are hardest to beat)")
-    bks = keyword_survival(df, 'boss')
-    # For boss, positive delta means player survives *more* when boss has it — i.e. easy boss
-    bks['delta'] = -bks['delta']  # flip: positive = boss keyword that kills players
-    bks = bks.rename(columns={'delta': 'player_death_delta'})
-    bks = bks.sort_values('player_death_delta', ascending=False).reset_index(drop=True)
-    print(bks.to_string(index=False))
+    with SectionWriter("Player keyword survival delta (sorted by impact)", streaming):
+        ks = keyword_survival(df, 'player')
+        print(ks.to_string(index=False))
 
-    hr("Player modifier correlation with survival")
-    mc = modifier_correlation(df, 'player')
-    print(mc.to_string(index=False))
+    with SectionWriter("Boss keyword survival delta (what boss keywords are hardest to beat)", streaming):
+        bks = keyword_survival(df, 'boss')
+        bks['delta'] = -bks['delta']
+        bks = bks.rename(columns={'delta': 'player_death_delta'})
+        bks = bks.sort_values('player_death_delta', ascending=False).reset_index(drop=True)
+        print(bks.to_string(index=False))
+
+    with SectionWriter("Player modifier correlation with survival", streaming):
+        mc = modifier_correlation(df, 'player')
+        print(mc.to_string(index=False))
 
     # ── Combo synergy sections ─────────────────────────────────────────────
     for ctx_label, ctx in (('Player', 'player'), ('Boss', 'boss')):
@@ -289,29 +313,31 @@ def print_report(df: pd.DataFrame, run_tree: bool = False,
             )
             params = f"min_support={min_support}, |delta|>={delta_threshold}"
 
-            hr(f"{ctx_label} {label} — synergies ({params})")
-            if syn.empty:
-                print("  (none above threshold)")
-            else:
-                print(syn.to_string(index=False))
+            with SectionWriter(f"{ctx_label} {label} — synergies ({params})", streaming):
+                if syn.empty:
+                    print("  (none above threshold)")
+                else:
+                    print(syn.to_string(index=False))
 
-            hr(f"{ctx_label} {label} — anti-synergies ({params})")
-            if anti.empty:
-                print("  (none above threshold)")
-            else:
-                print(anti.to_string(index=False))
+            with SectionWriter(f"{ctx_label} {label} — anti-synergies ({params})", streaming):
+                if anti.empty:
+                    print("  (none above threshold)")
+                else:
+                    print(anti.to_string(index=False))
 
     if run_tree:
         if len(df) < 50:
-            print("\n[tree] Insufficient data for a reliable model (need >= 50 rows).")
+            with SectionWriter("Gradient-boosted tree", streaming):
+                print("[tree] Insufficient data for a reliable model (need >= 50 rows).")
         else:
-            hr("Gradient-boosted tree — top 30 features by importance")
-            _, imp, scores = fit_tree(df)
-            print(f"5-fold ROC-AUC: {scores.mean():.3f} ± {scores.std():.3f}")
-            print()
-            print(imp.head(30).to_string(index=False))
+            with SectionWriter("Gradient-boosted tree — top 30 features by importance", streaming):
+                _, imp, scores = fit_tree(df)
+                print(f"5-fold ROC-AUC: {scores.mean():.3f} ± {scores.std():.3f}")
+                print()
+                print(imp.head(30).to_string(index=False))
 
-    print()
+    if not streaming:
+        print()
 
 # ── Entry point ────────────────────────────────────────────────────────────────
 
@@ -327,6 +353,8 @@ if __name__ == '__main__':
                         help='Minimum |conditional_delta| to report a combo (default: 0.15)')
     parser.add_argument('--out', type=str, default=None,
                         help='Write report to this file instead of stdout')
+    parser.add_argument('--stream', action='store_true',
+                        help='Emit SECTION_START/SECTION_END markers for SSE streaming')
     args = parser.parse_args()
 
     df = load_data(min_depth=args.depth)
@@ -344,4 +372,5 @@ if __name__ == '__main__':
         print(f"Wrote report to {args.out}")
     else:
         print_report(df, run_tree=args.tree,
-                     min_support=args.support, delta_threshold=args.threshold)
+                     min_support=args.support, delta_threshold=args.threshold,
+                     streaming=args.stream)

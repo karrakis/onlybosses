@@ -1,12 +1,81 @@
 require 'open3'
 
 class AdminController < ApplicationController
+  include ActionController::Live
+
   def index
     # Both /admin and /admin/synergy_chart render this same shell.
     # React owns the view state and uses pushState for the URL.
   end
 
-  # GET /admin/analysis_data — runs Python analysis, returns JSON sections
+  # GET /admin/analysis_stream — streams SSE events as each report section completes
+  # Events:
+  #   { type: "meta",    run_count:, snapshot_count: }
+  #   { type: "section", title:, lines: [...] }
+  #   { type: "done" }
+  #   { type: "error",   message: }
+  def analysis_stream
+    min_depth   = (params[:depth]     || 1).to_i.clamp(1, 50)
+    min_support = (params[:support]   || 15).to_i.clamp(1, 999)
+    delta_thr   = (params[:threshold] || 0.15).to_f.clamp(0.0, 1.0)
+    use_tree    = params[:tree] == '1'
+
+    response.headers['Content-Type']      = 'text/event-stream'
+    response.headers['Cache-Control']     = 'no-cache'
+    response.headers['X-Accel-Buffering'] = 'no'
+    response.headers['Last-Modified']     = Time.current.httpdate
+
+    sse = ->(payload) {
+      response.stream.write("data: #{JSON.generate(payload)}\n\n")
+    }
+
+    script = Rails.root.join('analysis', 'analyze.py').to_s
+    args   = ["python3", script,
+              "--depth",     min_depth.to_s,
+              "--support",   min_support.to_s,
+              "--threshold", delta_thr.to_s,
+              "--stream"]
+    args << "--tree" if use_tree
+
+    sse.({ type: 'meta',
+           run_count:      Run.count,
+           snapshot_count: DepthSnapshot.count })
+
+    Open3.popen3(*args) do |_stdin, stdout, stderr, wait_thr|
+      current_title = nil
+      current_lines = []
+
+      stdout.each_line do |raw|
+        line = raw.chomp
+        if line.start_with?('SECTION_START:')
+          current_title = line[14..]
+          current_lines = []
+        elsif line == 'SECTION_END'
+          sse.({ type: 'section', title: current_title, lines: current_lines }) if current_title
+          current_title = nil
+          current_lines = []
+        else
+          current_lines << line
+        end
+      end
+
+      # Flush any trailing section not followed by SECTION_END
+      sse.({ type: 'section', title: current_title, lines: current_lines }) if current_title
+
+      if wait_thr.value.success?
+        sse.({ type: 'done' })
+      else
+        err = stderr.read.presence || "Analysis script failed"
+        sse.({ type: 'error', message: err })
+      end
+    end
+  rescue IOError, ActionController::Live::ClientDisconnected
+    # client navigated away
+  ensure
+    response.stream.close
+  end
+
+  # GET /admin/analysis_data — kept for backwards compat / non-streaming fallback
   def analysis_data
     script      = Rails.root.join('analysis', 'analyze.py')
     min_depth   = (params[:depth]     || 1).to_i.clamp(1, 50)
