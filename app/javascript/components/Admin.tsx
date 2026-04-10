@@ -14,6 +14,32 @@ type AnalysisResult = {
   snapshot_count: number;
 };
 
+// ─── CollapsibleSection ───────────────────────────────────────────────────────
+
+function CollapsibleSection({ title, lines }: { title: string; lines: string[] }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className="mb-3 bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between bg-gray-800 border-b border-gray-700 px-4 py-2 text-left hover:bg-gray-750 focus:outline-none"
+      >
+        <h2 className="text-orange-400 font-bold text-sm uppercase tracking-wide">
+          {title}
+        </h2>
+        <span className="text-gray-400 text-xs ml-4 shrink-0">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="p-4 overflow-x-auto">
+          <pre className="text-gray-200 text-xs leading-5 whitespace-pre">
+            {lines.join("\n")}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── AnalysisView ─────────────────────────────────────────────────────────────
 
 type AnalysisViewProps = {
@@ -28,13 +54,14 @@ function AnalysisView({ onNavigate, result, setResult, onNavigateHome }: Analysi
   const [minSupport,      setMinSupport]      = React.useState(15);
   const [deltaThreshold,  setDeltaThreshold]  = React.useState(0.15);
   const [useTree,         setUseTree]         = React.useState(false);
+  const [useTriples,      setUseTriples]      = React.useState(false);
   const [loading,         setLoading]         = React.useState(false);
   const [streamSections,  setStreamSections]  = React.useState<Section[]>([]);
   const [streamMeta,      setStreamMeta]      = React.useState<{ run_count: number; snapshot_count: number } | null>(null);
   const [streamError,     setStreamError]     = React.useState<string | null>(null);
   const sourceRef = React.useRef<EventSource | null>(null);
 
-  const TOTAL_SECTIONS = useTree ? 13 : 12;
+  const TOTAL_SECTIONS = 8 + (useTriples ? 4 : 0) + (useTree ? 1 : 0);
 
   const SECTION_LABELS = [
     "Survival rate by depth",
@@ -43,12 +70,10 @@ function AnalysisView({ onNavigate, result, setResult, onNavigateHome }: Analysi
     "Player modifier correlation",
     "Player pairs — synergies",
     "Player pairs — anti-synergies",
-    "Player triples — synergies",
-    "Player triples — anti-synergies",
+    ...(useTriples ? ["Player triples — synergies", "Player triples — anti-synergies"] : []),
     "Boss pairs — synergies",
     "Boss pairs — anti-synergies",
-    "Boss triples — synergies",
-    "Boss triples — anti-synergies",
+    ...(useTriples ? ["Boss triples — synergies", "Boss triples — anti-synergies"] : []),
     ...(useTree ? ["Gradient-boosted tree"] : []),
   ];
 
@@ -67,7 +92,8 @@ function AnalysisView({ onNavigate, result, setResult, onNavigateHome }: Analysi
       depth:     String(minDepth),
       support:   String(minSupport),
       threshold: String(deltaThreshold),
-      tree:      useTree ? "1" : "0",
+      tree:      useTree    ? "1" : "0",
+      triples:   useTriples ? "1" : "0",
     });
 
     const source = new EventSource(`/admin/analysis_stream?${params}`);
@@ -170,6 +196,16 @@ function AnalysisView({ onNavigate, result, setResult, onNavigateHome }: Analysi
           </div>
           <div className="flex items-center gap-2 self-end mb-0.5">
             <input
+              type="checkbox" id="triples" checked={useTriples}
+              onChange={(e) => setUseTriples(e.target.checked)}
+              className="accent-orange-500"
+            />
+            <label htmlFor="triples" className="text-xs text-gray-300 cursor-pointer">
+              Include triples
+            </label>
+          </div>
+          <div className="flex items-center gap-2 self-end mb-0.5">
+            <input
               type="checkbox" id="tree" checked={useTree}
               onChange={(e) => setUseTree(e.target.checked)}
               className="accent-orange-500"
@@ -218,18 +254,7 @@ function AnalysisView({ onNavigate, result, setResult, onNavigateHome }: Analysi
 
         {/* Sections */}
         {displaySections.map((section, i) => (
-          <div key={i} className="mb-6 bg-gray-900 border border-gray-700 rounded-lg overflow-hidden">
-            <div className="bg-gray-800 border-b border-gray-700 px-4 py-2">
-              <h2 className="text-orange-400 font-bold text-sm uppercase tracking-wide">
-                {section.title}
-              </h2>
-            </div>
-            <div className="p-4 overflow-x-auto">
-              <pre className="text-gray-200 text-xs leading-5 whitespace-pre">
-                {section.lines.join("\n")}
-              </pre>
-            </div>
-          </div>
+          <CollapsibleSection key={i} title={section.title} lines={section.lines} />
         ))}
 
         {!loading && displaySections.length === 0 && !displayError && (

@@ -30,12 +30,15 @@ class AdminController < ApplicationController
     }
 
     script = Rails.root.join('analysis', 'analyze.py').to_s
-    args   = ["python3", script,
+    use_triples = params[:triples] == '1'
+
+    args = ["python3", script,
               "--depth",     min_depth.to_s,
               "--support",   min_support.to_s,
               "--threshold", delta_thr.to_s,
               "--stream"]
-    args << "--tree" if use_tree
+    args << "--tree"    if use_tree
+    args << "--triples" if use_triples
 
     sse.({ type: 'meta',
            run_count:      Run.count,

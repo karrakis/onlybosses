@@ -277,7 +277,7 @@ class SectionWriter:
             print("SECTION_END", flush=True)
 
 
-def print_report(df: pd.DataFrame, run_tree: bool = False,
+def print_report(df: pd.DataFrame, run_tree: bool = False, run_triples: bool = False,
                  min_support: int = 15, delta_threshold: float = 0.15,
                  streaming: bool = False):
 
@@ -305,8 +305,9 @@ def print_report(df: pd.DataFrame, run_tree: bool = False,
         print(mc.to_string(index=False))
 
     # ── Combo synergy sections ─────────────────────────────────────────────
+    ns = [(2, 'pairs')] + ([(3, 'triples')] if run_triples else [])
     for ctx_label, ctx in (('Player', 'player'), ('Boss', 'boss')):
-        for n, label in ((2, 'pairs'), (3, 'triples')):
+        for n, label in ns:
             syn, anti = combo_synergies(
                 df, context=ctx, n=n,
                 min_support=min_support, delta_threshold=delta_threshold
@@ -355,6 +356,8 @@ if __name__ == '__main__':
                         help='Write report to this file instead of stdout')
     parser.add_argument('--stream', action='store_true',
                         help='Emit SECTION_START/SECTION_END markers for SSE streaming')
+    parser.add_argument('--triples', action='store_true',
+                        help='Include triple-keyword combo analysis (slow with many keywords)')
     args = parser.parse_args()
 
     df = load_data(min_depth=args.depth)
@@ -364,13 +367,13 @@ if __name__ == '__main__':
         buf = io.StringIO()
         _stdout = sys.stdout
         sys.stdout = buf
-        print_report(df, run_tree=args.tree,
+        print_report(df, run_tree=args.tree, run_triples=args.triples,
                      min_support=args.support, delta_threshold=args.threshold)
         sys.stdout = _stdout
         with open(args.out, 'w') as f:
             f.write(buf.getvalue())
         print(f"Wrote report to {args.out}")
     else:
-        print_report(df, run_tree=args.tree,
+        print_report(df, run_tree=args.tree, run_triples=args.triples,
                      min_support=args.support, delta_threshold=args.threshold,
                      streaming=args.stream)
