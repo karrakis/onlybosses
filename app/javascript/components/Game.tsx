@@ -78,6 +78,11 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     // Pre-rolled keywords that are guaranteed to appear on the boss at TIER_UP_DEPTH.
     // Excluded from normal rotation until then so the player can plan around them.
     const [tieredKeywords, setTieredKeywords] = useState<string[]>([]);
+    // Race conflict: set when player tries to pick a creature keyword at their race cap.
+    const [raceConflictPending, setRaceConflictPending] = useState<{ newRace: string } | null>(null);
+    // Weapon conflict: set when a new weapon would exceed hand capacity.
+    const [weaponConflictPending, setWeaponConflictPending] = useState<{ newWeapon: string; handsNeeded: number } | null>(null);
+    const [weaponDiscardSelection, setWeaponDiscardSelection] = useState<string[]>([]);
     const TIER_UP_DEPTH = 5;
 
     useEffect(() => {
@@ -93,9 +98,13 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     }, [boss, allKeywordsData]);
 
     useEffect(() => {
-        // Update player keyword data when player changes
+        // Update player keyword data when player changes.
+        // Map over player.keywords (which can contain duplicates for stacking) so each
+        // copy of a keyword gets its own data object — required for stacking calculations.
         if (player && player.keywords) {
-            const playerKwData = allKeywordsData.filter(kw => player.keywords.includes(kw.name));
+            const playerKwData = player.keywords
+                .map((name: string) => allKeywordsData.find((kw: any) => kw.name === name))
+                .filter(Boolean);
             setPlayerKeywordData(playerKwData);
         }
     }, [player, allKeywordsData]);
@@ -125,7 +134,14 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const physicalAbilities = [...new Set<string>(
         playerKeywordData
             .filter((kw: any) => kw.category === 'weapon' || kw.category === 'attack')
-            .flatMap((kw: any) => (kw.properties?.abilities || []).filter((a: string) => a !== 'cast'))
+            .flatMap((kw: any) => {
+                if (kw.category === 'attack') {
+                    // Attack keywords ARE the ability — the keyword name is the action
+                    return [kw.name];
+                }
+                // Weapon keywords list their granted abilities explicitly
+                return (kw.properties?.abilities || []).filter((a: string) => a !== 'cast');
+            })
     )];
     const visibleActionBarSpells = canCast
         ? actionBarSpells.filter((spell) => collectedSpells.includes(spell))
@@ -145,7 +161,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         if (!player) {
             return {
                 summaryRows: [] as Array<{ label: string; value: string }>,
-                keywordRows: [] as Array<{ label: string; value: string }>
+                keywordRows: [] as Array<{ label: string; value: string; count: number }>
             };
         }
 
@@ -248,12 +264,23 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             { label: 'Damage Output Multipliers', value: formatTypedOutput() },
             { label: 'Damage Reduction Profile', value: formatReductionProfile() },
             { label: 'Available Actions', value: (player.actions || []).join(', ') || 'None' },
-            { label: 'Available Spells', value: collectedSpells.length ? collectedSpells.map(formatSpellName).join(', ') : 'None' }
+            { label: 'Available Spells', value: collectedSpells.length ? collectedSpells.map(formatSpellName).join(', ') : 'None' },
+            { label: 'Hands', value: `${player.equipped_hands ?? 0} / ${player.max_hands ?? 2}` },
+            { label: 'Race Slots', value: `${player.race_count ?? 0} / ${player.max_race_slots ?? 1}` }
         ];
 
-        const keywordRows = (playerKeywordData || []).map((keyword) => ({
-            label: keyword.name,
-            value: formatKeywordAttributes(keyword)
+        // Deduplicate keywords for display but track how many times each appears.
+        // (playerKeywordData may have duplicate entries when passives stack.)
+        const kwCountMap = new Map<string, number>();
+        const kwDataMap = new Map<string, any>();
+        (playerKeywordData || []).forEach((keyword) => {
+            kwCountMap.set(keyword.name, (kwCountMap.get(keyword.name) || 0) + 1);
+            if (!kwDataMap.has(keyword.name)) kwDataMap.set(keyword.name, keyword);
+        });
+        const keywordRows = Array.from(kwCountMap.entries()).map(([name, count]) => ({
+            label: name,
+            value: formatKeywordAttributes(kwDataMap.get(name)),
+            count
         }));
 
         return {
@@ -419,9 +446,45 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const handleInitialKeywordToggle = (keywordName: string) => {
         if (selectedInitialKeywords.includes(keywordName)) {
             setSelectedInitialKeywords(selectedInitialKeywords.filter(k => k !== keywordName));
-        } else if (selectedInitialKeywords.length < 2) {
-            setSelectedInitialKeywords([...selectedInitialKeywords, keywordName]);
+            return;
         }
+        if (selectedInitialKeywords.length >= 2) return;
+
+        const newKw = allKeywordsData.find((k: any) => k.name === keywordName);
+
+        // Race check: only one creature allowed at start (default max_race_slots = 1)
+        if (newKw?.category === 'creature') {
+            const alreadyHasCreature = selectedInitialKeywords.some((n: string) => {
+                const kw = allKeywordsData.find((k: any) => k.name === n);
+                return kw?.category === 'creature';
+            });
+            if (alreadyHasCreature) return;
+            // Also block if this creature's max_hands would make existing selected weapons invalid
+            if (newKw.properties?.max_hands != null) {
+                const handsUsed = selectedInitialKeywords.reduce((sum: number, n: string) => {
+                    const kw = allKeywordsData.find((k: any) => k.name === n);
+                    return kw?.category === 'weapon' ? sum + (kw.properties?.hands ?? 1) : sum;
+                }, 0);
+                if (handsUsed > newKw.properties.max_hands) return;
+            }
+        }
+
+        // Weapon hands check
+        if (newKw?.category === 'weapon') {
+            const newHands: number = newKw.properties?.hands ?? 1;
+            // Effective max hands: from already-selected creature if it declares max_hands, else 2
+            const creatureKw = selectedInitialKeywords
+                .map((n: string) => allKeywordsData.find((k: any) => k.name === n))
+                .find((k: any) => k?.category === 'creature' && k.properties?.max_hands != null);
+            const effectiveMaxHands: number = creatureKw ? creatureKw.properties.max_hands : 2;
+            const handsUsed = selectedInitialKeywords.reduce((sum: number, n: string) => {
+                const kw = allKeywordsData.find((k: any) => k.name === n);
+                return kw?.category === 'weapon' ? sum + (kw.properties?.hands ?? 1) : sum;
+            }, 0);
+            if (handsUsed + newHands > effectiveMaxHands) return;
+        }
+
+        setSelectedInitialKeywords([...selectedInitialKeywords, keywordName]);
     };
     
     const handleInitialKeywordConfirm = async () => {
@@ -482,80 +545,155 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
 
     const handleKeywordSelection = async (selectedKeyword: string) => {
         try {
+            const keywordData = allKeywordsData.find((kw: any) => kw.name === selectedKeyword);
+
+            // When at race capacity, pause and show the race-swap modal instead.
+            if (keywordData?.category === 'creature' && player) {
+                const raceCount = player.race_count ?? 0;
+                const maxSlots = player.max_race_slots ?? 1;
+                if (raceCount >= maxSlots) {
+                    setRaceConflictPending({ newRace: selectedKeyword });
+                    return;
+                }
+            }
+
+            // When over hand capacity, pause and show the weapon discard modal.
+            if (keywordData?.category === 'weapon' && player) {
+                const newHands: number = keywordData.properties?.hands ?? 1;
+                const equipped: number = player.equipped_hands ?? 0;
+                const maxHands: number = player.max_hands ?? 2;
+                if (equipped + newHands > maxHands) {
+                    setWeaponConflictPending({ newWeapon: selectedKeyword, handsNeeded: newHands });
+                    setWeaponDiscardSelection([]);
+                    return;
+                }
+            }
+
             // Add selected keyword to player on backend and level up
             // Pass nextDepth so the backend records a descent snapshot
             const nextDepth = depth + 1;
             const updatedPlayer = await PlayerService.addKeyword(selectedKeyword, nextDepth);
             setPlayer(updatedPlayer);
 
-            // Remove selected keyword from boss keywords
-            const updatedKeywords = bossKeywords.filter(k => k !== selectedKeyword);
-
-            // At tier-up depth, inject the pre-rolled tiered keywords instead of random rolls.
-            // Otherwise, roll new keywords respecting the tier threshold and additive rarity cap.
-            let addedCount = 0;
-            if (nextDepth >= TIER_UP_DEPTH && tieredKeywords.length > 0) {
-                for (const kw of tieredKeywords) {
-                    if (!updatedKeywords.includes(kw)) {
-                        updatedKeywords.push(kw);
-                        addedCount++;
-                    }
-                }
-                setTieredKeywords([]);
-            }
-
-            if (addedCount < 2) {
-                // Tier threshold: rarity R unlocks at depth (R-1)*5
-                const maxRarity = Math.floor(nextDepth / 5) + 1;
-                // Additive rarity cap: combined rarity of the 2 new keywords cannot exceed this
-                const rarityCap = Math.max(2, 2 * Math.floor(nextDepth / 5) + 1);
-
-                const candidatePool = allKeywordsData
-                    .filter(kw =>
-                        !updatedKeywords.includes(kw.name) &&
-                        !tieredKeywords.includes(kw.name) &&
-                        (kw.rarity - 1) * 5 <= nextDepth &&
-                        kw.rarity <= maxRarity
-                    )
-                    .sort(() => 0.5 - Math.random());
-
-                let rarityBudget = rarityCap;
-                while (addedCount < 2 && candidatePool.length > 0) {
-                    const eligible = candidatePool.filter(kw => kw.rarity <= rarityBudget);
-                    if (eligible.length === 0) break;
-                    const chosen = eligible[0];
-                    candidatePool.splice(candidatePool.indexOf(chosen), 1);
-                    updatedKeywords.push(chosen.name);
-                    rarityBudget -= chosen.rarity;
-                    addedCount++;
-                }
-            }
-            
-            setBossKeywords(updatedKeywords);
-            setShowKeywordSelection(false);
-            setDepth((d) => d + 1);
-            
-            // Reset game state for new boss
-            setLoading(true);
-            setBossDying(false);
-            setBossShaking(false);
-            setDescendClicked(false);
-            setTurnToken(null);
-
-            // Generate new boss with updated keywords
-            const generatedBoss = await BossService.generateBoss(updatedKeywords);
-            setBoss(generatedBoss);
-            
-            // If image is still generating, poll for updates
-            if (generatedBoss.image_status === 'pending' || generatedBoss.image_status === 'generating') {
-                pollForImage(generatedBoss.id);
-            }
-            
-            setLoading(false);
+            await proceedWithBossKeywords(selectedKeyword, nextDepth);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to generate new boss');
             setLoading(false);
         }
+    };
+
+    // Handles the weapon-conflict choice: discard selected weapons then take the new one.
+    const handleWeaponConflictConfirm = async () => {
+        if (!weaponConflictPending || !player) return;
+        const { newWeapon } = weaponConflictPending;
+        setWeaponConflictPending(null);
+        try {
+            const nextDepth = depth + 1;
+            const updatedPlayer = await PlayerService.swapWeapons(newWeapon, weaponDiscardSelection, nextDepth);
+            setWeaponDiscardSelection([]);
+            setPlayer(updatedPlayer);
+            await proceedWithBossKeywords(newWeapon, nextDepth);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to resolve weapon choice');
+            setLoading(false);
+        }
+    };
+
+    // Handles the race-conflict choice.
+    // 'keep' = stay current race, discard the offered keyword; boss still loses it.
+    // 'swap' = remove current race, take the new one.
+    const handleRaceConflictChoice = async (choice: 'keep' | 'swap') => {
+        if (!raceConflictPending || !player) return;
+        const { newRace } = raceConflictPending;
+        setRaceConflictPending(null);
+        try {
+            const nextDepth = depth + 1;
+            let updatedPlayer: any;
+            if (choice === 'swap') {
+                const currentRace = (player.explicit_keywords || []).find((kw: string) => {
+                    const kwData = allKeywordsData.find((k: any) => k.name === kw);
+                    return kwData?.category === 'creature';
+                });
+                updatedPlayer = await PlayerService.swapRace(newRace, currentRace || '', nextDepth);
+            } else {
+                // Keep current race — just level up without taking the keyword
+                updatedPlayer = await PlayerService.skipKeyword(nextDepth);
+            }
+            setPlayer(updatedPlayer);
+            await proceedWithBossKeywords(newRace, nextDepth);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to resolve race choice');
+            setLoading(false);
+        }
+    };
+
+    // Shared tail of keyword selection: removes the taken/discarded keyword from the boss pool,
+    // rolls 2 new keywords, regenerates the boss. Call after player state is already updated.
+    const proceedWithBossKeywords = async (takenKeyword: string, nextDepth: number) => {
+        // Remove selected keyword from boss keywords
+        const updatedKeywords = bossKeywords.filter(k => k !== takenKeyword);
+
+        // At tier-up depth, inject the pre-rolled tiered keywords instead of random rolls.
+        // Otherwise, roll new keywords respecting the tier threshold and additive rarity cap.
+        let addedCount = 0;
+        if (nextDepth >= TIER_UP_DEPTH && tieredKeywords.length > 0) {
+            for (const kw of tieredKeywords) {
+                if (!updatedKeywords.includes(kw)) {
+                    updatedKeywords.push(kw);
+                    addedCount++;
+                }
+            }
+            setTieredKeywords([]);
+        }
+
+        if (addedCount < 2) {
+            // Tier threshold: rarity R unlocks at depth (R-1)*5
+            const maxRarity = Math.floor(nextDepth / 5) + 1;
+            // Additive rarity cap: combined rarity of the 2 new keywords cannot exceed this
+            const rarityCap = Math.max(2, 2 * Math.floor(nextDepth / 5) + 1);
+
+            const candidatePool = allKeywordsData
+                .filter(kw =>
+                    !updatedKeywords.includes(kw.name) &&
+                    !tieredKeywords.includes(kw.name) &&
+                    (kw.rarity - 1) * 5 <= nextDepth &&
+                    kw.rarity <= maxRarity
+                )
+                .sort(() => 0.5 - Math.random());
+
+            let rarityBudget = rarityCap;
+            while (addedCount < 2 && candidatePool.length > 0) {
+                const eligible = candidatePool.filter(kw => kw.rarity <= rarityBudget);
+                if (eligible.length === 0) break;
+                const chosen = eligible[0];
+                candidatePool.splice(candidatePool.indexOf(chosen), 1);
+                updatedKeywords.push(chosen.name);
+                rarityBudget -= chosen.rarity;
+                addedCount++;
+            }
+        }
+
+        setBossKeywords(updatedKeywords);
+        setShowKeywordSelection(false);
+        setDepth((d) => d + 1);
+
+        // Reset game state for new boss
+        setLoading(true);
+        setBossDying(false);
+        setBossShaking(false);
+        setDescendClicked(false);
+        setTurnToken(null);
+
+        // Generate new boss with updated keywords
+        const generatedBoss = await BossService.generateBoss(updatedKeywords);
+        setBoss(generatedBoss);
+
+        // If image is still generating, poll for updates
+        if (generatedBoss.image_status === 'pending' || generatedBoss.image_status === 'generating') {
+            pollForImage(generatedBoss.id);
+        }
+
+        setLoading(false);
     };
 
     const handleRemoveKeywordSelection = async (keywordToRemove: string) => {
@@ -737,6 +875,32 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         setActionBarSpells((prev) => (prev.includes(spell) ? prev : [...prev, spell]));
     };
     
+    function getWeaponConflict(keywordData: any): string | null {
+        if (keywordData?.category !== 'weapon') return null;
+        const newHands: number = keywordData?.properties?.hands ?? 1;
+        const equippedHands: number = player?.equipped_hands ?? 0;
+        const maxHands: number = player?.max_hands ?? 2;
+        if (equippedHands + newHands <= maxHands) return null;
+        return `Requires ${newHands} hand${newHands !== 1 ? 's' : ''} (${equippedHands}/${maxHands} used) — drop a weapon to equip this`;
+    }
+
+    function getRaceConflict(keywordData: any): string | null {
+        if (keywordData?.category !== 'creature') return null;
+        const raceCount: number = player?.race_count ?? 0;
+        const maxSlots: number = player?.max_race_slots ?? 1;
+        if (raceCount < maxSlots) return null;
+        return `You already have ${raceCount} creature type${raceCount !== 1 ? 's' : ''} (${raceCount}/${maxSlots}) — take Chimerism to allow more`;
+    }
+
+    function getBossKeywordDerivedFrom(passiveName: string): string | null {
+        if (!boss) return null;
+        for (const bossKwName of (boss.keywords || [])) {
+            const kw = allKeywordsData.find((k: any) => k.name === bossKwName);
+            if (kw?.properties?.passives?.includes(passiveName)) return bossKwName;
+        }
+        return null;
+    }
+
     function formatKeywordAttributes(keyword: any): string {
         const attrs = keyword.properties || {};
         const parts: string[] = [];
@@ -828,6 +992,18 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
 
         if (typeof attrs.mana_regen_multiplier === 'number') {
             parts.push(`${(attrs.mana_regen_multiplier * 100).toFixed(0)}% mana regen`);
+        }
+
+        if (typeof attrs.hands === 'number') {
+            parts.push(`${attrs.hands} hand${attrs.hands !== 1 ? 's' : ''} required`);
+        }
+
+        if (typeof attrs.max_hands === 'number') {
+            parts.push(`Provides ${attrs.max_hands} hand${attrs.max_hands !== 1 ? 's' : ''}`);
+        }
+
+        if (typeof attrs.race_slots === 'number') {
+            parts.push(`+${attrs.race_slots} race slot${attrs.race_slots !== 1 ? 's' : ''}`);
         }
         
         return parts.join(' • ') || 'No special attributes';
@@ -941,6 +1117,18 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         if (typeof attrs.mana_regen_multiplier === 'number') {
             parts.push(`${(attrs.mana_regen_multiplier * 100).toFixed(0)}% mana regen`);
         }
+
+        if (typeof attrs.hands === 'number') {
+            parts.push(`${attrs.hands} hand${attrs.hands !== 1 ? 's' : ''} required`);
+        }
+
+        if (typeof attrs.max_hands === 'number') {
+            parts.push(`Provides ${attrs.max_hands} hand${attrs.max_hands !== 1 ? 's' : ''}`);
+        }
+
+        if (typeof attrs.race_slots === 'number') {
+            parts.push(`+${attrs.race_slots} race slot${attrs.race_slots !== 1 ? 's' : ''}`);
+        }
         
         if (parts.length === 0) return 'No special attributes';
         
@@ -962,16 +1150,44 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                     <div className="grid grid-cols-1 gap-4 mb-8">
                         {initialKeywordOptions.map((keyword) => {
                             const isSelected = selectedInitialKeywords.includes(keyword.name);
+                            let isBlocked = !isSelected && selectedInitialKeywords.length >= 2;
+                            if (!isSelected && !isBlocked) {
+                                if (keyword.category === 'creature') {
+                                    const alreadyHasCreature = selectedInitialKeywords.some((n: string) => {
+                                        const kw = allKeywordsData.find((k: any) => k.name === n);
+                                        return kw?.category === 'creature';
+                                    });
+                                    if (alreadyHasCreature) isBlocked = true;
+                                    if (!isBlocked && keyword.properties?.max_hands != null) {
+                                        const handsUsed = selectedInitialKeywords.reduce((sum: number, n: string) => {
+                                            const kw = allKeywordsData.find((k: any) => k.name === n);
+                                            return kw?.category === 'weapon' ? sum + (kw.properties?.hands ?? 1) : sum;
+                                        }, 0);
+                                        if (handsUsed > keyword.properties.max_hands) isBlocked = true;
+                                    }
+                                } else if (keyword.category === 'weapon') {
+                                    const newHands: number = keyword.properties?.hands ?? 1;
+                                    const creatureKw = selectedInitialKeywords
+                                        .map((n: string) => allKeywordsData.find((k: any) => k.name === n))
+                                        .find((k: any) => k?.category === 'creature' && k.properties?.max_hands != null);
+                                    const effectiveMaxHands: number = creatureKw ? creatureKw.properties.max_hands : 2;
+                                    const handsUsed = selectedInitialKeywords.reduce((sum: number, n: string) => {
+                                        const kw = allKeywordsData.find((k: any) => k.name === n);
+                                        return kw?.category === 'weapon' ? sum + (kw.properties?.hands ?? 1) : sum;
+                                    }, 0);
+                                    if (handsUsed + newHands > effectiveMaxHands) isBlocked = true;
+                                }
+                            }
                             return (
                                 <button
                                     key={keyword.name}
                                     onClick={() => handleInitialKeywordToggle(keyword.name)}
-                                    disabled={!isSelected && selectedInitialKeywords.length >= 2}
+                                    disabled={isBlocked}
                                     className={`p-6 rounded-lg border-2 transition-all text-left ${
                                         isSelected 
                                             ? 'border-green-500 bg-green-900 bg-opacity-30' 
                                             : 'border-gray-600 bg-gray-800 hover:border-gray-400'
-                                    } ${!isSelected && selectedInitialKeywords.length >= 2 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                    } ${isBlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                 >
                                     <div className="flex items-center justify-between mb-2">
                                         <h3 className="text-2xl font-bold capitalize">{keyword.name}</h3>
@@ -1366,8 +1582,13 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                 paginatedKeywordRows.map((row, idx) => (
                                     <div
                                         key={`keyword-${row.label}-${idx}`}
-                                        className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3"
+                                        className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 relative"
                                     >
+                                        {row.count > 1 && (
+                                            <span className="absolute top-2 right-2 bg-yellow-500 text-black text-xs font-bold px-1.5 py-0.5 rounded">
+                                                x{row.count}
+                                            </span>
+                                        )}
                                         <div className="text-lg font-semibold capitalize mb-1">{row.label}</div>
                                         <div className="text-sm text-gray-200 break-words">{row.value}</div>
                                     </div>
@@ -1419,24 +1640,46 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                     <div className="grid grid-cols-2 gap-4 pb-4">
                                         {boss.keywords && boss.keywords.map((keywordName: string) => {
                                             const keywordData = allKeywordsData.find(kw => kw.name === keywordName);
+                                            const weaponConflict = keywordData ? getWeaponConflict(keywordData) : null;
+                                            const raceConflict = keywordData ? getRaceConflict(keywordData) : null;
+                                            const derivedFrom = keywordData?.category === 'passive' ? getBossKeywordDerivedFrom(keywordName) : null;
+                                            const hasConflict = !!(weaponConflict || raceConflict);
                                             return (
                                                 <button
                                                     key={keywordName}
                                                     onClick={() => handleKeywordSelection(keywordName)}
-                                                    className="bg-gray-700 hover:bg-gray-600 border-2 border-gray-500 rounded-lg p-4 text-left transition-colors"
+                                                    className={`bg-gray-700 hover:bg-gray-600 border-2 rounded-lg p-4 text-left transition-colors ${hasConflict ? 'border-yellow-600' : 'border-gray-500'}`}
                                                 >
                                                     <div className="text-xl font-semibold capitalize mb-2">{keywordName}</div>
                                                     {keywordData && (
                                                         <div className="text-sm text-gray-300">{renderKeywordAttributes(keywordData)}</div>
+                                                    )}
+                                                    {derivedFrom && (
+                                                        <div className="mt-2 text-xs text-yellow-400 italic">↳ Derived from {derivedFrom} — boss will re-acquire</div>
+                                                    )}
+                                                    {weaponConflict && (
+                                                        <div className="mt-2 text-xs text-yellow-300">⚠ {weaponConflict}</div>
+                                                    )}
+                                                    {raceConflict && (
+                                                        <div className="mt-2 text-xs text-yellow-300">⚠ {raceConflict}</div>
                                                     )}
                                                 </button>
                                             );
                                         })}
                                     </div>
                                 </div>
-                                {player && player.keywords.length > 0 && (
+                                {player && ((player.explicit_keywords?.length ?? 0) > 0 || (player.keywords?.length ?? 0) > 0) && (
                                     <div className="px-8 pb-8 pt-4 border-t-2 border-gray-600 shrink-0">
-                                        <p className="text-sm text-gray-400">Your Powers: {player.keywords.join(', ')}</p>
+                                        <p className="text-sm text-gray-300 mb-1">
+                                            <span className="text-gray-400">Your Powers: </span>
+                                            {(player.explicit_keywords || player.keywords).join(', ')}
+                                        </p>
+                                        {(player.derived_keywords?.length ?? 0) > 0 && (
+                                            <p className="text-xs text-gray-500 mb-1">Derived: {player.derived_keywords.join(', ')}</p>
+                                        )}
+                                        <p className="text-xs text-gray-500 mb-1">
+                                            Hands: {player.equipped_hands ?? 0}/{player.max_hands ?? 2} &nbsp;|&nbsp; Race Slots: {player.race_count ?? 0}/{player.max_race_slots ?? 1}
+                                        </p>
                                         <button
                                             onClick={() => setShowRemoveKeywordPanel(true)}
                                             className="mt-3 w-full py-2 rounded-lg border-2 border-red-700 text-red-400 hover:bg-red-900 hover:bg-opacity-30 transition-colors text-sm font-semibold"
@@ -1454,7 +1697,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                 </div>
                                 <div className="overflow-y-auto px-8 flex-1 min-h-0">
                                     <div className="grid grid-cols-2 gap-4 pb-4">
-                                        {player && player.keywords.map((keywordName: string) => {
+                                        {player && (player.explicit_keywords || player.keywords).map((keywordName: string) => {
                                             const keywordData = allKeywordsData.find(kw => kw.name === keywordName);
                                             return (
                                                 <button
@@ -1485,6 +1728,115 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 </div>
             )}
             
+            {/* Race Conflict Modal */}
+            {raceConflictPending && player && (() => {
+                const newRaceData = allKeywordsData.find((kw: any) => kw.name === raceConflictPending.newRace);
+                const currentRaceName = (player.explicit_keywords || []).find((kw: string) => {
+                    const kwData = allKeywordsData.find((k: any) => k.name === kw);
+                    return kwData?.category === 'creature';
+                });
+                const currentRaceData = currentRaceName ? allKeywordsData.find((kw: any) => kw.name === currentRaceName) : null;
+                return (
+                    <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+                        <div className="bg-gray-800 border-4 border-yellow-600 rounded-lg max-w-lg w-full p-8">
+                            <h2 className="text-2xl font-bold text-yellow-400 text-center mb-2">Race Conflict</h2>
+                            <p className="text-gray-300 text-center text-sm mb-6">
+                                You can only be one race. Choose to keep your current form or become the new one.
+                                Either way, the boss loses this trait.
+                            </p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <button
+                                    onClick={() => handleRaceConflictChoice('keep')}
+                                    className="bg-gray-700 hover:bg-gray-600 border-2 border-gray-400 rounded-lg p-4 text-left transition-colors"
+                                >
+                                    <div className="text-xs text-gray-400 mb-1">Keep current</div>
+                                    <div className="text-xl font-bold capitalize mb-2">{currentRaceName ?? 'None'}</div>
+                                    {currentRaceData && (
+                                        <div className="text-xs text-gray-300">{formatKeywordAttributes(currentRaceData)}</div>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={() => handleRaceConflictChoice('swap')}
+                                    className="bg-gray-700 hover:bg-gray-600 border-2 border-yellow-600 rounded-lg p-4 text-left transition-colors"
+                                >
+                                    <div className="text-xs text-yellow-400 mb-1">Become new race</div>
+                                    <div className="text-xl font-bold capitalize mb-2">{raceConflictPending.newRace}</div>
+                                    {newRaceData && (
+                                        <div className="text-xs text-gray-300">{formatKeywordAttributes(newRaceData)}</div>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {/* Weapon Conflict Modal */}
+            {weaponConflictPending && player && (() => {
+                const newWeaponData = allKeywordsData.find((kw: any) => kw.name === weaponConflictPending.newWeapon);
+                const equippedWeapons = (player.explicit_keywords || [])
+                    .map((kw: string) => allKeywordsData.find((k: any) => k.name === kw))
+                    .filter((kw: any) => kw?.category === 'weapon');
+                const discardedHands = weaponDiscardSelection.reduce((sum: number, name: string) => {
+                    const kw = allKeywordsData.find((k: any) => k.name === name);
+                    return sum + (kw?.properties?.hands ?? 1);
+                }, 0);
+                const willFit = (player.equipped_hands ?? 0) - discardedHands + weaponConflictPending.handsNeeded <= (player.max_hands ?? 2);
+                return (
+                    <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+                        <div className="bg-gray-800 border-4 border-orange-600 rounded-lg max-w-lg w-full p-8">
+                            <h2 className="text-2xl font-bold text-orange-400 text-center mb-1">Not Enough Hands</h2>
+                            <p className="text-gray-300 text-center text-sm mb-1">
+                                <span className="font-semibold capitalize">{weaponConflictPending.newWeapon}</span> needs {weaponConflictPending.handsNeeded} hand{weaponConflictPending.handsNeeded !== 1 ? 's' : ''}.
+                                You have {player.equipped_hands ?? 0}/{player.max_hands ?? 2} used.
+                            </p>
+                            <p className="text-gray-400 text-center text-xs mb-4">Select weapons to drop until you have room.</p>
+                            <div className="space-y-2 mb-4">
+                                {equippedWeapons.map((kw: any) => {
+                                    const selected = weaponDiscardSelection.includes(kw.name);
+                                    return (
+                                        <button
+                                            key={kw.name}
+                                            onClick={() => setWeaponDiscardSelection(sel =>
+                                                selected ? sel.filter(n => n !== kw.name) : [...sel, kw.name]
+                                            )}
+                                            className={`w-full rounded-lg border-2 px-4 py-3 text-left transition-colors ${
+                                                selected
+                                                    ? 'bg-red-900 border-red-500 text-white'
+                                                    : 'bg-gray-700 border-gray-500 hover:bg-gray-600'
+                                            }`}
+                                        >
+                                            <span className="font-semibold capitalize">{kw.name}</span>
+                                            <span className="text-xs text-gray-400 ml-2">{kw.properties?.hands ?? 1} hand{(kw.properties?.hands ?? 1) !== 1 ? 's' : ''}</span>
+                                            {selected && <span className="float-right text-red-400 text-xs font-bold">DROP</span>}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => { setWeaponConflictPending(null); setWeaponDiscardSelection([]); }}
+                                    className="flex-1 py-2 rounded-lg border-2 border-gray-500 text-gray-300 hover:bg-gray-700 transition-colors text-sm"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleWeaponConflictConfirm}
+                                    disabled={!willFit}
+                                    className={`flex-1 py-2 rounded-lg border-2 text-sm font-semibold transition-colors ${
+                                        willFit
+                                            ? 'bg-orange-800 border-orange-500 hover:bg-orange-700 text-white'
+                                            : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
+                                    }`}
+                                >
+                                    {willFit ? `Equip ${weaponConflictPending.newWeapon}` : `Need ${weaponConflictPending.handsNeeded - ((player.max_hands ?? 2) - (player.equipped_hands ?? 0) + discardedHands)} more hand${weaponConflictPending.handsNeeded - ((player.max_hands ?? 2) - (player.equipped_hands ?? 0) + discardedHands) !== 1 ? 's' : ''} freed`}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
             {/* Player Death Modal */}
             {playerDead && (
                 <div className="absolute inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">

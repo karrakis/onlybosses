@@ -12,11 +12,11 @@ end
 
 puts "Seeding keywords..."
 keywords_data.each do |data|
-  BossKeyword.find_or_create_by!(name: data['name']) do |keyword|
-    keyword.category = data['category']
-    keyword.rarity = data['rarity']
-    keyword.properties = data['attributes']
-  end
+  keyword = BossKeyword.find_or_initialize_by(name: data['name'])
+  keyword.category   = data['category']
+  keyword.rarity     = data['rarity']
+  keyword.properties = data['attributes']
+  keyword.save!
   print "."
 end
 

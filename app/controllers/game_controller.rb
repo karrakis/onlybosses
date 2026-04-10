@@ -53,6 +53,48 @@ class GameController < ApplicationController
     render json: player
   end
 
+  # POST /skip_keyword
+  # Called when the player discards a boss keyword without taking it (e.g. hate-draft keep-race).
+  # Still levels up and records a snapshot so depth progression is preserved.
+  def skip_keyword
+    depth  = params[:depth].to_i
+    player = PlayerFactory.get_player(session)
+    PlayerFactory.level_up(player)
+    PlayerFactory.save_player(session, player)
+    SnapshotService.record_snapshot(session, player, get_current_boss, depth) if depth > 0
+    render json: player
+  end
+
+  # POST /swap_weapons
+  # Removes each weapon in old_keywords, then adds new_keyword, levels up once.
+  def swap_weapons
+    new_keyword  = params[:new_keyword]
+    old_keywords = Array(params[:old_keywords])
+    depth        = params[:depth].to_i
+    player       = PlayerFactory.get_player(session)
+    old_keywords.each { |kw| PlayerFactory.remove_keyword(player, kw) }
+    PlayerFactory.add_keyword(player, new_keyword)
+    PlayerFactory.level_up(player)
+    PlayerFactory.save_player(session, player)
+    SnapshotService.record_snapshot(session, player, get_current_boss, depth) if depth > 0
+    render json: player
+  end
+
+  # POST /swap_race
+  # Atomically removes old_keyword and adds new_keyword, then levels up once.
+  def swap_race
+    new_keyword = params[:new_keyword]
+    old_keyword = params[:old_keyword]
+    depth       = params[:depth].to_i
+    player      = PlayerFactory.get_player(session)
+    PlayerFactory.remove_keyword(player, old_keyword)
+    PlayerFactory.add_keyword(player, new_keyword)
+    PlayerFactory.level_up(player)
+    PlayerFactory.save_player(session, player)
+    SnapshotService.record_snapshot(session, player, get_current_boss, depth) if depth > 0
+    render json: player
+  end
+
   # POST /remove_keyword
   def remove_keyword
     keyword = params[:keyword]

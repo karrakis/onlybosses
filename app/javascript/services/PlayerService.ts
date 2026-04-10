@@ -1,6 +1,8 @@
 export interface Player {
     name: string;
-    keywords: string[];
+    explicit_keywords: string[];
+    derived_keywords: string[];
+    keywords: string[];           // combined explicit + derived, used by game logic
     bosses_defeated: number;
     turns_since_mana_cost?: number;
     turns_since_stamina_cost?: number;
@@ -12,6 +14,11 @@ export interface Player {
     mana: number;
     damage: number;
     actions: string[];
+    // Slot tracking
+    max_hands: number;            // hand capacity from race keywords (default 2)
+    equipped_hands: number;       // hands used by currently held weapons
+    max_race_slots: number;       // 1 + chimerism count
+    race_count: number;           // number of creature-type keywords held
 }
 
 export const PlayerService = {
@@ -83,6 +90,36 @@ export const PlayerService = {
             throw new Error('Failed to reset player');
         }
         
+        return response.json();
+    },
+
+    async skipKeyword(depth?: number): Promise<Player> {
+        const response = await fetch('/skip_keyword', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ depth }),
+        });
+        if (!response.ok) throw new Error('Failed to skip keyword');
+        return response.json();
+    },
+
+    async swapWeapons(newKeyword: string, oldKeywords: string[], depth?: number): Promise<Player> {
+        const response = await fetch('/swap_weapons', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ new_keyword: newKeyword, old_keywords: oldKeywords, depth }),
+        });
+        if (!response.ok) throw new Error('Failed to swap weapons');
+        return response.json();
+    },
+
+    async swapRace(newKeyword: string, oldKeyword: string, depth?: number): Promise<Player> {
+        const response = await fetch('/swap_race', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ new_keyword: newKeyword, old_keyword: oldKeyword, depth }),
+        });
+        if (!response.ok) throw new Error('Failed to swap race');
         return response.json();
     }
 };
