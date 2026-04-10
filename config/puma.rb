@@ -14,8 +14,10 @@ threads min_threads_count, max_threads_count
 worker_timeout 3600 if ENV.fetch("RAILS_ENV", "development") == "development"
 
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
+# low_latency=true disables Nagle's algorithm so SSE events flush immediately.
 #
-port ENV.fetch("PORT") { 3000 }
+port_num = ENV.fetch("PORT") { 3000 }
+bind "tcp://0.0.0.0:#{port_num}?low_latency=true"
 
 # Specifies the `environment` that Puma will run in.
 #

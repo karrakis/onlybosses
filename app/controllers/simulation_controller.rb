@@ -13,6 +13,9 @@ class SimulationController < ApplicationController
     response.headers['Content-Type']      = 'text/event-stream'
     response.headers['Cache-Control']     = 'no-cache'
     response.headers['X-Accel-Buffering'] = 'no'
+    # Rack::ETag middleware buffers the entire response to compute a hash unless
+    # Last-Modified or ETag is already present — set it to bypass that buffering.
+    response.headers['Last-Modified']     = Time.current.httpdate
 
     count.times do |i|
       depth = RunSimulatorService.simulate_run(keyword_registry)
