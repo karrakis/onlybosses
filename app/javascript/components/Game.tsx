@@ -1010,7 +1010,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     }
 
     // Render keyword attributes with tooltips for passives
-    const renderKeywordAttributes = (keyword: any): React.ReactNode => {
+    const renderKeywordAttributes = (keyword: any, redAttrKeys?: string[]): React.ReactNode => {
         const attrs = keyword.properties || {};
         const parts: React.ReactNode[] = [];
         
@@ -1119,11 +1119,17 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         }
 
         if (typeof attrs.hands === 'number') {
-            parts.push(`${attrs.hands} hand${attrs.hands !== 1 ? 's' : ''} required`);
+            const handsText = `${attrs.hands} hand${attrs.hands !== 1 ? 's' : ''} required`;
+            parts.push(redAttrKeys?.includes('hands')
+                ? <span key="hands-req" className="text-red-400">{handsText}</span>
+                : handsText);
         }
 
         if (typeof attrs.max_hands === 'number') {
-            parts.push(`Provides ${attrs.max_hands} hand${attrs.max_hands !== 1 ? 's' : ''}`);
+            const maxHandsText = `Provides ${attrs.max_hands} hand${attrs.max_hands !== 1 ? 's' : ''}`;
+            parts.push(redAttrKeys?.includes('max_hands')
+                ? <span key="max-hands" className="text-red-400">{maxHandsText}</span>
+                : maxHandsText);
         }
 
         if (typeof attrs.race_slots === 'number') {
@@ -1150,20 +1156,31 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                     <div className="grid grid-cols-1 gap-4 mb-8">
                         {initialKeywordOptions.map((keyword) => {
                             const isSelected = selectedInitialKeywords.includes(keyword.name);
-                            let isBlocked = !isSelected && selectedInitialKeywords.length >= 2;
-                            if (!isSelected && !isBlocked) {
+                            let isBlocked = false;
+                            let blockReason: 'race' | 'hands_too_low' | 'hands_overflow' | 'slots_full' | null = null;
+
+                            if (!isSelected && selectedInitialKeywords.length >= 2) {
+                                isBlocked = true;
+                                blockReason = 'slots_full';
+                            } else if (!isSelected) {
                                 if (keyword.category === 'creature') {
                                     const alreadyHasCreature = selectedInitialKeywords.some((n: string) => {
                                         const kw = allKeywordsData.find((k: any) => k.name === n);
                                         return kw?.category === 'creature';
                                     });
-                                    if (alreadyHasCreature) isBlocked = true;
+                                    if (alreadyHasCreature) {
+                                        isBlocked = true;
+                                        blockReason = 'race';
+                                    }
                                     if (!isBlocked && keyword.properties?.max_hands != null) {
                                         const handsUsed = selectedInitialKeywords.reduce((sum: number, n: string) => {
                                             const kw = allKeywordsData.find((k: any) => k.name === n);
                                             return kw?.category === 'weapon' ? sum + (kw.properties?.hands ?? 1) : sum;
                                         }, 0);
-                                        if (handsUsed > keyword.properties.max_hands) isBlocked = true;
+                                        if (handsUsed > keyword.properties.max_hands) {
+                                            isBlocked = true;
+                                            blockReason = 'hands_too_low';
+                                        }
                                     }
                                 } else if (keyword.category === 'weapon') {
                                     const newHands: number = keyword.properties?.hands ?? 1;
@@ -1175,9 +1192,18 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                         const kw = allKeywordsData.find((k: any) => k.name === n);
                                         return kw?.category === 'weapon' ? sum + (kw.properties?.hands ?? 1) : sum;
                                     }, 0);
-                                    if (handsUsed + newHands > effectiveMaxHands) isBlocked = true;
+                                    if (handsUsed + newHands > effectiveMaxHands) {
+                                        isBlocked = true;
+                                        blockReason = 'hands_overflow';
+                                    }
                                 }
                             }
+
+                            const redAttrKeys: string[] =
+                                blockReason === 'hands_too_low' ? ['max_hands'] :
+                                blockReason === 'hands_overflow' ? ['hands'] :
+                                [];
+
                             return (
                                 <button
                                     key={keyword.name}
@@ -1195,7 +1221,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                             {keyword.category} • Rarity {keyword.rarity}
                                         </span>
                                     </div>
-                                    <div className="text-sm text-gray-300">{renderKeywordAttributes(keyword)}</div>
+                                    <div className="text-sm text-gray-300">{renderKeywordAttributes(keyword, redAttrKeys)}</div>
                                 </button>
                             );
                         })}
