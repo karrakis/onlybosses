@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_04_01_000005) do
+ActiveRecord::Schema[7.0].define(version: 2026_04_10_050155) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -119,7 +119,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_04_01_000005) do
   create_table "snapshot_modifiers", force: :cascade do |t|
     t.bigint "depth_snapshot_id", null: false
     t.bigint "modifier_key_id", null: false
-    t.decimal "value", precision: 10, scale: 6, null: false
+    t.float "value", null: false
     t.string "context", default: "player", null: false
     t.index ["depth_snapshot_id", "modifier_key_id", "context"], name: "index_snapshot_modifiers_uniqueness", unique: true
     t.index ["depth_snapshot_id"], name: "index_snapshot_modifiers_on_depth_snapshot_id"
