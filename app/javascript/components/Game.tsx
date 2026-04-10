@@ -1443,21 +1443,21 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                 )}
                                 <div 
                                     className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
-                                        actionInProgress || bossDying 
-                                            ? 'bg-gray-900 text-gray-600 cursor-not-allowed' 
+                                        actionInProgress || bossDying || (forcedPlayerAction && forcedPlayerAction !== 'attack')
+                                            ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40' 
                                             : 'bg-gray-800 hover:bg-gray-700 active:bg-gray-600'
                                     }`}
-                                    onClick={() => !actionInProgress && !bossDying && handleAction('attack')}
+                                    onClick={() => !actionInProgress && !bossDying && (!forcedPlayerAction || forcedPlayerAction === 'attack') && handleAction('attack')}
                                 >
                                     Attack
                                 </div>
                                 <div
                                     className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
-                                        actionInProgress || bossDying
-                                            ? 'bg-gray-900 text-gray-600 cursor-not-allowed'
+                                        actionInProgress || bossDying || (forcedPlayerAction && forcedPlayerAction !== 'guard')
+                                            ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40'
                                             : 'bg-yellow-900 hover:bg-yellow-800 active:bg-yellow-700'
                                     }`}
-                                    onClick={() => !actionInProgress && !bossDying && handleAction('guard')}
+                                    onClick={() => !actionInProgress && !bossDying && (!forcedPlayerAction || forcedPlayerAction === 'guard') && handleAction('guard')}
                                 >
                                     Guard
                                 </div>
@@ -1465,11 +1465,11 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                     <div
                                         key={ability}
                                         className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
-                                            actionInProgress || bossDying
-                                                ? 'bg-gray-900 text-gray-600 cursor-not-allowed'
+                                            actionInProgress || bossDying || (forcedPlayerAction && forcedPlayerAction !== ability)
+                                                ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40'
                                                 : 'bg-orange-900 hover:bg-orange-800 active:bg-orange-700'
                                         }`}
-                                        onClick={() => !actionInProgress && !bossDying && handleAction(ability)}
+                                        onClick={() => !actionInProgress && !bossDying && (!forcedPlayerAction || forcedPlayerAction === ability) && handleAction(ability)}
                                     >
                                         {formatSpellName(ability)}
                                     </div>
@@ -1477,11 +1477,11 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                 {canCast && (
                                     <div
                                         className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
-                                            actionInProgress || bossDying 
-                                                ? 'bg-gray-900 text-gray-600 cursor-not-allowed'
+                                            actionInProgress || bossDying || (forcedPlayerAction && !forcedPlayerAction.startsWith('cast'))
+                                                ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40'
                                                 : 'bg-purple-800 hover:bg-purple-700 active:bg-purple-600'
                                         }`}
-                                        onClick={() => !actionInProgress && !bossDying && setShowCastMenu(true)}
+                                        onClick={() => !actionInProgress && !bossDying && (!forcedPlayerAction || forcedPlayerAction.startsWith('cast')) && setShowCastMenu(true)}
                                     >
                                         Cast
                                     </div>
@@ -1490,11 +1490,11 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                     <div
                                         key={spell}
                                         className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
-                                            actionInProgress || bossDying 
-                                                ? 'bg-gray-900 text-gray-600 cursor-not-allowed'
+                                            actionInProgress || bossDying || (forcedPlayerAction && forcedPlayerAction !== `cast:${spell}`)
+                                                ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40'
                                                 : 'bg-blue-800 hover:bg-blue-700 active:bg-blue-600'
                                         }`}
-                                        onClick={() => !actionInProgress && !bossDying && handleAction(`cast:${spell}`)}
+                                        onClick={() => !actionInProgress && !bossDying && (!forcedPlayerAction || forcedPlayerAction === `cast:${spell}`) && handleAction(`cast:${spell}`)}
                                     >
                                         {formatSpellName(spell)}
                                     </div>
