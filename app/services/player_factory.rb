@@ -53,10 +53,13 @@ class PlayerFactory
   end
 
   # Add a keyword to the player's explicit list.
-  # Stackable duplicates are not yet permitted — guard will be relaxed when stacking is implemented.
+  # Passive keywords are stackable — acquiring the same passive multiple times stacks its
+  # effects multiplicatively (via the normal keyword iteration in recalculate_stats /
+  # DamageCalculator). All other categories guard against duplicates.
   def self.add_keyword(player, keyword)
     explicit = player['explicit_keywords'] || []
-    return player if explicit.include?(keyword)
+    kw = BossKeyword.find_by(name: keyword)
+    return player if explicit.include?(keyword) && kw&.category != 'passive'
 
     player['explicit_keywords'] = explicit + [keyword]
     refresh_derived_keywords(player)
