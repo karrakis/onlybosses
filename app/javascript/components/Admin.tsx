@@ -1,9 +1,10 @@
 import * as React from "react";
 import SynergyChart from "./SynergyChart";
+import KeywordChart from "./KeywordChart";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type View = "analysis" | "synergy_chart";
+type View = "analysis" | "synergy_chart" | "keyword_chart";
 
 type Section = { title: string; lines: string[] };
 
@@ -154,6 +155,12 @@ function AnalysisView({ onNavigate, result, setResult, onNavigateHome }: Analysi
           </div>
             <div className="flex items-center gap-3">
             <button
+              onClick={() => onNavigate("keyword_chart")}
+              className="text-orange-400 hover:text-orange-300 border border-orange-700 rounded px-3 py-1 text-sm"
+            >
+              Keyword Chart →
+            </button>
+            <button
               onClick={() => onNavigate("synergy_chart")}
               className="text-orange-400 hover:text-orange-300 border border-orange-700 rounded px-3 py-1 text-sm"
             >
@@ -272,14 +279,18 @@ function AnalysisView({ onNavigate, result, setResult, onNavigateHome }: Analysi
 
 export default function Admin({ onNavigateHome = () => { history.pushState({}, "", "/"); location.reload(); } }: { onNavigateHome?: () => void }) {
   const pathToView = (): View =>
-    window.location.pathname.includes("synergy_chart") ? "synergy_chart" : "analysis";
+    window.location.pathname.includes("synergy_chart") ? "synergy_chart" :
+    window.location.pathname.includes("keyword_chart") ? "keyword_chart" : "analysis";
 
   const [view,      setView]      = React.useState<View>(pathToView);
   const [result,    setResult]    = React.useState<AnalysisResult | null>(null);
 
   function navigate(v: View) {
     setView(v);
-    history.pushState({}, "", v === "synergy_chart" ? "/admin/synergy_chart" : "/admin");
+    const path = v === "synergy_chart" ? "/admin/synergy_chart"
+               : v === "keyword_chart" ? "/admin/keyword_chart"
+               : "/admin";
+    history.pushState({}, "", path);
   }
 
   // Keep in sync with browser back/forward
@@ -291,6 +302,9 @@ export default function Admin({ onNavigateHome = () => { history.pushState({}, "
 
   if (view === "synergy_chart") {
     return <SynergyChart onBack={() => navigate("analysis")} analysisResult={result} />;
+  }
+  if (view === "keyword_chart") {
+    return <KeywordChart onBack={() => navigate("analysis")} analysisResult={result} />;
   }
   return <AnalysisView onNavigate={navigate} result={result} setResult={setResult} onNavigateHome={onNavigateHome} />;
 }

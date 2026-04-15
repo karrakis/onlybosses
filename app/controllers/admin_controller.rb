@@ -112,6 +112,46 @@ class AdminController < ApplicationController
     end
   end
 
+  # GET /admin/keyword_data
+  # Returns per-depth survival rate data for individual keywords.
+  #
+  # Params:
+  #   keywords[]   — keyword name(s), max 8
+  #   depth_min    — integer (default 1)
+  #   depth_max    — integer (default 20)
+  #   context      — "player" | "boss" (default "player")
+  #   min_support  — minimum snapshot count per depth (default 3)
+  #   date_from, date_to — optional YYYY-MM-DD strings
+  def keyword_data
+    depth_min   = (params[:depth_min]   || 1).to_i.clamp(1, 50)
+    depth_max   = (params[:depth_max]   || 20).to_i.clamp(depth_min, 50)
+    context     = params[:context].presence_in(%w[player boss]) || 'player'
+    min_support = (params[:min_support] || 3).to_i.clamp(1, 9999)
+    keywords    = Array(params[:keywords]).first(8)
+
+    date_from = params[:date_from].present? ? (Date.parse(params[:date_from]) rescue nil) : nil
+    date_to   = params[:date_to].present?   ? (Date.parse(params[:date_to])   rescue nil) : nil
+
+    kw_col = context == 'player' ? 'keyword_ids' : 'boss_keyword_ids'
+    conn   = ActiveRecord::Base.connection
+
+    result = keywords.filter_map do |name|
+      name = name.strip
+      next nil if name.empty?
+
+      kw = BossKeyword.find_by(name: name)
+      unless kw
+        next { keyword: name, data: [], error: "Unknown keyword: #{name}" }
+      end
+
+      data = per_depth_rate(conn, kw_col, kw.id, depth_min, depth_max, min_support,
+                             date_from: date_from, date_to: date_to)
+      { keyword: name, data: data }
+    end
+
+    render json: result
+  end
+
   # GET /admin/combo_data
   # Returns per-depth conditional delta data for each requested combo.
   #
@@ -219,6 +259,52 @@ class AdminController < ApplicationController
         support:    support,
         combo_rate: combo_rate.round(4),
         baseline:   baseline.round(4),
+      }
+    end
+  end
+
+  # ── Per-depth survival rate for a single keyword ─────────────────────────────
+  #
+  # Returns an array of:
+  #   { depth:, rate:, support:, baseline: }
+  # where `rate` is the survival rate when the keyword is present, and
+  # `baseline` is the overall survival rate at that depth (no keyword filter).
+  def per_depth_rate(conn, kw_col, kw_id, depth_min, depth_max, min_support,
+                     date_from: nil, date_to: nil)
+    kw_arr = "ARRAY[#{kw_id.to_i}]::integer[]"
+
+    date_clauses = []
+    date_clauses << "AND ds.created_at >= #{conn.quote(date_from.to_s)}" if date_from
+    date_clauses << "AND ds.created_at <  #{conn.quote((date_to + 1).to_s)}" if date_to
+
+    sql = <<~SQL
+      SELECT ds.depth,
+             AVG(CASE WHEN ds.reached_next THEN 1.0 ELSE 0.0 END) AS overall_rate,
+             COUNT(*)  FILTER (WHERE ds.#{kw_col} @> #{kw_arr}) AS kw_support,
+             AVG(CASE WHEN ds.reached_next THEN 1.0 ELSE 0.0 END)
+               FILTER (WHERE ds.#{kw_col} @> #{kw_arr}) AS kw_rate
+      FROM   depth_snapshots ds
+      JOIN   runs r ON r.id = ds.run_id
+      WHERE  ds.depth BETWEEN #{depth_min} AND #{depth_max}
+        AND  r.outcome = 'died'
+        #{date_clauses.join("\n        ")}
+      GROUP  BY ds.depth
+      ORDER  BY ds.depth
+    SQL
+
+    conn.execute(sql).filter_map do |row|
+      support = row['kw_support'].to_i
+      next if support < min_support
+
+      rate     = row['kw_rate']&.to_f
+      baseline = row['overall_rate']&.to_f
+      next if rate.nil? || baseline.nil?
+
+      {
+        depth:    row['depth'].to_i,
+        rate:     rate.round(4),
+        support:  support,
+        baseline: baseline.round(4),
       }
     end
   end
