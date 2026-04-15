@@ -310,13 +310,21 @@ export default function SynergyChart({
     setError(null);
     try {
       const updated = await Promise.all(
-        lines.map(async (line) => ({
-          ...line,
-          data: await fetchComboData(
-            line.keywords, line.context, depthMin, depthMax, minSupport,
-            line.dateFrom, line.dateTo,
-          ),
-        })),
+        lines.map(async (line) => {
+          // Use current range dates if the range still exists, otherwise keep stored dates
+          const currentRange = ranges.find((r) => r.label === line.rangeName);
+          const dateFrom = currentRange ? currentRange.from : line.dateFrom;
+          const dateTo   = currentRange ? currentRange.to   : line.dateTo;
+          return {
+            ...line,
+            dateFrom,
+            dateTo,
+            data: await fetchComboData(
+              line.keywords, line.context, depthMin, depthMax, minSupport,
+              dateFrom, dateTo,
+            ),
+          };
+        }),
       );
       setLines(updated);
     } catch (e: any) {
