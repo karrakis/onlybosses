@@ -128,6 +128,10 @@ class AdminController < ApplicationController
     min_support = (params[:min_support] || 3).to_i.clamp(1, 9999)
     combos      = Array(params[:combos]).first(8)
 
+    # Optional date range (YYYY-MM-DD strings parsed safely; nil means no filter)
+    date_from = params[:date_from].present? ? (Date.parse(params[:date_from]) rescue nil) : nil
+    date_to   = params[:date_to].present?   ? (Date.parse(params[:date_to])   rescue nil) : nil
+
     kw_col = context == 'player' ? 'keyword_ids' : 'boss_keyword_ids'
     conn   = ActiveRecord::Base.connection
 
@@ -145,7 +149,8 @@ class AdminController < ApplicationController
         next { combo: names.join(' + '), data: [], error: "Unknown keyword(s): #{missing.join(', ')}" }
       end
 
-      data = per_depth_delta(conn, kw_col, kw_ids, depth_min, depth_max, min_support)
+      data = per_depth_delta(conn, kw_col, kw_ids, depth_min, depth_max, min_support,
+                             date_from: date_from, date_to: date_to)
       { combo: names.join(' + '), data: data }
     end
 
@@ -161,7 +166,8 @@ class AdminController < ApplicationController
   #   { depth:, delta:, support:, combo_rate:, baseline: }
   #
   # kw_ids are already-validated integer IDs — no injection risk.
-  def per_depth_delta(conn, kw_col, kw_ids, depth_min, depth_max, min_support)
+  def per_depth_delta(conn, kw_col, kw_ids, depth_min, depth_max, min_support,
+                      date_from: nil, date_to: nil)
     n          = kw_ids.length
     combo_arr  = "ARRAY[#{kw_ids.join(',')}]::integer[]"
 
@@ -178,12 +184,18 @@ class AdminController < ApplicationController
                         "FILTER (WHERE ds.#{kw_col} @> #{indiv_arr}) AS rate_#{i}"
     end
 
+    # Date clauses: date_from/date_to are Ruby Date objects, conn.quote handles escaping
+    date_clauses = []
+    date_clauses << "AND ds.created_at >= #{conn.quote(date_from.to_s)}" if date_from
+    date_clauses << "AND ds.created_at <  #{conn.quote((date_to + 1).to_s)}" if date_to
+
     sql = <<~SQL
       SELECT #{select_parts.join(', ')}
       FROM   depth_snapshots ds
       JOIN   runs r ON r.id = ds.run_id
       WHERE  ds.depth BETWEEN #{depth_min} AND #{depth_max}
         AND  r.outcome = 'died'
+        #{date_clauses.join("\n        ")}
       GROUP  BY ds.depth
       ORDER  BY ds.depth
     SQL

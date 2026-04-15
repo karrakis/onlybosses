@@ -9,9 +9,12 @@ type DataPoint = {
   depth: number; delta: number; support: number; combo_rate: number; baseline: number;
 };
 
+type DateRange = { id: string; label: string; from: string; to: string };
+
 type ComboLine = {
   id: string; keywords: string[]; context: "player" | "boss";
   label: string; color: string; data: DataPoint[];
+  dateFrom: string; dateTo: string; rangeName: string;
 };
 
 type TooltipState = {
@@ -217,8 +220,12 @@ export default function SynergyChart({
   const [refreshing, setRefreshing] = React.useState(false);
   const [error,      setError]      = React.useState<string | null>(null);
   const [tooltip,    setTooltip]    = React.useState<TooltipState | null>(null);
+  const [ranges,     setRanges]     = React.useState<DateRange[]>([
+    { id: "range_0", label: "All time", from: "", to: "" },
+  ]);
 
-  const colorIdx = React.useRef(0);
+  const colorIdx   = React.useRef(0);
+  const rangeIdRef = React.useRef(1);
 
   // Sidebar sections derived from passed-in analysis result, filtered by current context
   const allSections         = analysisResult?.sections ?? [];
@@ -235,6 +242,7 @@ export default function SynergyChart({
   async function fetchComboData(
     keywords: string[], ctx: "player" | "boss",
     dMin: number, dMax: number, support: number,
+    dateFrom: string = "", dateTo: string = "",
   ): Promise<DataPoint[]> {
     const p = new URLSearchParams();
     p.append("combos[]", keywords.join(","));
@@ -242,6 +250,8 @@ export default function SynergyChart({
     p.set("depth_max",   String(dMax));
     p.set("context",     ctx);
     p.set("min_support", String(support));
+    if (dateFrom) p.set("date_from", dateFrom);
+    if (dateTo)   p.set("date_to",   dateTo);
     const res  = await fetch(`/admin/combo_data?${p}`);
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
     const json: Array<{ combo: string; data: DataPoint[]; error?: string }> = await res.json();
@@ -250,35 +260,42 @@ export default function SynergyChart({
     return json[0].data;
   }
 
-  // ── Add combo — accepts an optional name override for sidebar clicks ───────
+  // ── Add combo — adds one line per active date range ─────────────────────
   async function addCombo(overrideName?: string) {
     const keywords = parseCombo(overrideName ?? input);
     if (!keywords.length) return;
-    const label = keywords.join(" + ") + ` [${context}]`;
-
-    if (lines.find((l) => l.label === label)) {
-      if (!overrideName) setError(`"${label}" is already on the chart.`);
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchComboData(keywords, context, depthMin, depthMax, minSupport);
-      if (!data.length) {
+      const newLines: ComboLine[] = [];
+      const multiRange = ranges.length > 1;
+      for (const range of ranges) {
+        const label = keywords.join(" + ") + ` [${context}]` +
+                      (multiRange ? ` · ${range.label}` : "");
+        if (lines.find((l) => l.label === label)) continue;
+        const data = await fetchComboData(
+          keywords, context, depthMin, depthMax, minSupport,
+          range.from, range.to,
+        );
+        if (!data.length) continue;
+        const color = COLORS[colorIdx.current % COLORS.length];
+        colorIdx.current++;
+        newLines.push({
+          id: `${label}:${Date.now()}`,
+          keywords, context, label, color, data,
+          dateFrom: range.from, dateTo: range.to, rangeName: range.label,
+        });
+      }
+      if (!newLines.length) {
         setError(
           `No data for "${keywords.join(" + ")}" ` +
           `(depth ${depthMin}–${depthMax}, min support ${minSupport}). ` +
           `Try lowering min support or broadening the depth range.`,
         );
-        return;
+      } else {
+        setLines((prev) => [...prev, ...newLines]);
+        if (!overrideName) setInput("");
       }
-      const color = COLORS[colorIdx.current % COLORS.length];
-      colorIdx.current++;
-      setLines((prev) => [
-        ...prev,
-        { id: `${label}:${Date.now()}`, keywords, context, label, color, data },
-      ]);
-      if (!overrideName) setInput("");
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -295,7 +312,10 @@ export default function SynergyChart({
       const updated = await Promise.all(
         lines.map(async (line) => ({
           ...line,
-          data: await fetchComboData(line.keywords, line.context, depthMin, depthMax, minSupport),
+          data: await fetchComboData(
+            line.keywords, line.context, depthMin, depthMax, minSupport,
+            line.dateFrom, line.dateTo,
+          ),
         })),
       );
       setLines(updated);
@@ -308,6 +328,18 @@ export default function SynergyChart({
 
   function removeLine(id: string) {
     setLines((prev) => prev.filter((l) => l.id !== id));
+  }
+
+  // ── Date range management ──────────────────────────────────────────────────
+  function addRange() {
+    const id = `range_${rangeIdRef.current++}`;
+    setRanges((prev) => [...prev, { id, label: `Range ${rangeIdRef.current}`, from: "", to: "" }]);
+  }
+  function removeRange(id: string) {
+    setRanges((prev) => prev.filter((r) => r.id !== id));
+  }
+  function updateRange(id: string, field: "label" | "from" | "to", value: string) {
+    setRanges((prev) => prev.map((r) => r.id === id ? { ...r, [field]: value } : r));
   }
 
   // ── Y domain ───────────────────────────────────────────────────────────────
@@ -388,6 +420,54 @@ export default function SynergyChart({
               {refreshing ? "Refreshing…" : "↺ Refresh all"}
             </button>
           )}
+        </div>
+
+        {/* Date Ranges */}
+        <div className="bg-gray-900 border border-gray-700 rounded-lg p-3 mb-2">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold uppercase tracking-wide text-gray-400">Date Ranges</span>
+            <button
+              onClick={addRange}
+              className="text-xs text-orange-400 hover:text-orange-300 border border-orange-800 rounded px-2 py-0.5"
+            >
+              + Add range
+            </button>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            {ranges.map((range) => (
+              <div key={range.id} className="flex flex-wrap gap-2 items-center">
+                <input
+                  value={range.label}
+                  onChange={(e) => updateRange(range.id, "label", e.target.value)}
+                  placeholder="Label"
+                  className="w-28 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-xs"
+                />
+                <input
+                  type="date"
+                  value={range.from}
+                  onChange={(e) => updateRange(range.id, "from", e.target.value)}
+                  className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-xs"
+                />
+                <span className="text-gray-500 text-xs">→</span>
+                <input
+                  type="date"
+                  value={range.to}
+                  onChange={(e) => updateRange(range.id, "to", e.target.value)}
+                  className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-xs"
+                />
+                {ranges.length > 1 && (
+                  <button
+                    onClick={() => removeRange(range.id)}
+                    className="text-gray-600 hover:text-red-400 text-xs px-1"
+                    title="Remove range"
+                  >✕</button>
+                )}
+                {!range.from && !range.to && (
+                  <span className="text-gray-600 text-xs italic">no filter</span>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Add combo row */}
