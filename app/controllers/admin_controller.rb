@@ -47,6 +47,7 @@ class AdminController < ApplicationController
     Open3.popen3(*args) do |_stdin, stdout, stderr, wait_thr|
       current_title = nil
       current_lines = []
+      all_sections  = []
 
       stdout.each_line do |raw|
         line = raw.chomp
@@ -54,7 +55,10 @@ class AdminController < ApplicationController
           current_title = line[14..]
           current_lines = []
         elsif line == 'SECTION_END'
-          sse.({ type: 'section', title: current_title, lines: current_lines }) if current_title
+          if current_title
+            sse.({ type: 'section', title: current_title, lines: current_lines })
+            all_sections << { title: current_title, lines: current_lines }
+          end
           current_title = nil
           current_lines = []
         else
@@ -63,10 +67,28 @@ class AdminController < ApplicationController
       end
 
       # Flush any trailing section not followed by SECTION_END
-      sse.({ type: 'section', title: current_title, lines: current_lines }) if current_title
+      if current_title
+        sse.({ type: 'section', title: current_title, lines: current_lines })
+        all_sections << { title: current_title, lines: current_lines }
+      end
 
       if wait_thr.value.success?
-        sse.({ type: 'done' })
+        # Persist the completed report so it survives page reloads
+        run_count_val      = Run.count
+        snapshot_count_val = DepthSnapshot.count
+        AnalysisReport.create!(
+          params:         {
+            min_depth:       min_depth,
+            min_support:     min_support,
+            delta_threshold: delta_thr,
+            tree:            use_tree,
+            triples:         use_triples,
+          },
+          run_count:      run_count_val,
+          snapshot_count: snapshot_count_val,
+          sections:       all_sections,
+        )
+        sse.({ type: 'done', run_count: run_count_val, snapshot_count: snapshot_count_val })
       else
         err = stderr.read.presence || "Analysis script failed"
         sse.({ type: 'error', message: err })
@@ -76,6 +98,30 @@ class AdminController < ApplicationController
     # client navigated away
   ensure
     response.stream.close
+  end
+
+  # GET /admin/latest_analysis — returns the most recently saved AnalysisReport
+  def latest_analysis
+    report = AnalysisReport.order(created_at: :desc).first
+    if report
+      render json: {
+        id:             report.id,
+        saved_at:       report.created_at.iso8601,
+        params:         report.params,
+        run_count:      report.run_count,
+        snapshot_count: report.snapshot_count,
+        sections:       report.sections,
+        error:          nil,
+      }
+    else
+      render json: { id: nil }
+    end
+  end
+
+  # DELETE /admin/analysis_report — deletes the most recently saved report
+  def delete_analysis
+    AnalysisReport.order(created_at: :desc).first&.destroy
+    render json: { ok: true }
   end
 
   # GET /admin/analysis_data — kept for backwards compat / non-streaming fallback

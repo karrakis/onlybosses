@@ -13,6 +13,8 @@ type AnalysisResult = {
   error: string | null;
   run_count: number;
   snapshot_count: number;
+  saved_at?: string | null;
+  report_id?: number | null;
 };
 
 // ─── CollapsibleSection ───────────────────────────────────────────────────────
@@ -48,9 +50,10 @@ type AnalysisViewProps = {
   result:         AnalysisResult | null;
   setResult:      React.Dispatch<React.SetStateAction<AnalysisResult | null>>;
   onNavigateHome: () => void;
+  onClearSaved:   () => void;
 };
 
-function AnalysisView({ onNavigate, result, setResult, onNavigateHome }: AnalysisViewProps) {
+function AnalysisView({ onNavigate, result, setResult, onNavigateHome, onClearSaved }: AnalysisViewProps) {
   const [minDepth,        setMinDepth]        = React.useState(1);
   const [minSupport,      setMinSupport]      = React.useState(15);
   const [deltaThreshold,  setDeltaThreshold]  = React.useState(0.15);
@@ -114,13 +117,13 @@ function AnalysisView({ onNavigate, result, setResult, onNavigateHome }: Analysi
           setResult(r => ({
             sections:       prev,
             error:          null,
-            run_count:      streamMeta?.run_count      ?? r?.run_count      ?? 0,
-            snapshot_count: streamMeta?.snapshot_count ?? r?.snapshot_count ?? 0,
+            run_count:      data.run_count      ?? streamMeta?.run_count      ?? r?.run_count      ?? 0,
+            snapshot_count: data.snapshot_count ?? streamMeta?.snapshot_count ?? r?.snapshot_count ?? 0,
+            saved_at:       new Date().toISOString(),
           }));
           return prev;
         });
-      } else if (data.type === 'error') {
-        source.close();
+      } else if (data.type === 'error') {        source.close();
         setLoading(false);
         setStreamError(data.message);
       }
@@ -150,6 +153,15 @@ function AnalysisView({ onNavigate, result, setResult, onNavigateHome }: Analysi
             {displayMeta && (
               <p className="text-gray-400 mt-1">
                 {displayMeta.run_count} runs &nbsp;·&nbsp; {displayMeta.snapshot_count} snapshots
+              </p>
+            )}
+            {result?.saved_at && !loading && (
+              <p className="text-gray-600 text-xs mt-0.5">
+                Saved {new Date(result.saved_at).toLocaleString()}
+                <button
+                  onClick={onClearSaved}
+                  className="ml-3 text-red-500 hover:text-red-300 underline"
+                >clear</button>
               </p>
             )}
           </div>
@@ -285,6 +297,31 @@ export default function Admin({ onNavigateHome = () => { history.pushState({}, "
   const [view,      setView]      = React.useState<View>(pathToView);
   const [result,    setResult]    = React.useState<AnalysisResult | null>(null);
 
+  // Load the most recent saved analysis on first mount
+  React.useEffect(() => {
+    fetch("/admin/latest_analysis")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.id) {
+          setResult({
+            sections:       data.sections,
+            error:          null,
+            run_count:      data.run_count,
+            snapshot_count: data.snapshot_count,
+            saved_at:       data.saved_at,
+            report_id:      data.id,
+          });
+        }
+      })
+      .catch(() => { /* silently ignore if fetch fails */ });
+  }, []);
+
+  function clearSaved() {
+    fetch("/admin/analysis_report", { method: "DELETE" })
+      .then(() => setResult(null))
+      .catch(() => setResult(null));
+  }
+
   function navigate(v: View) {
     setView(v);
     const path = v === "synergy_chart" ? "/admin/synergy_chart"
@@ -306,5 +343,5 @@ export default function Admin({ onNavigateHome = () => { history.pushState({}, "
   if (view === "keyword_chart") {
     return <KeywordChart onBack={() => navigate("analysis")} analysisResult={result} />;
   }
-  return <AnalysisView onNavigate={navigate} result={result} setResult={setResult} onNavigateHome={onNavigateHome} />;
+  return <AnalysisView onNavigate={navigate} result={result} setResult={setResult} onNavigateHome={onNavigateHome} onClearSaved={clearSaved} />;
 }
