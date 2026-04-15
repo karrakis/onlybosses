@@ -430,7 +430,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     }, []);
 
     const handleDescend = () => {
-        if (boss && isDead(boss, bossKeywordData) && !descendClicked) {
+        if (boss && (isDead(boss, bossKeywordData) || bossDying) && !descendClicked) {
             setDescendClicked(true);
             setShowRemoveKeywordPanel(false);
             setShowKeywordSelection(true);
@@ -683,6 +683,8 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         setBossShaking(false);
         setDescendClicked(false);
         setTurnToken(null);
+        setForcedPlayerAction(null);
+        setActionInProgress(false);
 
         // Generate new boss with updated keywords
         const generatedBoss = await BossService.generateBoss(updatedKeywords);
@@ -755,6 +757,8 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             setBossShaking(false);
             setDescendClicked(false);
             setTurnToken(null);
+            setForcedPlayerAction(null);
+            setActionInProgress(false);
 
             const generatedBoss = await BossService.generateBoss(updatedKeywords);
             setBoss(generatedBoss);
@@ -1422,7 +1426,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                         </button>
                     </div>
                     <div id="action-bar" className="flex items-center gap-2 w-full">
-                        {boss && isDead(boss, bossKeywordData) ? (
+                        {boss && (isDead(boss, bossKeywordData) || bossDying) ? (
                             <div 
                                 className={`w-64 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center ${
                                     descendClicked 
