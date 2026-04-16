@@ -22,3 +22,41 @@
   80%  { opacity: 1;    filter: brightness(1.0); }
   100% { opacity: 0.94; filter: brightness(1.15); }
 }
+
+/* ── Whirlwind: attacker spins 2 full rotations ── */
+@keyframes whirlwindSpin {
+  0%   { transform: rotate(0deg) scale(1); }
+  25%  { transform: rotate(180deg) scale(1.07); }
+  50%  { transform: rotate(360deg) scale(1); }
+  75%  { transform: rotate(540deg) scale(1.07); }
+  100% { transform: rotate(720deg) scale(1); }
+}
+
+/* Slash marks sweep across the screen (left→right for player, right→left for boss) */
+@keyframes slashSweepLtr {
+  0%   { clip-path: inset(0 100% 0 0); opacity: 1; }
+  65%  { clip-path: inset(0 0 0 0);    opacity: 1; }
+  100% { clip-path: inset(0 0 0 0);    opacity: 0; }
+}
+@keyframes slashSweepRtl {
+  0%   { clip-path: inset(0 0 0 100%); opacity: 1; }
+  65%  { clip-path: inset(0 0 0 0);    opacity: 1; }
+  100% { clip-path: inset(0 0 0 0);    opacity: 0; }
+}
+
+/* ── Smash: jump-up → hang → slam → squash → settle ── */
+@keyframes smashSlam {
+  0%   { transform: translateY(0)     scaleX(1)    scaleY(1); }
+  22%  { transform: translateY(-30px) scaleX(0.92) scaleY(1.1); }
+  48%  { transform: translateY(-28px) scaleX(0.92) scaleY(1.1); }
+  68%  { transform: translateY(12px)  scaleX(1.13) scaleY(0.84); }
+  83%  { transform: translateY(-5px)  scaleX(0.97) scaleY(1.03); }
+  100% { transform: translateY(0)     scaleX(1)    scaleY(1); }
+}
+
+/* Shockwave rings expand from impact point — starts invisible so delay works cleanly */
+@keyframes shockwaveExpand {
+  0%   { transform: translate(-50%, -50%) scale(0);   opacity: 0; }
+  12%  { transform: translate(-50%, -50%) scale(0.1); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) scale(4.5); opacity: 0; }
+}

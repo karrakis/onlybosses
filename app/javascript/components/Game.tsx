@@ -46,6 +46,9 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const [bossDying, setBossDying] = useState<boolean>(false);
     const [playerShaking, setPlayerShaking] = useState<boolean>(false);
     const [playerDead, setPlayerDead] = useState<boolean>(false);
+    const [playerCombatAnim, setPlayerCombatAnim] = useState<'whirlwind' | 'smash' | null>(null);
+    const [bossCombatAnim, setBossCombatAnim] = useState<'whirlwind' | 'smash' | null>(null);
+    const [activeEffect, setActiveEffect] = useState<{ type: 'whirlwind' | 'smash'; direction: 'ltr' | 'rtl' } | null>(null);
     const [actionInProgress, setActionInProgress] = useState<boolean>(false);
     const [turnToken, setTurnToken] = useState<string | null>(null);
     const [grassHeight, setGrassHeight] = useState<number>(50);
@@ -798,6 +801,23 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         }
         
         setActionInProgress(true);
+
+        // Fire player combat animation immediately (before API roundtrip)
+        const playerBase = action.split(':')[0];
+        if (playerBase === 'whirlwind' || playerBase === 'smash') {
+            setPlayerCombatAnim(playerBase as 'whirlwind' | 'smash');
+            if (playerBase === 'smash') {
+                // Delay shockwave to sync with the slam impact (~60% into the animation)
+                setTimeout(() => {
+                    setActiveEffect({ type: 'smash', direction: 'ltr' });
+                    setTimeout(() => setActiveEffect(null), 700);
+                }, 450);
+            } else {
+                setActiveEffect({ type: 'whirlwind', direction: 'ltr' });
+                setTimeout(() => setActiveEffect(null), 500);
+            }
+            setTimeout(() => setPlayerCombatAnim(null), playerBase === 'whirlwind' ? 700 : 800);
+        }
         
         try {
             const response = await takeAction(action);
@@ -853,6 +873,22 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                         if (currentState.player.life < playerLifeAfterPlayerAction) {
                             setPlayerShaking(true);
                         }
+                    }
+
+                    // Fire boss combat animation
+                    const bossBase = bossAction.split(':')[0];
+                    if (bossBase === 'whirlwind' || bossBase === 'smash') {
+                        setBossCombatAnim(bossBase as 'whirlwind' | 'smash');
+                        if (bossBase === 'smash') {
+                            setTimeout(() => {
+                                setActiveEffect({ type: 'smash', direction: 'rtl' });
+                                setTimeout(() => setActiveEffect(null), 700);
+                            }, 450);
+                        } else {
+                            setActiveEffect({ type: 'whirlwind', direction: 'rtl' });
+                            setTimeout(() => setActiveEffect(null), 500);
+                        }
+                        setTimeout(() => setBossCombatAnim(null), bossBase === 'whirlwind' ? 700 : 800);
                     }
                     
                     console.log("Boss action complete");
@@ -1315,6 +1351,41 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                     <div className="w-full bg-gradient-to-t from-green-700 to-green-900" style={{ height: `${grassHeight}%` }}></div>
                 </div>
                 <div id="game-panels" className="absolute inset-0 w-full h-full flex z-10">
+                    {/* Combat effect overlay — covers the full battle area */}
+                    {activeEffect && (
+                        <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
+                            {activeEffect.type === 'whirlwind' && [0, 1, 2, 3].map((i) => (
+                                <div
+                                    key={i}
+                                    style={{
+                                        position: 'absolute',
+                                        top: `${24 + i * 13}%`,
+                                        left: 0,
+                                        right: 0,
+                                        height: '3px',
+                                        background: 'linear-gradient(to right, transparent 0%, rgba(180,220,255,0) 8%, rgba(180,220,255,0.85) 32%, rgba(255,255,255,1) 50%, rgba(180,220,255,0.85) 68%, rgba(180,220,255,0) 92%, transparent 100%)',
+                                        transform: `rotate(${-20 + i * 13}deg)`,
+                                        animation: `${activeEffect.direction === 'ltr' ? 'slashSweepLtr' : 'slashSweepRtl'} 0.38s ease-out ${i * 0.07}s both`,
+                                    }}
+                                />
+                            ))}
+                            {activeEffect.type === 'smash' && [0, 1, 2].map((i) => (
+                                <div
+                                    key={i}
+                                    style={{
+                                        position: 'absolute',
+                                        top: '65%',
+                                        left: activeEffect.direction === 'ltr' ? '73%' : '27%',
+                                        width: '60px',
+                                        height: '60px',
+                                        borderRadius: '50%',
+                                        border: `${3 - i}px solid rgba(255,${150 + i * 30},${30 + i * 50},${0.9 - i * 0.25})`,
+                                        animation: `shockwaveExpand 0.65s ease-out ${i * 0.15}s both`,
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    )}
                     <div id="left-panel" className="flex-[2] min-w-0 h-full flex flex-col items-center justify-end p-4">
                         <div className="w-full flex flex-col items-center justify-end">
                             <ShakeAnimation 
@@ -1327,6 +1398,11 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                     src={playerImage} 
                                     alt="Player"
                                     className="w-1/2 h-auto object-contain mb-16"
+                                    style={playerCombatAnim === 'whirlwind'
+                                        ? { animation: 'whirlwindSpin 0.7s ease-in-out' }
+                                        : playerCombatAnim === 'smash'
+                                        ? { animation: 'smashSlam 0.8s ease-in-out' }
+                                        : undefined}
                                 />
                             </ShakeAnimation>
                         </div>
@@ -1382,7 +1458,14 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                             src={boss.image_url} 
                                             alt={boss.name}
                                             className="w-1/2 h-auto object-contain mb-16 transition-opacity duration-[5000ms]"
-                                            style={{ opacity: bossDying ? 0 : 1 }}
+                                            style={{
+                                                opacity: bossDying ? 0 : 1,
+                                                ...(bossCombatAnim === 'whirlwind'
+                                                    ? { animation: 'whirlwindSpin 0.7s ease-in-out' }
+                                                    : bossCombatAnim === 'smash'
+                                                    ? { animation: 'smashSlam 0.8s ease-in-out' }
+                                                    : {})
+                                            }}
                                         />
                                     </ShakeAnimation>
                                 ) : boss.image_status === 'generating' || boss.image_status === 'pending' ? (
