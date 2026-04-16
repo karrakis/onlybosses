@@ -67,6 +67,8 @@ class CombatService
     (boss_data['keywords'] || []).each do |kw_name|
       kw = BossKeyword.find_by(name: kw_name)
       next unless kw
+      # Attack-category keywords ARE abilities — they register by their own name.
+      boss_abilities.add(kw_name) if kw.category == 'attack'
       (kw.properties&.dig('abilities') || []).each { |a| boss_abilities.add(a) }
     end
 
