@@ -45,10 +45,22 @@ module Api
     private
     
     def boss_json(boss)
+      primary_names = boss.boss_keywords.order('boss_keyword_associations.position').pluck(:name)
+
+      # Compute derived passives for display — not independently stealable,
+      # but shown so the player knows what abilities/stats come with each primary.
+      derived_passives = []
+      primary_names.each do |kw_name|
+        kw = BossKeyword.find_by(name: kw_name)
+        next unless kw&.properties&.dig('passives')
+        kw.properties['passives'].each { |p| derived_passives << p unless derived_passives.include?(p) }
+      end
+
       {
         id: boss.id,
         name: boss.name,
-        keywords: boss.boss_keywords.order('boss_keyword_associations.position').pluck(:name),
+        keywords: primary_names,
+        derived_passives: derived_passives,
         stats: boss.computed_stats,
         image_status: boss.image_generation_status,
         image_url: boss.image.attached? ? url_for(boss.image) : nil,

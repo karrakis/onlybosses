@@ -13,6 +13,7 @@ export interface Boss {
   id: number;
   name: string;
   keywords: string[];
+  derived_passives: string[];
   stats: any;
   image_status: 'pending' | 'generating' | 'completed' | 'failed';
   image_url: string | null;

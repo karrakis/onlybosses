@@ -1780,6 +1780,27 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                             );
                                         })}
                                     </div>
+                                    {boss.derived_passives && boss.derived_passives.length > 0 && (
+                                        <div className="pb-4">
+                                            <div className="text-xs uppercase tracking-widest text-gray-500 mb-2">Derived passives — steal the primary keyword to acquire</div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {boss.derived_passives.map((passiveName: string) => {
+                                                    const passiveData = allKeywordsData.find(kw => kw.name === passiveName);
+                                                    return (
+                                                        <div
+                                                            key={passiveName}
+                                                            className="bg-gray-800 border border-gray-600 rounded-lg p-3 opacity-60 cursor-default"
+                                                        >
+                                                            <div className="text-sm font-semibold capitalize text-gray-400 mb-1">{passiveName}</div>
+                                                            {passiveData && (
+                                                                <div className="text-xs text-gray-500">{formatKeywordAttributes(passiveData)}</div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                                 {player && ((player.explicit_keywords?.length ?? 0) > 0 || (player.keywords?.length ?? 0) > 0) && (
                                     <div className="px-8 pb-8 pt-4 border-t-2 border-gray-600 shrink-0">
