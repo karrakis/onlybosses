@@ -80,7 +80,9 @@ class RunSimulatorService
     kw_names.each do |name|
       kw = registry[name]
       next unless kw&.properties&.dig('passives')
-      kw.properties['passives'].each { |p| expanded << p unless expanded.include?(p) }
+      # Allow stacking — multiple primaries granting the same passive each contribute
+      # a separate copy so their multipliers compound correctly.
+      kw.properties['passives'].each { |p| expanded << p }
     end
     expanded
   end

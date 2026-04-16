@@ -58,7 +58,9 @@ class BossFactory
         computed_stats: compute_stats(expanded_keywords)  # Use expanded keywords for stats
       )
       
-      expanded_keywords.each_with_index do |keyword, index|
+      # Only save primary keywords as associations — derived passives are baked into
+      # their parent keyword's stat computation and are not separately stealable.
+      keywords.each_with_index do |keyword, index|
         BossKeywordAssociation.create!(
           boss: boss,
           boss_keyword: keyword,
@@ -71,29 +73,23 @@ class BossFactory
     
     def expand_keywords_with_passives(keywords)
       expanded = []
-      seen = Set.new
-      
+      seen_primaries = Set.new
+
       keywords.each do |keyword|
-        # Add the main keyword
-        unless seen.include?(keyword.name)
-          expanded << keyword
-          seen.add(keyword.name)
-        end
-        
-        # Add passive keywords
-        if keyword.properties && keyword.properties['passives']
-          keyword.properties['passives'].each do |passive_name|
-            unless seen.include?(passive_name)
-              passive_keyword = BossKeyword.find_by(name: passive_name)
-              if passive_keyword
-                expanded << passive_keyword
-                seen.add(passive_name)
-              end
-            end
-          end
+        # Deduplicate primary keywords only
+        next if seen_primaries.include?(keyword.name)
+        seen_primaries.add(keyword.name)
+        expanded << keyword
+
+        # Stack derived passives — multiple primaries granting the same passive each
+        # contribute a separate copy so their multipliers compound correctly.
+        next unless keyword.properties && keyword.properties['passives']
+        keyword.properties['passives'].each do |passive_name|
+          passive_keyword = BossKeyword.find_by(name: passive_name)
+          expanded << passive_keyword if passive_keyword
         end
       end
-      
+
       expanded
     end
     
@@ -143,8 +139,8 @@ class BossFactory
           vulnerabilities |= attrs['vulnerabilities']
         end
         
-        # Track passives and abilities
-        passives |= (attrs['passives'] || [])
+        # Track passives and abilities (allow duplicates so stacking is reflected)
+        passives += (attrs['passives'] || [])
         abilities |= (attrs['abilities'] || [])
         
         # Track weapons
