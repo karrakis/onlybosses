@@ -129,7 +129,20 @@ class GameController < ApplicationController
       render json: { error: 'No active boss found' }, status: :bad_request
       return
     end
-    
+
+    # Expand boss keywords to include derived passives.  Stacking is intentional —
+    # multiple primaries granting the same passive each add an independent copy so
+    # multipliers compound, exactly as RunSimulatorService.expand_keywords does.
+    boss_expanded = boss.dup
+    boss_expanded_keywords = (boss['keywords'] || []).dup
+    (boss['keywords'] || []).each do |kw_name|
+      kw = BossKeyword.find_by(name: kw_name)
+      (kw&.properties&.dig('passives') || []).each do |passive_name|
+        boss_expanded_keywords << passive_name   # no dedup: intentional stacking
+      end
+    end
+    boss_expanded['keywords'] = boss_expanded_keywords
+
     # Convert player hash with symbol keys to string keys for consistency
     player_with_string_keys = player.deep_stringify_keys
     
@@ -142,12 +155,11 @@ class GameController < ApplicationController
       'bossStamina' => boss['stamina'],
       'bossMana' => boss['mana'],
       'player' => player_with_string_keys,
-      'boss' => boss
+      'boss' => boss_expanded
     }
 
-    player_mana_turn_start = game_status['playerMana']
+    player_mana_turn_start    = game_status['playerMana']
     player_stamina_turn_start = game_status['playerStamina']
-    boss_mana_turn_start = game_status['bossMana']
 
     # Override player action if previous turn set a forced follow-up (e.g. smash → guard)
     if session[:player_forced_next_action]
@@ -170,15 +182,14 @@ class GameController < ApplicationController
       player_after_player_action['stamina'] = game_status['playerStamina']
       player_after_player_action['mana'] = game_status['playerMana']
       
-      # Determine which resource is the boss's life resource
+      # Determine which resource is the boss's life resource.
+      # boss_expanded['keywords'] already includes derived passives, so a simple scan suffices.
       boss_life_resource = 'life'
-      if boss['keywords']
-        boss['keywords'].each do |keyword_name|
-          keyword = BossKeyword.find_by(name: keyword_name)
-          if keyword && keyword.properties['life_resource']
-            boss_life_resource = keyword.properties['life_resource']
-            break
-          end
+      (boss_expanded['keywords'] || []).each do |keyword_name|
+        keyword = BossKeyword.find_by(name: keyword_name)
+        if keyword&.properties&.dig('life_resource')
+          boss_life_resource = keyword.properties['life_resource']
+          break
         end
       end
       
@@ -194,9 +205,12 @@ class GameController < ApplicationController
         end
         
         if CombatService.known_action?(boss_action)
+          # Capture boss resources immediately before the boss acts — matches simulator's
+          # boss_mana_before / boss_stamina_before which are both set post-player-action.
+          boss_mana_before    = game_status['bossMana']
           boss_stamina_before = game_status['bossStamina']
           game_status = CombatService.apply_action(game_status, boss_action, 'boss', 'player')
-          boss_mana_cost    = game_status['bossMana']    < boss_mana_turn_start
+          boss_mana_cost    = game_status['bossMana']    < boss_mana_before
           boss_stamina_cost = game_status['bossStamina'] < boss_stamina_before
           game_status = CombatService.apply_regeneration(game_status, 'boss', mana_cost: boss_mana_cost, stamina_cost: boss_stamina_cost)
 

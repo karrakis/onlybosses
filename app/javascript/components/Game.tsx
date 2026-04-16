@@ -93,8 +93,12 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             // Update boss keywords from loaded boss
             if (boss.keywords && boss.keywords.length > 0) {
                 setBossKeywords(boss.keywords);
-                // Update boss keyword data
-                const bossKwData = allKeywordsData.filter(kw => boss.keywords.includes(kw.name));
+                // Update boss keyword data — include derived passives so that
+                // life_resource checks (ghost/ethereal) still work correctly.
+                const bossKwData = allKeywordsData.filter(kw =>
+                    boss.keywords.includes(kw.name) ||
+                    (boss.derived_passives || []).includes(kw.name)
+                );
                 setBossKeywordData(bossKwData);
             }
         }
@@ -631,7 +635,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     };
 
     // Shared tail of keyword selection: removes the taken/discarded keyword from the boss pool,
-    // rolls 2 new keywords, regenerates the boss. Call after player state is already updated.
+    // rolls 3 new keywords, regenerates the boss. Call after player state is already updated.
     const proceedWithBossKeywords = async (takenKeyword: string, nextDepth: number) => {
         // Remove selected keyword from boss keywords
         const updatedKeywords = bossKeywords.filter(k => k !== takenKeyword);
@@ -649,11 +653,11 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             setTieredKeywords([]);
         }
 
-        if (addedCount < 2) {
+        if (addedCount < 3) {
             // Tier threshold: rarity R unlocks at depth (R-1)*5
             const maxRarity = Math.floor(nextDepth / 5) + 1;
-            // Additive rarity cap: combined rarity of the 2 new keywords cannot exceed this
-            const rarityCap = Math.max(2, 2 * Math.floor(nextDepth / 5) + 1);
+            // Additive rarity cap: combined rarity of the 3 new keywords cannot exceed this
+            const rarityCap = Math.max(3, 3 * Math.floor(nextDepth / 5) + 1);
 
             const candidatePool = allKeywordsData
                 .filter(kw =>
@@ -665,7 +669,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 .sort(() => 0.5 - Math.random());
 
             let rarityBudget = rarityCap;
-            while (addedCount < 2 && candidatePool.length > 0) {
+            while (addedCount < 3 && candidatePool.length > 0) {
                 const eligible = candidatePool.filter(kw => kw.rarity <= rarityBudget);
                 if (eligible.length === 0) break;
                 const chosen = eligible[0];
@@ -724,9 +728,9 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 setTieredKeywords([]);
             }
 
-            if (addedCount < 2) {
+            if (addedCount < 3) {
                 const maxRarity = Math.floor(nextDepth / 5) + 1;
-                const rarityCap = Math.max(2, 2 * Math.floor(nextDepth / 5) + 1);
+                const rarityCap = Math.max(3, 3 * Math.floor(nextDepth / 5) + 1);
 
                 const candidatePool = allKeywordsData
                     .filter(kw =>
@@ -738,7 +742,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                     .sort(() => 0.5 - Math.random());
 
                 let rarityBudget = rarityCap;
-                while (addedCount < 2 && candidatePool.length > 0) {
+                while (addedCount < 3 && candidatePool.length > 0) {
                     const eligible = candidatePool.filter(kw => kw.rarity <= rarityBudget);
                     if (eligible.length === 0) break;
                     const chosen = eligible[0];
@@ -848,7 +852,10 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 }
                 
                 // Check if boss is defeated using correct life resource
-                const updatedBossKwData = allKeywordsData.filter(kw => currentState.boss.keywords?.includes(kw.name));
+                const updatedBossKwData = allKeywordsData.filter(kw =>
+                    currentState.boss.keywords?.includes(kw.name) ||
+                    (currentState.boss.derived_passives || []).includes(kw.name)
+                );
                 if (isDead(currentState.boss, updatedBossKwData) && !bossDying) {
                     setBossDying(true);
                     setBossShaking(true);
