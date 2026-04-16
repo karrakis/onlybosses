@@ -123,7 +123,7 @@ class RunSimulatorService
       gs = build_game_status(player_e, boss_e)
 
       # ── Player turn ──────────────────────────────────────────────────────
-      player_action = player_forced || 'attack'
+      player_action = player_forced || CombatService.choose_player_action(gs)
       player_forced = nil
       player_stamina_before = gs['playerStamina']
       player_mana_before    = gs['playerMana']

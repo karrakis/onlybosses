@@ -113,6 +113,67 @@ class CombatService
     best ? best[:action] : 'guard'
   end
 
+  # Returns the action string the player should take this turn, chosen by highest
+  # expected damage across all available abilities.  Mirrors choose_boss_action exactly
+  # so that any new ability added to the combat system is automatically available to
+  # both sides — no separate maintenance required.  Falls back to 'guard' when no
+  # resource-affordable candidates exist.
+  def self.choose_player_action(game_status)
+    player_data    = game_status['player']
+    boss_data      = game_status['boss']
+    player_stamina = game_status['playerStamina'].to_f
+    player_mana    = game_status['playerMana'].to_f
+
+    player_abilities = Set.new
+    (player_data['keywords'] || []).each do |kw_name|
+      kw = BossKeyword.find_by(name: kw_name)
+      next unless kw
+      # Attack-category keywords ARE abilities — they register by their own name.
+      player_abilities.add(kw_name) if kw.category == 'attack'
+      (kw.properties&.dig('abilities') || []).each { |a| player_abilities.add(a) }
+    end
+
+    candidates = []
+
+    # Basic attack — always available if stamina allows
+    if player_stamina >= 10
+      dmg = DamageCalculator.calculate_damage(player_data, boss_data, { 'physical' => 10 })[:total_damage]
+      candidates << { action: 'attack', damage: dmg }
+    end
+
+    # Spells
+    if player_mana >= 10 && player_abilities.include?('cast')
+      spells = player_abilities.reject { |a| a == 'cast' }.to_a
+      if spells.any?
+        spells.each do |spell|
+          base = SPELL_BASE_DAMAGE[spell] || { 'magic' => 12 }
+          dmg  = DamageCalculator.calculate_damage(player_data, boss_data, base)[:total_damage]
+          candidates << { action: "cast:#{spell}", damage: dmg }
+        end
+      else
+        dmg = DamageCalculator.calculate_damage(player_data, boss_data, { 'magic' => 12 })[:total_damage]
+        candidates << { action: 'cast', damage: dmg }
+      end
+    end
+
+    # Named attack-category abilities (whirlwind, smash, stab, cleave, etc.)
+    player_abilities.each do |ability|
+      next if %w[cast attack guard].include?(ability)
+      attack_kw = BossKeyword.find_by(name: ability, category: 'attack')
+      next unless attack_kw
+      attrs          = attack_kw.properties || {}
+      stamina_needed = (attrs['stamina_cost'] || 10).to_f
+      next unless player_stamina >= stamina_needed
+      hit_count  = (attrs['hit_count'] || 1).to_i
+      base_dmg   = attrs['base_damage_by_type'] || { 'physical' => 10 }
+      single_dmg = DamageCalculator.calculate_damage(player_data, boss_data, base_dmg)[:total_damage]
+      candidates << { action: ability, damage: single_dmg * hit_count }
+    end
+
+    best = candidates.max_by { |c| c[:damage] }
+    best ? best[:action] : 'guard'
+  end
+
   # ── Regeneration ───────────────────────────────────────────────────────────
 
   # Apply end-of-turn resource regeneration for entity_key ('player' or 'boss').
