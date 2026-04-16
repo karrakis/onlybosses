@@ -107,97 +107,100 @@ class RunSimulatorService
   end
 
   private_class_method def self.simulate_fight(player_e, boss_e, registry)
+    # Initialise regen accumulators expected by CombatService.apply_regeneration
+    player_e['turns_since_mana_cost']    ||= 0
+    player_e['turns_since_stamina_cost'] ||= 0
+    boss_e['turns_since_mana_cost']      ||= 0
+    boss_e['turns_since_stamina_cost']   ||= 0
+
+    # Forced-action state mirrors session[:player/boss_forced_next_action] in the live game
+    player_forced = nil
+    boss_forced   = nil
+
     MAX_TURNS_PER_FIGHT.times do
-      attack(player_e, boss_e, registry)
-      return :boss_died   if dead?(boss_e,   registry)
-      attack(boss_e,   player_e, registry)
+      gs = build_game_status(player_e, boss_e)
+
+      # ── Player turn ──────────────────────────────────────────────────────
+      player_action = player_forced || 'attack'
+      player_forced = nil
+      player_stamina_before = gs['playerStamina']
+      player_mana_before    = gs['playerMana']
+
+      gs = CombatService.apply_action(gs, player_action, 'player', 'boss')
+
+      # Capture forced follow-up (e.g. smash → guard)
+      if gs['playerForcedNextAction']
+        player_forced = gs.delete('playerForcedNextAction')
+      end
+
+      sync_entities(gs, player_e, boss_e)
+      return :boss_died if dead?(boss_e, registry)
+
+      # ── Boss turn ────────────────────────────────────────────────────────
+      boss_action = boss_forced || CombatService.choose_boss_action(gs)
+      boss_forced = nil
+      boss_stamina_before = gs['bossStamina']
+      boss_mana_before    = gs['bossMana']
+
+      gs = CombatService.apply_action(gs, boss_action, 'boss', 'player')
+
+      if gs['bossForcedNextAction']
+        boss_forced = gs.delete('bossForcedNextAction')
+      end
+
+      # ── End-of-turn regeneration (boss first, then player — mirrors live game) ──
+      boss_mana_cost    = gs['bossMana']    < boss_mana_before
+      boss_stamina_cost = gs['bossStamina'] < boss_stamina_before
+      gs = CombatService.apply_regeneration(gs, 'boss',   mana_cost: boss_mana_cost,   stamina_cost: boss_stamina_cost)
+
+      player_mana_cost    = gs['playerMana']    < player_mana_before
+      player_stamina_cost = gs['playerStamina'] < player_stamina_before
+      gs = CombatService.apply_regeneration(gs, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
+
+      sync_entities(gs, player_e, boss_e)
       return :player_died if dead?(player_e, registry)
-      apply_regen(player_e)
-      apply_regen(boss_e)
     end
-    # Turn limit hit: whoever has more % of their life resource remaining wins
+
+    # Turn limit hit — whoever has more % of their life resource remaining wins
     life_pct(player_e, registry) >= life_pct(boss_e, registry) ? :boss_died : :player_died
   end
 
-  private_class_method def self.attack(attacker, defender, registry)
-    return if attacker['stamina'].to_f < 10
-
-    attacker['stamina'] -= 10
-    attacker_kws = (attacker['keywords'] || []).filter_map { |n| registry[n] }
-    defender_kws = (defender['keywords'] || []).filter_map { |n| registry[n] }
-
-    result   = calc_damage(attacker_kws, defender_kws, { 'physical' => 10.0 })
-    total    = result[:total_damage].ceil
-    res_key  = result[:life_resource] == 'mana' ? 'mana' : 'life'
-    defender[res_key] = [(defender[res_key].to_f - total), 0].max
-
-    # Lifesteal
-    ls = attacker_kws.sum { |k| k.properties&.dig('lifesteal').to_f }
-    if ls > 0
-      healing       = (total * ls).ceil
-      a_res         = get_life_resource(attacker_kws)
-      a_key         = a_res == 'mana' ? 'mana' : 'life'
-      attacker[a_key] = [attacker[a_key].to_f + healing, attacker["max_#{a_key}"].to_f].min
-    end
+  # Build the game_status hash format that CombatService expects.
+  # The entity objects are embedded by reference so apply_regeneration's
+  # internal sync-back writes persist into player_e / boss_e automatically.
+  private_class_method def self.build_game_status(player_e, boss_e)
+    {
+      'playerLife'    => player_e['life'],
+      'playerStamina' => player_e['stamina'],
+      'playerMana'    => player_e['mana'],
+      'bossLife'      => boss_e['life'],
+      'bossStamina'   => boss_e['stamina'],
+      'bossMana'      => boss_e['mana'],
+      'player'        => player_e,
+      'boss'          => boss_e,
+    }
   end
 
-  # Flat +5 stamina and mana per turn (simplified from the real regen-scale system)
-  private_class_method def self.apply_regen(entity)
-    entity['stamina'] = [(entity['stamina'].to_f + 5), entity['max_stamina'].to_f].min
-    entity['mana']    = [(entity['mana'].to_f + 5),    entity['max_mana'].to_f   ].min
+  # Copy flat resource keys from game_status back into the entity objects.
+  private_class_method def self.sync_entities(gs, player_e, boss_e)
+    player_e['life']    = gs['playerLife']
+    player_e['stamina'] = gs['playerStamina']
+    player_e['mana']    = gs['playerMana']
+    boss_e['life']      = gs['bossLife']
+    boss_e['stamina']   = gs['bossStamina']
+    boss_e['mana']      = gs['bossMana']
   end
 
   private_class_method def self.dead?(entity, registry)
     kws     = (entity['keywords'] || []).filter_map { |n| registry[n] }
-    res_key = get_life_resource(kws) == 'mana' ? 'mana' : 'life'
+    res_key = kws.find { |k| k.properties&.dig('life_resource') }&.properties&.dig('life_resource') == 'mana' ? 'mana' : 'life'
     entity[res_key].to_f <= 0
   end
 
   private_class_method def self.life_pct(entity, registry)
     kws     = (entity['keywords'] || []).filter_map { |n| registry[n] }
-    res     = get_life_resource(kws)
-    res_key = res == 'mana' ? 'mana' : 'life'
+    res_key = kws.find { |k| k.properties&.dig('life_resource') }&.properties&.dig('life_resource') == 'mana' ? 'mana' : 'life'
     max     = entity["max_#{res_key}"].to_f
     max.zero? ? 0.0 : entity[res_key].to_f / max
-  end
-
-  private_class_method def self.get_life_resource(keyword_objects)
-    keyword_objects.each do |kw|
-      lr = kw.properties&.dig('life_resource')
-      return lr if lr
-    end
-    'life'
-  end
-
-  private_class_method def self.calc_damage(attacker_kws, defender_kws, base_damage)
-    d = base_damage.transform_values(&:to_f)
-
-    # Weapon base damage
-    attacker_kws.select { |k| k.category == 'weapon' }.each do |wk|
-      (wk.properties['base_damage_by_type'] || {}).each { |t, a| d[t] = (d[t] || 0.0) + a }
-    end
-
-    # Weapon multipliers
-    attacker_kws.select { |k| k.category == 'weapon' }.each do |wk|
-      applies = wk.properties['applies_to'] || []
-      mult    = wk.properties['damage_multiplier'] || 1.0
-      d.each { |t, a| d[t] = a * mult if applies.include?(t) }
-    end
-
-    # Damage output modifiers
-    out = {}
-    attacker_kws.each { |k| (k.properties['damage_output_by_type'] || {}).each { |t, m| out[t] = (out[t] || 1.0) * m } }
-    d.each { |t, a| d[t] = a * (out[t] || 1.0) }
-
-    # Global amplification
-    amp = attacker_kws.reduce(1.0) { |a, k| a * (k.properties['damage_amplification'] || 1.0) }
-    d.transform_values! { |v| v * amp }
-
-    # Damage reduction
-    red = {}
-    defender_kws.each { |k| (k.properties['damage_reduction_by_type'] || {}).each { |t, m| red[t] = (red[t] || 1.0) * m } }
-    d.each { |t, a| d[t] = a * (red[t] || 1.0) }
-
-    { total_damage: d.values.sum, life_resource: get_life_resource(defender_kws) }
   end
 end

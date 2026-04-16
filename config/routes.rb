@@ -22,7 +22,12 @@ Rails.application.routes.draw do
   post 'record_snapshot', to: 'game#record_snapshot'
   post 'set_boss', to: 'game#set_boss'
   get  'simulate_runs', to: 'simulation#run'
-  
+
+  resources :simulation_batches, only: [:create, :show] do
+    collection { get :latest }
+    member     { patch :cancel }
+  end
+
   namespace :api do
     resources :bosses, only: [:show, :index] do
       collection do

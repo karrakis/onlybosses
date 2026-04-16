@@ -156,12 +156,8 @@ class GameController < ApplicationController
     end
 
     # Process player action
-    if respond_to?(base_action, true)
-      if base_action == 'cast'
-        game_status = send(base_action, game_status, 'player', 'boss', action_payload)
-      else
-        game_status = send(base_action, game_status, 'player', 'boss')
-      end
+    if CombatService.known_action?(base_action)
+      game_status = CombatService.apply_action(game_status, base_action, 'player', 'boss', action_payload)
 
       # Persist forced next action to session if the player action set one
       if game_status['playerForcedNextAction']
@@ -197,19 +193,12 @@ class GameController < ApplicationController
           choose_boss_action(game_status)
         end
         
-        if boss_action == 'cast' || boss_action.start_with?('cast:') || respond_to?(boss_action, true)
+        if CombatService.known_action?(boss_action)
           boss_stamina_before = game_status['bossStamina']
-          if boss_action == 'cast'
-            game_status = send(boss_action, game_status, 'boss', 'player', nil)
-          elsif boss_action.start_with?('cast:')
-            _, boss_spell = boss_action.split(':', 2)
-            game_status = send('cast', game_status, 'boss', 'player', boss_spell)
-          else
-            game_status = send(boss_action, game_status, 'boss', 'player')
-          end
-          boss_mana_cost = game_status['bossMana'] < boss_mana_turn_start
+          game_status = CombatService.apply_action(game_status, boss_action, 'boss', 'player')
+          boss_mana_cost    = game_status['bossMana']    < boss_mana_turn_start
           boss_stamina_cost = game_status['bossStamina'] < boss_stamina_before
-          game_status = apply_regeneration(game_status, 'boss', mana_cost: boss_mana_cost, stamina_cost: boss_stamina_cost)
+          game_status = CombatService.apply_regeneration(game_status, 'boss', mana_cost: boss_mana_cost, stamina_cost: boss_stamina_cost)
 
           # Persist boss forced next action if set
           if game_status['bossForcedNextAction']
@@ -223,9 +212,9 @@ class GameController < ApplicationController
         end
 
         # Apply player regeneration after the full turn, so incoming mana damage also interrupts it
-        player_mana_cost = game_status['playerMana'] < player_mana_turn_start
+        player_mana_cost    = game_status['playerMana']    < player_mana_turn_start
         player_stamina_cost = game_status['playerStamina'] < player_stamina_turn_start
-        game_status = apply_regeneration(game_status, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
+        game_status = CombatService.apply_regeneration(game_status, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
 
         # Sync latest resources back to session entities
         player['life'] = game_status['playerLife']
@@ -258,9 +247,9 @@ class GameController < ApplicationController
         }
       else
         # Boss is defeated, no boss action
-        player_mana_cost = game_status['playerMana'] < player_mana_turn_start
+        player_mana_cost    = game_status['playerMana']    < player_mana_turn_start
         player_stamina_cost = game_status['playerStamina'] < player_stamina_turn_start
-        game_status = apply_regeneration(game_status, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
+        game_status = CombatService.apply_regeneration(game_status, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
 
         player['life'] = game_status['playerLife']
         player['stamina'] = game_status['playerStamina']
@@ -298,377 +287,19 @@ class GameController < ApplicationController
   end
 
   private
-  
+
   def get_current_boss
     session[:current_boss] || {}
   end
-  
+
   def save_current_boss(boss_data)
-    # Convert ActionController::Parameters to hash if needed
     session[:current_boss] = boss_data.is_a?(ActionController::Parameters) ? boss_data.to_unsafe_h : boss_data
   end
-  
-  SPELL_BASE_DAMAGE = {
-    'magic_missile'    => { 'magic'     => 12 },
-    'fire_bolt'        => { 'magic'     => 14 },
-    'firebolt'         => { 'magic'     => 14 },
-    'lightning_strike' => { 'lightning' => 15 },
-    'light_bolt'       => { 'light'     => 12 }
-  }.freeze
 
+  # Delegate to CombatService — kept here only as a private wrapper so choose_boss_action
+  # can still be called within this controller without the class prefix.
   def choose_boss_action(game_status)
-    boss_data    = game_status['boss']
-    player_data  = game_status['player']
-    boss_stamina = game_status['bossStamina'].to_f
-    boss_mana    = game_status['bossMana'].to_f
-
-    # Collect all abilities granted by boss keywords
-    boss_abilities = Set.new
-    (boss_data['keywords'] || []).each do |kw_name|
-      kw = BossKeyword.find_by(name: kw_name)
-      next unless kw
-      (kw.properties&.dig('abilities') || []).each { |a| boss_abilities.add(a) }
-    end
-
-    candidates = []
-
-    # Attack: costs 10 stamina
-    if boss_stamina >= 10
-      dmg = DamageCalculator.calculate_damage(boss_data, player_data, { 'physical' => 10 })[:total_damage]
-      candidates << { action: 'attack', damage: dmg }
-    end
-
-    # Cast spells: costs 10 mana each
-    if boss_mana >= 10 && boss_abilities.include?('cast')
-      spells = boss_abilities.reject { |a| a == 'cast' }.to_a
-
-      if spells.any?
-        spells.each do |spell|
-          base = SPELL_BASE_DAMAGE[spell] || { 'magic' => 12 }
-          dmg  = DamageCalculator.calculate_damage(boss_data, player_data, base)[:total_damage]
-          candidates << { action: "cast:#{spell}", damage: dmg }
-        end
-      else
-        # 'cast' ability present but no named spells — use magic_missile
-        dmg = DamageCalculator.calculate_damage(boss_data, player_data, { 'magic' => 12 })[:total_damage]
-        candidates << { action: 'cast', damage: dmg }
-      end
-    end
-
-    # Physical special abilities (whirlwind, smash, stab, cleave, piercing_arrow, etc.)
-    # Looked up dynamically so any future creature with these abilities is handled automatically.
-    boss_abilities.each do |ability|
-      next if %w[cast attack guard].include?(ability)
-      attack_kw = BossKeyword.find_by(name: ability, category: 'attack')
-      next unless attack_kw
-      attrs          = attack_kw.properties || {}
-      stamina_needed = (attrs['stamina_cost'] || 10).to_f
-      next unless boss_stamina >= stamina_needed
-      hit_count = (attrs['hit_count'] || 1).to_i
-      base_dmg  = attrs['base_damage_by_type'] || { 'physical' => 10 }
-      single_dmg = DamageCalculator.calculate_damage(boss_data, player_data, base_dmg)[:total_damage]
-      candidates << { action: ability, damage: single_dmg * hit_count }
-    end
-
-    # Pick highest expected damage; fall back to guard if nothing available
-    best = candidates.max_by { |c| c[:damage] }
-    best ? best[:action] : 'guard'
-  end
-  
-  def attack(game_status, action_taker = 'player', target = 'boss')
-    # Basic attack has physical damage
-    ability_damage = { 'physical' => 10 }
-
-    stamina_cost = 10
-    stamina_key = "#{action_taker}Stamina"
-    return game_status if game_status[stamina_key].nil? || game_status[stamina_key] < stamina_cost
-
-    game_status[stamina_key] -= stamina_cost
-
-    # Get attacker and defender data
-    attacker_data = game_status[action_taker]
-    defender_data = game_status[target]
-    
-    # Calculate damage using the typed damage system
-    damage_result = DamageCalculator.calculate_damage(attacker_data, defender_data, ability_damage)
-    
-    total_damage = damage_result[:total_damage].ceil
-    life_resource = damage_result[:life_resource]
-
-    # Apply guard reduction after all other modifiers
-    total_damage = (total_damage * 0.5).ceil if game_status["#{target}Guarding"]
-
-    # Apply damage to the appropriate resource
-    resource_key = "#{target}#{life_resource.capitalize}"
-    game_status[resource_key] -= total_damage
-    game_status[resource_key] = 0 if game_status[resource_key] < 0
-    
-    # Check for lifesteal on attacker
-    lifesteal_amount = 0
-    if attacker_data['keywords']
-      attacker_data['keywords'].each do |keyword_name|
-        keyword = BossKeyword.find_by(name: keyword_name)
-        if keyword && keyword.properties && keyword.properties['lifesteal']
-          lifesteal_amount += keyword.properties['lifesteal']
-        end
-      end
-    end
-    
-    # Apply lifesteal healing if attacker has it
-    if lifesteal_amount > 0
-      healing = (total_damage * lifesteal_amount).ceil
-      
-      # Determine attacker's life resource
-      attacker_life_resource = 'life'
-      if attacker_data['keywords']
-        attacker_data['keywords'].each do |keyword_name|
-          keyword = BossKeyword.find_by(name: keyword_name)
-          if keyword && keyword.properties['life_resource']
-            attacker_life_resource = keyword.properties['life_resource']
-            break
-          end
-        end
-      end
-      
-      # Apply healing to attacker's life resource
-      attacker_resource_key = "#{action_taker}#{attacker_life_resource.capitalize}"
-      attacker_max_key = "max_#{attacker_life_resource}"
-      
-      game_status[attacker_resource_key] += healing
-      
-      # Cap at max resource value
-      if attacker_data[attacker_max_key]
-        game_status[attacker_resource_key] = [game_status[attacker_resource_key], attacker_data[attacker_max_key]].min
-      end
-    end
-    
-    game_status
-  end
-
-  def guard(game_status, action_taker = 'player', target = 'boss')
-    # Guard costs no stamina, halves incoming damage this turn, and grants +5 stamina regen
-    game_status["#{action_taker}Guarding"] = true
-    game_status["#{action_taker}StaminaRegenBonus"] = 5
-    game_status
-  end
-
-  def stab(game_status, action_taker = 'player', target = 'boss')
-    execute_physical_attack(game_status, action_taker, target, 'stab')
-  end
-
-  def whirlwind(game_status, action_taker = 'player', target = 'boss')
-    execute_physical_attack(game_status, action_taker, target, 'whirlwind')
-  end
-
-  def cleave(game_status, action_taker = 'player', target = 'boss')
-    execute_physical_attack(game_status, action_taker, target, 'cleave')
-  end
-
-  def smash(game_status, action_taker = 'player', target = 'boss')
-    execute_physical_attack(game_status, action_taker, target, 'smash')
-  end
-
-  def piercing_arrow(game_status, action_taker = 'player', target = 'boss')
-    execute_physical_attack(game_status, action_taker, target, 'piercing_arrow')
-  end
-
-  # Data-driven physical attack: reads hit_count, base_damage_by_type, stamina_cost, and
-  # force_next_action from the attack-category keyword entry in the database.
-  def execute_physical_attack(game_status, action_taker, target, ability_name)
-    attack_kw = BossKeyword.find_by(name: ability_name, category: 'attack')
-    return game_status unless attack_kw
-
-    attrs        = attack_kw.properties || {}
-    stamina_cost = (attrs['stamina_cost'] || 10).to_i
-    hit_count    = (attrs['hit_count']    || 1).to_i
-    base_damage  = attrs['base_damage_by_type'] || { 'physical' => 10 }
-    force_next   = attrs['force_next_action']
-
-    stamina_key = "#{action_taker}Stamina"
-    return game_status if game_status[stamina_key].nil? || game_status[stamina_key] < stamina_cost
-
-    game_status[stamina_key] -= stamina_cost
-
-    attacker_data = game_status[action_taker]
-    defender_data = game_status[target]
-
-    # Resolve lifesteal and attacker life resource once; shared across all hits
-    lifesteal_amount       = 0
-    attacker_life_resource = 'life'
-    (attacker_data['keywords'] || []).each do |kw_name|
-      kw = BossKeyword.find_by(name: kw_name)
-      next unless kw
-      lifesteal_amount       += kw.properties['lifesteal'].to_f if kw.properties['lifesteal']
-      attacker_life_resource  = kw.properties['life_resource']  if kw.properties['life_resource']
-    end
-
-    hit_count.times do
-      damage_result = DamageCalculator.calculate_damage(attacker_data, defender_data, base_damage.dup)
-      hit_damage    = damage_result[:total_damage].ceil
-      life_resource = damage_result[:life_resource]
-
-      hit_damage = (hit_damage * 0.5).ceil if game_status["#{target}Guarding"]
-
-      resource_key = "#{target}#{life_resource.capitalize}"
-      game_status[resource_key] = [game_status[resource_key] - hit_damage, 0].max
-
-      next unless lifesteal_amount > 0
-
-      healing               = (hit_damage * lifesteal_amount).ceil
-      attacker_resource_key = "#{action_taker}#{attacker_life_resource.capitalize}"
-      attacker_max_key      = "max_#{attacker_life_resource}"
-      game_status[attacker_resource_key] += healing
-      if attacker_data[attacker_max_key]
-        game_status[attacker_resource_key] = [game_status[attacker_resource_key], attacker_data[attacker_max_key]].min
-      end
-    end
-
-    game_status["#{action_taker}ForcedNextAction"] = force_next if force_next
-
-    game_status
-  end
-
-  def cast(game_status, action_taker = 'player', target = 'boss', spell_name = nil)
-    # Basic cast uses magic damage and mana cost
-    base_damage = 12
-    if spell_name.present?
-      case spell_name
-      when 'magic_missile'
-        base_damage = 12
-      when 'firebolt', 'fire_bolt'
-        base_damage = 14
-      when 'lightning_strike'
-        base_damage = 15
-      when 'light_bolt'
-        base_damage = 12
-      else
-        base_damage = 12
-      end
-    end
-
-    mana_cost = 10
-    mana_key = "#{action_taker}Mana"
-    if game_status[mana_key].nil? || game_status[mana_key] < mana_cost
-      return game_status
-    end
-
-    game_status[mana_key] -= mana_cost
-
-    ability_damage = spell_name == 'light_bolt' ? { 'light' => base_damage } : { 'magic' => base_damage }
-
-    attacker_data = game_status[action_taker]
-    defender_data = game_status[target]
-
-    damage_result = DamageCalculator.calculate_damage(attacker_data, defender_data, ability_damage)
-    total_damage = damage_result[:total_damage].ceil
-    life_resource = damage_result[:life_resource]
-
-    # Apply guard reduction after all other modifiers
-    total_damage = (total_damage * 0.5).ceil if game_status["#{target}Guarding"]
-
-    resource_key = "#{target}#{life_resource.capitalize}"
-    game_status[resource_key] -= total_damage
-    game_status[resource_key] = 0 if game_status[resource_key] < 0
-
-    game_status
-  end
-
-  def apply_regeneration(game_status, entity_key, mana_cost:, stamina_cost:)
-    entity_data = game_status[entity_key]
-    return game_status unless entity_data
-
-    entity_data['turns_since_mana_cost'] ||= 0
-    entity_data['turns_since_stamina_cost'] ||= 0
-
-    if mana_cost
-      entity_data['turns_since_mana_cost'] = 0
-    else
-      entity_data['turns_since_mana_cost'] += 1
-      base_regen = [5 * entity_data['turns_since_mana_cost'], 25].min
-      regen_multiplier = mana_regen_multiplier(entity_data)
-      mana_regen = (base_regen * regen_multiplier).floor
-      if mana_regen > 0
-        mana_key = "#{entity_key}Mana"
-        max_mana = get_max_resource(entity_data, 'mana')
-        if max_mana
-          game_status[mana_key] = [game_status[mana_key] + mana_regen, max_mana].min
-        else
-          game_status[mana_key] += mana_regen
-        end
-      end
-    end
-
-    if stamina_cost
-      entity_data['turns_since_stamina_cost'] = 0
-    else
-      entity_data['turns_since_stamina_cost'] += 1
-      stamina_regen = 5 * entity_data['turns_since_stamina_cost']
-      stamina_regen += game_status["#{entity_key}StaminaRegenBonus"].to_i
-      stamina_key = "#{entity_key}Stamina"
-      max_stamina = get_max_resource(entity_data, 'stamina')
-      if max_stamina
-        game_status[stamina_key] = [game_status[stamina_key] + stamina_regen, max_stamina].min
-      else
-        game_status[stamina_key] += stamina_regen
-      end
-    end
-
-    entity_data['mana'] = game_status["#{entity_key}Mana"]
-    entity_data['stamina'] = game_status["#{entity_key}Stamina"]
-
-    game_status
-  end
-
-  def mana_regen_multiplier(entity_data)
-    keywords = entity_data['keywords'] || []
-    keywords.each do |keyword_name|
-      keyword = BossKeyword.find_by(name: keyword_name)
-      next unless keyword
-
-      attrs = keyword.properties || {}
-      return attrs['mana_regen_multiplier'].to_f if attrs['mana_regen_multiplier']
-    end
-
-    1.0
-  end
-
-  def get_max_resource(entity_data, resource_name)
-    if entity_data["max_#{resource_name}"]
-      entity_data["max_#{resource_name}"]
-    else
-      entity_data.dig('stats', 'base_stats', resource_name)
-    end
-  end
-
-  def heal(game_status, action_taker = 'player', target = 'player')    
-    # Get action_taker's healing stat (handle different structures for player vs boss)
-    action_taker_data = game_status[action_taker]
-    if action_taker == 'boss' && action_taker_data['stats']['base_stats']
-      healing = action_taker_data['stats']['base_stats']['damage'] * 2 || 0
-    else
-      healing = action_taker_data['stats']['damage'] * 2 || 0
-    end
-    
-    # Check if target is undead
-    target_data = game_status[target]
-    is_undead = false
-    
-    if target_data['keywords']
-      is_undead = target_data['keywords'].include?('undead')
-    end
-    
-    life_key = "#{target}Life"
-    
-    if is_undead
-      # Healing damages undead
-      game_status[life_key] -= healing
-      game_status[life_key] = 0 if game_status[life_key] < 0
-    else
-      # Normal healing
-      game_status[life_key] += healing
-    end
-    
-    game_status
+    CombatService.choose_boss_action(game_status)
   end
 
 end

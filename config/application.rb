@@ -11,6 +11,11 @@ module OnlyBosses
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 7.0
 
+    # Use GoodJob as the ActiveJob backend (Postgres-backed, no Redis needed).
+    # async mode runs jobs in background threads inside the Puma process.
+    config.active_job.queue_adapter = :good_job
+    config.good_job.execution_mode  = :async
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

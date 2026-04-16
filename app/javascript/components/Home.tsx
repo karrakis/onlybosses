@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import MagmaBackground from './MagmaBackground';
 import Game from './Game';
 
@@ -13,41 +13,63 @@ interface HomeProps {
     onNavigate?: (to: string) => void;
 }
 
-interface SimProgress {
-    run: number;
-    depth: number;
+interface SimBatch {
+    id: number;
+    status: 'pending' | 'running' | 'done' | 'cancelled';
     total: number;
+    completed: number;
+    created_at: string;
 }
 
 const Home: React.FC<HomeProps> = ({ availableKeywords, onNavigate }) => {
     const [activeGame, setActiveGame] = useState<boolean>(false);
 
-    const [simCount, setSimCount] = useState<number>(10);
-    const [isSimulating, setIsSimulating] = useState<boolean>(false);
-    const [simProgress, setSimProgress] = useState<SimProgress>({ run: 0, depth: 0, total: 0 });
+    const [simCount, setSimCount] = useState<number>(500);
+    const [batch, setBatch] = useState<SimBatch | null>(null);
 
-    const startSimulation = () => {
-        if (isSimulating) return;
-        setIsSimulating(true);
-        setSimProgress({ run: 0, depth: 0, total: simCount });
+    // On mount: resume tracking any active batch
+    useEffect(() => {
+        fetch('/simulation_batches/latest')
+            .then(r => r.json())
+            .then((data: SimBatch | { id: null }) => { if (data.id) setBatch(data as SimBatch); })
+            .catch(() => {});
+    }, []);
 
-        const source = new EventSource(`/simulate_runs?count=${simCount}`);
+    // Poll for progress while a batch is active
+    useEffect(() => {
+        if (!batch || batch.status === 'done' || batch.status === 'cancelled') return;
+        const timer = setInterval(() => {
+            fetch(`/simulation_batches/${batch.id}`)
+                .then(r => r.json())
+                .then((data: SimBatch) => setBatch(data))
+                .catch(() => {});
+        }, 2000);
+        return () => clearInterval(timer);
+    }, [batch?.id, batch?.status]);
 
-        source.onmessage = (e: MessageEvent) => {
-            const data = JSON.parse(e.data);
-            if (data.done) {
-                source.close();
-                setIsSimulating(false);
-            } else {
-                setSimProgress({ run: data.run, depth: data.depth, total: data.total });
-            }
-        };
-
-        source.onerror = () => {
-            source.close();
-            setIsSimulating(false);
-        };
+    const startSimulation = async () => {
+        if (batch && (batch.status === 'pending' || batch.status === 'running')) return;
+        try {
+            const res = await fetch('/simulation_batches', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ count: simCount }),
+            });
+            const data: SimBatch = await res.json();
+            setBatch(data);
+        } catch (_) {}
     };
+
+    const cancelBatch = async () => {
+        if (!batch) return;
+        try {
+            const res = await fetch(`/simulation_batches/${batch.id}/cancel`, { method: 'PATCH' });
+            const data: SimBatch = await res.json();
+            setBatch(data);
+        } catch (_) {}
+    };
+
+    const isActive = batch?.status === 'pending' || batch?.status === 'running';
 
     return (
         <div className="w-screen h-screen flex items-center justify-center text-3xl font-bold relative overflow-hidden">
@@ -60,24 +82,32 @@ const Home: React.FC<HomeProps> = ({ availableKeywords, onNavigate }) => {
                         <input
                             type="number"
                             min={1}
-                            max={500}
+                            max={100000}
                             value={simCount}
                             onChange={(e) => setSimCount(Math.max(1, parseInt(e.target.value) || 1))}
-                            disabled={isSimulating}
-                            className="w-16 text-center text-sm bg-black/50 border border-gray-500 rounded px-2 py-1 text-white disabled:opacity-50"
+                            disabled={isActive}
+                            className="w-20 text-center text-sm bg-black/50 border border-gray-500 rounded px-2 py-1 text-white disabled:opacity-50"
                         />
                         <button
                             onClick={startSimulation}
-                            disabled={isSimulating}
+                            disabled={isActive}
                             className="text-sm border border-gray-400 rounded px-3 py-1 text-white bg-black/50 hover:bg-black/70 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isSimulating ? 'Running…' : 'Generate'}
+                            {isActive ? 'Running…' : 'Generate'}
                         </button>
+                        {isActive && (
+                            <button
+                                onClick={cancelBatch}
+                                className="text-sm border border-red-700 rounded px-2 py-1 text-red-400 bg-black/50 hover:bg-red-950/50"
+                            >
+                                Cancel
+                            </button>
+                        )}
                     </div>
-                    {(isSimulating || simProgress.run > 0) && (
+                    {batch && (
                         <div className="text-xs text-gray-300 text-right bg-black/60 rounded px-3 py-1.5 leading-5">
-                            <div>Depth {simProgress.depth}</div>
-                            <div>{simProgress.run} / {simProgress.total} runs</div>
+                            <div className="capitalize text-gray-400">{batch.status}</div>
+                            <div>{batch.completed.toLocaleString()} / {batch.total.toLocaleString()} runs</div>
                         </div>
                     )}
                 </div>
