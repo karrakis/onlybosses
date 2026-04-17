@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -60 160 480" width="160" height="420">
+
+  <!--
+    Harpy silhouette.
+    Based on humanoid but: no arms, bird claws instead of feet.
+    Wings supplied by wing.svg (fly keyword).
+    Faces left via transform="translate(160,0) scale(-1,1)".
+  -->
+
+  <g id="harpy" fill="white" stroke="black" stroke-width="2" stroke-linejoin="round" transform="translate(160,0) scale(-1,1)">
+
+    <!-- ═══════════════════════════════════════════════
+         BACK LIMBS (no arms — legs only)
+         ═══════════════════════════════════════════════ -->
+
+    <!-- BACK UPPER LEG -->
+    <path d="
+      M 83,256
+      C 84,270  86,295  85,330
+      L 98,330
+      C 99,295  100,270  100,256
+      Z
+    "/>
+
+    <!-- BACK LOWER LEG -->
+    <path d="
+      M 83,328
+      C 83,345  84,365  84,390
+      L 98,390
+      C 98,365  99,345  98,328
+      Z
+    "/>
+
+    <!-- BACK ANKLE KNOB -->
+    <circle cx="91" cy="391" r="5" fill="white" stroke="black" stroke-width="1.5"/>
+
+    <!-- BACK CLAWS (center 91,391) — forward = rightward pre-flip -->
+    <path d="M 91,391 C 110,384 124,377 131,373" fill="none" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 91,391 C 112,391 127,389 133,389" fill="none" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 91,391 C 109,397 121,404 126,410" fill="none" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 91,391 C 75,393  63,397  57,401"  fill="none" stroke-width="2"   stroke-linecap="round"/>
+
+    <!-- ═══════════════════════════════════════════════
+         BODY (torso, hips, neck, head)
+         ═══════════════════════════════════════════════ -->
+
+    <!-- TORSO -->
+    <path d="
+      M 50,100
+      C 38,105  34,120  36,145
+      C 38,168  42,185  48,195
+      L 50,230
+      L 110,230
+      L 112,195
+      C 118,185 122,168 124,145
+      C 126,120 122,105 110,100
+      Z
+    "/>
+
+    <!-- WAIST / HIP BAND -->
+    <path d="M 50,225 L 48,258 L 112,258 L 110,225 Z"/>
+
+    <!-- NECK -->
+    <path d="M 70,76 L 68,96 L 88,96 L 86,76 Z"/>
+
+    <!-- CREST FEATHERS — before head so head circle covers quill bases.
+         transform: translate(quill-pos) rotate(angle) scale(0.4)
+         x=-50 y=-225 puts feather quill (50,225) at local origin → parent quill-pos.
+         rotate(-N) leans tip upper-left in pre-flip = upper-right in screen = backward. -->
+    <image href="feather.svg" x="-50" y="-225" width="100" height="250"
+           transform="translate(72,24) rotate(-52) scale(0.4)"/>
+    <image href="feather.svg" x="-50" y="-225" width="100" height="250"
+           transform="translate(77,19) rotate(-45) scale(0.4)"/>
+    <image href="feather.svg" x="-50" y="-225" width="100" height="250"
+           transform="translate(83,24) rotate(-38) scale(0.4)"/>
+
+    <!-- HEAD -->
+    <ellipse cx="78" cy="48" rx="28" ry="30"/>
+
+    <!-- MOUTH — lower right in pre-flip = lower forward in screen.
+         At y≈58–66, x≈88–106 (within head ellipse boundary). -->
+    <path d="M 89,57 C 93,53 103,53 107,57 C 103,67 93,67 89,57 Z" fill="#1a0808"/>
+    <!-- Upper teeth (apex down) -->
+    <polygon points="91,56  93,63  95,56" fill="white" stroke="none"/>
+    <polygon points="96,55  98,62  100,55" fill="white" stroke="none"/>
+    <polygon points="101,56 103,63 105,56" fill="white" stroke="none"/>
+    <!-- Lower teeth (apex up) -->
+    <polygon points="92,66  94,59  96,66" fill="white" stroke="none"/>
+    <polygon points="99,66 101,59 103,66" fill="white" stroke="none"/>
+
+    <!-- EYE -->
+    <circle cx="92" cy="46" r="5" fill="black" stroke="none"/>
+    <circle cx="94" cy="46" r="1.5" fill="white" stroke="none"/>
+
+    <!-- ═══════════════════════════════════════════════
+         FRONT LIMBS (no arms — legs only)
+         ═══════════════════════════════════════════════ -->
+
+    <!-- FRONT UPPER LEG -->
+    <path d="
+      M 60,256
+      C 61,270  62,295  62,330
+      L 75,330
+      C 76,295  76,270  76,256
+      Z
+    "/>
+
+    <!-- FRONT LOWER LEG -->
+    <path d="
+      M 60,328
+      C 60,345  60,365  60,390
+      L 74,390
+      C 74,365  75,345  75,328
+      Z
+    "/>
+
+    <!-- FRONT ANKLE KNOB -->
+    <circle cx="67" cy="391" r="5" fill="white" stroke="black" stroke-width="1.5"/>
+
+    <!-- FRONT CLAWS (center 67,391) — forward = rightward pre-flip -->
+    <path d="M 67,391 C  86,384 100,377 107,373" fill="none" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 67,391 C  88,391 103,389 109,389" fill="none" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 67,391 C  85,397  97,404 102,410" fill="none" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 67,391 C  51,393  39,397  33,401"  fill="none" stroke-width="2"   stroke-linecap="round"/>
+
+  </g>
+
+</svg>

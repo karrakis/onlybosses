@@ -191,13 +191,17 @@ const WING_SVG     = '/assets/keywords/wing.svg';
 
 // Creatures that use humanoid.svg as their base model
 const HUMANOID_CREATURES = new Set([
-  'human', 'harpy', 'golem', 'vampire', 'giant', 'goblin',
+  'human', 'golem', 'vampire', 'giant', 'goblin',
   'troll', 'zombie', 'werewolf', 'minotaur',
 ]);
 
 // Creatures with their own dedicated base SVG
+const HARPY_SVG   = '/assets/keywords/harpy.svg';
+
+// Creatures with their own dedicated base SVG
 const CREATURE_SVG: Record<string, string> = {
   phoenix: PHOENIX_SVG,
+  harpy:   HARPY_SVG,
 };
 
 function resolveBodySvg(selected: string[]): string {
