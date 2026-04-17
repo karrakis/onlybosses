@@ -10,7 +10,7 @@
     Facing left: screen-left is the FRONT side. Feet toe-points to the left.
   -->
 
-  <g id="humanoid" fill="white" stroke="black" stroke-width="2" stroke-linejoin="round">
+  <g id="humanoid" fill="white" stroke="black" stroke-width="2" stroke-linejoin="round" transform="translate(160,0) scale(-1,1)">
 
     <!-- ═══════════════════════════════════════════════
          BACK LIMBS (creature's left side, screen-right)

@@ -1,10 +1,11 @@
 import * as React from "react";
 import SynergyChart from "./SynergyChart";
 import KeywordChart from "./KeywordChart";
+import CreaturePlayground from "./CreaturePlayground";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type View = "analysis" | "synergy_chart" | "keyword_chart";
+type View = "analysis" | "synergy_chart" | "keyword_chart" | "playground";
 
 type Section = { title: string; lines: string[] };
 
@@ -179,6 +180,12 @@ function AnalysisView({ onNavigate, result, setResult, onNavigateHome, onClearSa
               Synergy Chart →
             </button>
             <button
+              onClick={() => onNavigate("playground")}
+              className="text-green-400 hover:text-green-300 border border-green-700 rounded px-3 py-1 text-sm"
+            >
+              Playground →
+            </button>
+            <button
               onClick={onNavigateHome}
               className="text-gray-400 hover:text-white border border-gray-600 rounded px-3 py-1 text-sm"
             >
@@ -292,7 +299,8 @@ function AnalysisView({ onNavigate, result, setResult, onNavigateHome, onClearSa
 export default function Admin({ onNavigateHome = () => { history.pushState({}, "", "/"); location.reload(); } }: { onNavigateHome?: () => void }) {
   const pathToView = (): View =>
     window.location.pathname.includes("synergy_chart") ? "synergy_chart" :
-    window.location.pathname.includes("keyword_chart") ? "keyword_chart" : "analysis";
+    window.location.pathname.includes("keyword_chart") ? "keyword_chart" :
+    window.location.pathname.includes("playground")   ? "playground" : "analysis";
 
   const [view,      setView]      = React.useState<View>(pathToView);
   const [result,    setResult]    = React.useState<AnalysisResult | null>(null);
@@ -326,6 +334,7 @@ export default function Admin({ onNavigateHome = () => { history.pushState({}, "
     setView(v);
     const path = v === "synergy_chart" ? "/admin/synergy_chart"
                : v === "keyword_chart" ? "/admin/keyword_chart"
+               : v === "playground"    ? "/admin/playground"
                : "/admin";
     history.pushState({}, "", path);
   }
@@ -342,6 +351,9 @@ export default function Admin({ onNavigateHome = () => { history.pushState({}, "
   }
   if (view === "keyword_chart") {
     return <KeywordChart onBack={() => navigate("analysis")} analysisResult={result} />;
+  }
+  if (view === "playground") {
+    return <CreaturePlayground onBack={() => navigate("analysis")} />;
   }
   return <AnalysisView onNavigate={navigate} result={result} setResult={setResult} onNavigateHome={onNavigateHome} onClearSaved={clearSaved} />;
 }

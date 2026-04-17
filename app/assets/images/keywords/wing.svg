@@ -74,9 +74,6 @@
 
   </defs>
 
-  <!-- Background (remove for transparent embed) -->
-  <rect width="700" height="660" y="-160" fill="#16161e"/>
-
   <!-- Faint guide arc (comment out in production) -->
   <path id="arc-guide"
         d="M 60,280 C 100,40 480,20 640,190"
