@@ -186,22 +186,46 @@ const RARITY_COLOUR: Record<string, string> = {
 
 // SVGs served by Sprockets from app/assets/images/keywords/
 const HUMANOID_SVG = '/assets/keywords/humanoid.svg';
+const PHOENIX_SVG  = '/assets/keywords/phoenix.svg';
 const WING_SVG     = '/assets/keywords/wing.svg';
+
+// Creatures that use humanoid.svg as their base model
+const HUMANOID_CREATURES = new Set([
+  'human', 'harpy', 'golem', 'vampire', 'giant', 'goblin',
+  'troll', 'zombie', 'werewolf', 'minotaur',
+]);
+
+// Creatures with their own dedicated base SVG
+const CREATURE_SVG: Record<string, string> = {
+  phoenix: PHOENIX_SVG,
+};
+
+function resolveBodySvg(selected: string[]): string {
+  // First selected keyword that has a dedicated SVG wins
+  for (const name of selected) {
+    if (CREATURE_SVG[name]) return CREATURE_SVG[name];
+  }
+  // Humanoid creatures (and default)
+  return HUMANOID_SVG;
+}
 
 // ─── Creature viewport ────────────────────────────────────────────────────────
 
-function CreatureViewport({ selected, activeAnim }: { selected: string[]; activeAnim: string | null }) {
+function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[]; activeAnim: string | null; flipped: boolean }) {
   const hasWings = selected.includes('fly');
+  const bodySvg  = resolveBodySvg(selected);
   const anim     = activeAnim ? (ANIMATIONS[activeAnim] ?? FALLBACK_ANIM) : null;
 
   const animStyle: React.CSSProperties = anim ? {
     animation: `${anim.animName} ${anim.duration} ${anim.easing} ${anim.fillMode}`,
   } : {};
 
+  const flipStyle: React.CSSProperties = flipped ? { transform: 'scaleX(-1)' } : {};
+
   return (
     <div
       className="relative"
-      style={{ width: 700, height: 540, background: '#1e1e2e', borderRadius: 8, overflow: 'visible' }}
+      style={{ width: 700, height: 540, background: '#1e1e2e', borderRadius: 8, overflow: 'visible', ...flipStyle }}
     >
       {/* Animated wrapper — wings + humanoid move together */}
       <div style={{ position: 'absolute', inset: 0, ...animStyle }}>
@@ -216,7 +240,7 @@ function CreatureViewport({ selected, activeAnim }: { selected: string[]; active
             />
           </>
         )}
-        <object type="image/svg+xml" data={HUMANOID_SVG} aria-label="creature body"
+        <object type="image/svg+xml" data={bodySvg} aria-label="creature body"
           style={{ position: 'absolute', width: 160, height: 420, left: 270, top: 60,
                    pointerEvents: 'none', zIndex: 10 }}
         />
@@ -249,6 +273,7 @@ export default function CreaturePlayground({ onBack }: { onBack: () => void }) {
   const [activeAnim,     setActiveAnim]     = React.useState<string | null>(null);
   const [loading,        setLoading]        = React.useState(true);
   const [error,          setError]          = React.useState<string | null>(null);
+  const [isBoss,         setIsBoss]         = React.useState(true);
   const animTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Inject keyframes once
@@ -321,10 +346,19 @@ export default function CreaturePlayground({ onBack }: { onBack: () => void }) {
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 shrink-0">
         <h1 className="text-xl font-bold text-white">Creature Playground</h1>
-        <button onClick={onBack}
-          className="text-gray-400 hover:text-white border border-gray-600 rounded px-3 py-1 text-sm">
-          ← Admin
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsBoss(b => !b)}
+            title={isBoss ? 'Boss (facing left) — click to switch to Player' : 'Player (facing right) — click to switch to Boss'}
+            className="text-gray-300 hover:text-white border border-gray-600 hover:border-gray-400 rounded px-3 py-1 text-sm font-bold transition-colors"
+          >
+            {isBoss ? '←' : '→'}
+          </button>
+          <button onClick={onBack}
+            className="text-gray-400 hover:text-white border border-gray-600 rounded px-3 py-1 text-sm">
+            ← Admin
+          </button>
+        </div>
       </div>
 
       {/* ── Main 3-column layout ─────────────────────────────────────────── */}
@@ -371,7 +405,7 @@ export default function CreaturePlayground({ onBack }: { onBack: () => void }) {
 
         {/* Centre: creature viewport */}
         <div className="flex-1 flex items-center justify-center p-6 overflow-auto">
-          <CreatureViewport selected={selected} activeAnim={activeAnim} />
+          <CreatureViewport selected={selected} activeAnim={activeAnim} flipped={!isBoss} />
         </div>
 
         {/* Right: action panel */}

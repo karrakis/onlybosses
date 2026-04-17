@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 420" width="160" height="420">
+
+  <!--
+    Phoenix / generic bird base model.
+    Faces left via transform="translate(160,0) scale(-1,1)".
+    Wings are supplied separately by wing.svg (fly keyword).
+
+    Draw order (pre-flip coords; right = forward, left = backward):
+      1. Tail      (behind body — body covers apex)
+      2. Beak      (drawn behind head so head overlaps base)
+      3. Head      (behind body so body bites into bottom)
+      4. Body
+      5. Eye
+      6. Back leg  (in front of body)
+      7. Front leg (in front of body)
+  -->
+
+  <g id="phoenix" fill="white" stroke="black" stroke-width="2" stroke-linejoin="round"
+     transform="translate(160,-20) scale(-1,1)">
+
+    <!-- ── Tail: apex up, centered on body (x=78), behind body ── -->
+    <polygon points="78,257 52,332 104,332"/>
+
+    <!-- ── Beak: drawn before head so head overlaps the base ─── -->
+    <polygon points="134,118 99,112 99,125"/>
+
+    <!-- ── Head: centerline (cx=78), behind body so body bites in ── -->
+    <ellipse cx="78" cy="118" rx="21" ry="20"/>
+
+    <!-- ── Body: top-heavy vertical oval ─────────────────────── -->
+    <path d="M 78,130 C 120,132 107,292 78,295 C 49,292 36,132 78,130 Z"/>
+
+    <!-- ── Eye: on top of everything ─────────────────────────── -->
+    <circle cx="86" cy="112" r="3.5" fill="black" stroke="none"/>
+    <circle cx="87" cy="111" r="1"   fill="white" stroke="none"/>
+
+    <!-- ── Right leg (pre-flip right = post-flip left side) ─────────
+         Hip at body edge (100,235). 10° from vertical:
+           thigh dx=+9, dy=+49 → knee (109,284)
+           lower dx=+8, dy=-44 → foot (117,240)
+         Claws extend outward (rightward pre-flip = leftward post-flip). -->
+    <path d="M 100,235 L 109,284" fill="none" stroke-width="7" stroke-linecap="round"/>
+    <path d="M 109,284 L 117,240" fill="none" stroke-width="5" stroke-linecap="round"/>
+    <path d="M 117,240 L 145,236" fill="none" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 117,240 L 143,243" fill="none" stroke-width="2" stroke-linecap="round"/>
+    <path d="M 117,240 L  99,247" fill="none" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- ── Left leg (pre-flip left = post-flip right side) ────────
+         Mirror of right leg at x=78.
+         Hip (56,235), knee (47,284), foot (39,240).
+         Claws extend outward (leftward pre-flip = rightward post-flip). -->
+    <path d="M  56,235 L  47,284" fill="none" stroke-width="7" stroke-linecap="round"/>
+    <path d="M  47,284 L  39,240" fill="none" stroke-width="5" stroke-linecap="round"/>
+    <path d="M  39,240 L  11,236" fill="none" stroke-width="3" stroke-linecap="round"/>
+    <path d="M  39,240 L  13,243" fill="none" stroke-width="2" stroke-linecap="round"/>
+    <path d="M  39,240 L  57,247" fill="none" stroke-width="2" stroke-linecap="round"/>
+
+  </g>
+
+</svg>
