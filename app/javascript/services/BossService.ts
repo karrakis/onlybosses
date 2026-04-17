@@ -21,6 +21,9 @@ export interface Boss {
   life?: number;
   stamina?: number;
   mana?: number;
+  active_buffs?: Record<string, number>;
+  active_debuffs?: Record<string, number>;
+  cooldowns?: Record<string, number>;
 }
 
 export const BossService = {

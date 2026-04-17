@@ -32,6 +32,9 @@ class PlayerFactory
       'bosses_defeated'         => 0,
       'turns_since_mana_cost'   => 0,
       'turns_since_stamina_cost'=> 0,
+      'active_buffs'            => {},
+      'active_debuffs'          => {},
+      'cooldowns'               => {},
       'max_life'                => BASE_LIFE,
       'max_stamina'             => BASE_STAMINA,
       'max_mana'                => BASE_MANA,
@@ -112,10 +115,14 @@ class PlayerFactory
 
     explicit.each do |kw_name|
       kw = BossKeyword.find_by(name: kw_name)
-      next unless kw&.properties&.dig('passives')
+      next unless kw&.properties
 
-      kw.properties['passives'].each do |passive_name|
+      (kw.properties['passives'] || []).each do |passive_name|
         derived << passive_name
+      end
+
+      (kw.properties['abilities'] || []).each do |ability_name|
+        derived << ability_name
       end
     end
 

@@ -5,7 +5,7 @@ class RunSimulatorService
   # Simulate one full run. Returns the depth reached (integer).
   # keyword_registry: hash of name => BossKeyword, preloaded once by the caller.
   def self.simulate_run(keyword_registry)
-    non_passive = keyword_registry.values.reject { |k| k.category == 'passive' }
+    non_passive = keyword_registry.values.reject { |k| k.category == 'passive' || k.category == 'ability' }
     rarity1     = non_passive.select { |k| k.rarity == 1 }
     return 0 if rarity1.length < 2
 
@@ -115,6 +115,14 @@ class RunSimulatorService
     boss_e['turns_since_mana_cost']      ||= 0
     boss_e['turns_since_stamina_cost']   ||= 0
 
+    # Initialise transient effect state
+    player_e['active_buffs']   ||= {}
+    player_e['active_debuffs'] ||= {}
+    player_e['cooldowns']      ||= {}
+    boss_e['active_buffs']     ||= {}
+    boss_e['active_debuffs']   ||= {}
+    boss_e['cooldowns']        ||= {}
+
     # Forced-action state mirrors session[:player/boss_forced_next_action] in the live game
     player_forced = nil
     boss_forced   = nil
@@ -158,6 +166,10 @@ class RunSimulatorService
       player_mana_cost    = gs['playerMana']    < player_mana_before
       player_stamina_cost = gs['playerStamina'] < player_stamina_before
       gs = CombatService.apply_regeneration(gs, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
+
+      # End-of-round: tick buff/debuff/cooldown counters for both entities
+      gs = CombatService.tick_entity_effects(gs, 'player')
+      gs = CombatService.tick_entity_effects(gs, 'boss')
 
       sync_entities(gs, player_e, boss_e)
       return :player_died if dead?(player_e, registry)

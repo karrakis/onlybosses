@@ -39,7 +39,30 @@ class DamageCalculator
     damage_by_type.each do |type, amount|
       damage_by_type[type] = amount * amplification
     end
-    
+
+    # 5b. Apply active debuffs on defender that amplify incoming damage by type.
+    #     (e.g. fire_vulnerability from web adds a multiplier to fire damage)
+    if (debuffs = defender_data['active_debuffs'])
+      debuffs.each do |debuff_name, data|
+        case debuff_name
+        when 'fire_vulnerability'
+          mult = (data['multiplier'] || 1.5).to_f
+          damage_by_type['fire'] = (damage_by_type['fire'] || 0) * mult if damage_by_type['fire']
+        end
+      end
+    end
+
+    # 5c. Apply active buffs on defender that grant full immunity to a damage type.
+    #     physical_immunity (from fly) zeroes all melee/physical damage flavours:
+    #     physical, slashing, blunt, and piercing.  Magical and elemental types
+    #     (magic, fire, ice, holy, dark, …) are intentionally not blocked.
+    PHYSICAL_SUBTYPES = %w[physical slashing blunt piercing].freeze
+    if (buffs = defender_data['active_buffs'])
+      if buffs['physical_immunity'].to_i > 0
+        PHYSICAL_SUBTYPES.each { |t| damage_by_type[t] = 0 if damage_by_type.key?(t) }
+      end
+    end
+
     # 6. Apply defender's incoming damage reduction by type
     defender_reduction_mods = get_damage_reduction_by_type(defender_data)
     damage_by_type.each do |type, amount|

@@ -145,6 +145,14 @@ class GameController < ApplicationController
 
     # Convert player hash with symbol keys to string keys for consistency
     player_with_string_keys = player.deep_stringify_keys
+
+    # Ensure transient effect fields exist on both entities (defensive for pre-existing sessions)
+    player_with_string_keys['active_buffs']   ||= {}
+    player_with_string_keys['active_debuffs'] ||= {}
+    player_with_string_keys['cooldowns']      ||= {}
+    boss_expanded['active_buffs']             ||= {}
+    boss_expanded['active_debuffs']           ||= {}
+    boss_expanded['cooldowns']                ||= {}
     
     # Build game_status from session data
     game_status = {
@@ -230,13 +238,23 @@ class GameController < ApplicationController
         player_stamina_cost = game_status['playerStamina'] < player_stamina_turn_start
         game_status = CombatService.apply_regeneration(game_status, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
 
-        # Sync latest resources back to session entities
-        player['life'] = game_status['playerLife']
-        player['stamina'] = game_status['playerStamina']
-        player['mana'] = game_status['playerMana']
-        boss['life'] = game_status['bossLife']
-        boss['stamina'] = game_status['bossStamina']
-        boss['mana'] = game_status['bossMana']
+        # End-of-round: tick buff/debuff/cooldown counters for both entities
+        game_status = CombatService.tick_entity_effects(game_status, 'player')
+        game_status = CombatService.tick_entity_effects(game_status, 'boss')
+
+        # Sync latest resources + transient effects back to session entities
+        player['life']           = game_status['playerLife']
+        player['stamina']        = game_status['playerStamina']
+        player['mana']           = game_status['playerMana']
+        player['active_buffs']   = game_status['player']['active_buffs']   || {}
+        player['active_debuffs'] = game_status['player']['active_debuffs'] || {}
+        player['cooldowns']      = game_status['player']['cooldowns']      || {}
+        boss['life']             = game_status['bossLife']
+        boss['stamina']          = game_status['bossStamina']
+        boss['mana']             = game_status['bossMana']
+        boss['active_buffs']     = game_status['boss']['active_buffs']     || {}
+        boss['active_debuffs']   = game_status['boss']['active_debuffs']   || {}
+        boss['cooldowns']        = game_status['boss']['cooldowns']        || {}
         
         # Save updated states to session
         PlayerFactory.save_player(session, player)
@@ -257,7 +275,8 @@ class GameController < ApplicationController
           bossAction: boss_action,
           gameState: game_status,
           turnToken: new_token,
-          forcedPlayerAction: session[:player_forced_next_action]
+          forcedPlayerAction: session[:player_forced_next_action],
+          playerDied: player_dead?(game_status)
         }
       else
         # Boss is defeated, no boss action
@@ -265,12 +284,19 @@ class GameController < ApplicationController
         player_stamina_cost = game_status['playerStamina'] < player_stamina_turn_start
         game_status = CombatService.apply_regeneration(game_status, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
 
-        player['life'] = game_status['playerLife']
-        player['stamina'] = game_status['playerStamina']
-        player['mana'] = game_status['playerMana']
-        boss['life'] = game_status['bossLife']
-        boss['stamina'] = game_status['bossStamina']
-        boss['mana'] = game_status['bossMana']
+        # Still tick effects even when boss dies (cooldowns tick, buffs expire normally)
+        game_status = CombatService.tick_entity_effects(game_status, 'player')
+        game_status = CombatService.tick_entity_effects(game_status, 'boss')
+
+        player['life']           = game_status['playerLife']
+        player['stamina']        = game_status['playerStamina']
+        player['mana']           = game_status['playerMana']
+        player['active_buffs']   = game_status['player']['active_buffs']   || {}
+        player['active_debuffs'] = game_status['player']['active_debuffs'] || {}
+        player['cooldowns']      = game_status['player']['cooldowns']      || {}
+        boss['life']             = game_status['bossLife']
+        boss['stamina']          = game_status['bossStamina']
+        boss['mana']             = game_status['bossMana']
 
         PlayerFactory.save_player(session, player)
         save_current_boss(boss)
@@ -314,6 +340,24 @@ class GameController < ApplicationController
   # can still be called within this controller without the class prefix.
   def choose_boss_action(game_status)
     CombatService.choose_boss_action(game_status)
+  end
+
+  # Returns true if the player's life resource is at 0 or below.
+  # Checks player['keywords'] (which includes derived passives) for any keyword
+  # that overrides the life resource (e.g. ethereal → mana).
+  def player_dead?(game_status)
+    player_data = game_status['player']
+    return false unless player_data
+    kw_names   = player_data['keywords'] || []
+    res_key    = 'life'
+    kw_names.each do |name|
+      kw = BossKeyword.find_by(name: name)
+      if kw&.properties&.dig('life_resource')
+        res_key = kw.properties['life_resource']
+        break
+      end
+    end
+    game_status["player#{res_key.capitalize}"].to_f <= 0
   end
 
 end

@@ -150,6 +150,13 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 return (kw.properties?.abilities || []).filter((a: string) => a !== 'cast');
             })
     )];
+    const activeAbilities = [...new Set<string>(
+        playerKeywordData
+            .filter((kw: any) => kw.category === 'ability')
+            .map((kw: any) => kw.name)
+    )];
+    const isFlying = ((player?.active_buffs?.physical_immunity ?? 0) as number) > 0;
+    const isBossWebbed = ((boss?.active_debuffs?.fire_vulnerability ?? 0) as number) > 0;
     const visibleActionBarSpells = canCast
         ? actionBarSpells.filter((spell) => collectedSpells.includes(spell))
         : [];
@@ -319,21 +326,6 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             setStatusPage(statusTotalPages);
         }
     }, [statusPage, statusTotalPages]);
-
-    useEffect(() => {
-        // Check if player has died using correct life resource
-        // Only check if we have keyword data loaded AND it matches the player's keywords
-        // Also skip during initial keyword selection phase
-        if (player && player.keywords && player.keywords.length > 0 && 
-            allKeywordsData.length > 0 && 
-            playerKeywordData.length === player.keywords.length &&
-            !showInitialKeywordSelection) {
-            if (isDead(player, playerKeywordData) && !playerDead) {
-                setPlayerDead(true);
-                setActionInProgress(true); // Prevent further actions
-            }
-        }
-    }, [player, playerKeywordData, playerDead, allKeywordsData, showInitialKeywordSelection]);
 
     useEffect(() => {
         // Dynamically calculate grass height based on window width
@@ -661,6 +653,8 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
 
             const candidatePool = allKeywordsData
                 .filter(kw =>
+                    kw.category !== 'passive' &&
+                    kw.category !== 'ability' &&
                     !updatedKeywords.includes(kw.name) &&
                     !tieredKeywords.includes(kw.name) &&
                     (kw.rarity - 1) * 5 <= nextDepth &&
@@ -734,6 +728,8 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
 
                 const candidatePool = allKeywordsData
                     .filter(kw =>
+                        kw.category !== 'passive' &&
+                        kw.category !== 'ability' &&
                         !updatedKeywords.includes(kw.name) &&
                         !tieredKeywords.includes(kw.name) &&
                         (kw.rarity - 1) * 5 <= nextDepth &&
@@ -900,6 +896,10 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                     
                     console.log("Boss action complete");
                     setActionInProgress(false);
+                    // Show death modal only after animations have played
+                    if (response.playerDied) {
+                        setPlayerDead(true);
+                    }
                 }, 800); // Boss reacts after 800ms
             } else {
                 // No boss action (boss is dead)
@@ -1409,6 +1409,8 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                         ? { animation: 'whirlwindSpin 0.7s ease-in-out' }
                                         : playerCombatAnim === 'smash'
                                         ? { animation: 'smashSlam 0.8s ease-in-out' }
+                                        : isFlying
+                                        ? { animation: 'flyFloat 2s ease-in-out infinite' }
                                         : undefined}
                                 />
                             </ShakeAnimation>
@@ -1471,6 +1473,8 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                                     ? { animation: 'whirlwindSpin 0.7s ease-in-out' }
                                                     : bossCombatAnim === 'smash'
                                                     ? { animation: 'smashSlam 0.8s ease-in-out' }
+                                                    : isBossWebbed
+                                                    ? { animation: 'webPulse 1.5s ease-in-out infinite' }
                                                     : {})
                                             }}
                                         />
@@ -1568,6 +1572,25 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                         {formatSpellName(ability)}
                                     </div>
                                 ))}
+                                {activeAbilities.map((ability) => {
+                                    const cooldownTurns = ((player?.cooldowns?.[ability] ?? 0) as number);
+                                    const onCooldown = cooldownTurns > 0;
+                                    const abilityDisabled = actionInProgress || bossDying || onCooldown || (forcedPlayerAction != null && forcedPlayerAction !== ability);
+                                    return (
+                                        <div
+                                            key={ability}
+                                            className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex flex-col items-center justify-center cursor-pointer ${
+                                                abilityDisabled
+                                                    ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40'
+                                                    : 'bg-teal-900 hover:bg-teal-800 active:bg-teal-700'
+                                            }`}
+                                            onClick={() => !abilityDisabled && handleAction(ability)}
+                                        >
+                                            <span>{formatSpellName(ability)}</span>
+                                            {onCooldown && <span className="text-xs mt-1 opacity-80">{cooldownTurns} turn{cooldownTurns !== 1 ? 's' : ''}</span>}
+                                        </div>
+                                    );
+                                })}
                                 {canCast && (
                                     <div
                                         className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${

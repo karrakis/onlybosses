@@ -60,3 +60,15 @@
   12%  { transform: translate(-50%, -50%) scale(0.1); opacity: 0.9; }
   100% { transform: translate(-50%, -50%) scale(4.5); opacity: 0; }
 }
+
+/* Fly: player gently floats up/down with sky-blue glow */
+@keyframes flyFloat {
+  0%, 100% { transform: translateY(0);    filter: drop-shadow(0 0 8px rgba(100, 200, 255, 0.7)); }
+  50%       { transform: translateY(-14px); filter: drop-shadow(0 0 18px rgba(100, 200, 255, 1)); }
+}
+
+/* Web: boss pulses with sickly green glow while webbed */
+@keyframes webPulse {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(80, 200, 80, 0.5)) sepia(0.15); }
+  50%       { filter: drop-shadow(0 0 20px rgba(80, 200, 80, 0.9)) sepia(0.35); }
+}

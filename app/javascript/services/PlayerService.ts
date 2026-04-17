@@ -19,6 +19,10 @@ export interface Player {
     equipped_hands: number;       // hands used by currently held weapons
     max_race_slots: number;       // 1 + chimerism count
     race_count: number;           // number of creature-type keywords held
+    // Transient combat state
+    active_buffs: Record<string, number>;
+    active_debuffs: Record<string, number>;
+    cooldowns: Record<string, number>;
 }
 
 export const PlayerService = {

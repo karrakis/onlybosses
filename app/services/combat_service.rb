@@ -39,9 +39,14 @@ class CombatService
     when 'guard'  then guard(game_status, action_taker, target)
     when 'heal'   then heal(game_status, action_taker, target)
     else
-      # Handles whirlwind, stab, cleave, smash, piercing_arrow, and any future
-      # attack-category keywords without needing an explicit case branch.
-      execute_physical_attack(game_status, action_taker, target, action_name.to_s)
+      kw = BossKeyword.find_by(name: action_name.to_s)
+      if kw&.category == 'ability'
+        apply_ability(game_status, action_taker, target, action_name.to_s)
+      else
+        # Handles whirlwind, stab, cleave, smash, piercing_arrow, and any future
+        # attack-category keywords without needing an explicit case branch.
+        execute_physical_attack(game_status, action_taker, target, action_name.to_s)
+      end
     end
   end
 
@@ -49,129 +54,114 @@ class CombatService
   def self.known_action?(action_name)
     return true if action_name.to_s.start_with?('cast:')
     return true if %w[attack guard heal cast].include?(action_name.to_s)
-    BossKeyword.exists?(name: action_name.to_s, category: 'attack')
+    BossKeyword.exists?(name: action_name.to_s, category: %w[attack ability])
   end
 
   # ── Boss AI ────────────────────────────────────────────────────────────────
 
-  # Returns the action string the boss should take this turn, chosen by highest
-  # expected damage across all available abilities.  Falls back to 'guard' when
-  # no resource-affordable candidates exist.
+  # Returns the action string the boss should take this turn.
   def self.choose_boss_action(game_status)
-    boss_data    = game_status['boss']
-    player_data  = game_status['player']
-    boss_stamina = game_status['bossStamina'].to_f
-    boss_mana    = game_status['bossMana'].to_f
-
-    boss_abilities = Set.new
-    (boss_data['keywords'] || []).each do |kw_name|
-      kw = BossKeyword.find_by(name: kw_name)
-      next unless kw
-      # Attack-category keywords ARE abilities — they register by their own name.
-      boss_abilities.add(kw_name) if kw.category == 'attack'
-      (kw.properties&.dig('abilities') || []).each { |a| boss_abilities.add(a) }
-    end
-
-    candidates = []
-
-    # Basic attack — always available if stamina allows
-    if boss_stamina >= 10
-      dmg = DamageCalculator.calculate_damage(boss_data, player_data, { 'physical' => 10 })[:total_damage]
-      candidates << { action: 'attack', damage: dmg }
-    end
-
-    # Spells
-    if boss_mana >= 10 && boss_abilities.include?('cast')
-      spells = boss_abilities.reject { |a| a == 'cast' }.to_a
-      if spells.any?
-        spells.each do |spell|
-          base = SPELL_BASE_DAMAGE[spell] || { 'magic' => 12 }
-          dmg  = DamageCalculator.calculate_damage(boss_data, player_data, base)[:total_damage]
-          candidates << { action: "cast:#{spell}", damage: dmg }
-        end
-      else
-        dmg = DamageCalculator.calculate_damage(boss_data, player_data, { 'magic' => 12 })[:total_damage]
-        candidates << { action: 'cast', damage: dmg }
-      end
-    end
-
-    # Named attack-category abilities (whirlwind, smash, stab, cleave, etc.)
-    boss_abilities.each do |ability|
-      next if %w[cast attack guard].include?(ability)
-      attack_kw = BossKeyword.find_by(name: ability, category: 'attack')
-      next unless attack_kw
-      attrs          = attack_kw.properties || {}
-      stamina_needed = (attrs['stamina_cost'] || 10).to_f
-      next unless boss_stamina >= stamina_needed
-      hit_count  = (attrs['hit_count'] || 1).to_i
-      base_dmg   = attrs['base_damage_by_type'] || { 'physical' => 10 }
-      single_dmg = DamageCalculator.calculate_damage(boss_data, player_data, base_dmg)[:total_damage]
-      candidates << { action: ability, damage: single_dmg * hit_count }
-    end
-
-    best = candidates.max_by { |c| c[:damage] }
-    best ? best[:action] : 'guard'
+    choose_action_for(game_status, 'boss', 'player')
   end
 
-  # Returns the action string the player should take this turn, chosen by highest
-  # expected damage across all available abilities.  Mirrors choose_boss_action exactly
-  # so that any new ability added to the combat system is automatically available to
-  # both sides — no separate maintenance required.  Falls back to 'guard' when no
-  # resource-affordable candidates exist.
+  # Returns the action string the player should take this turn.
+  # Mirrors choose_boss_action exactly so any new ability type is automatically
+  # available to both sides without separate maintenance.
   def self.choose_player_action(game_status)
-    player_data    = game_status['player']
-    boss_data      = game_status['boss']
-    player_stamina = game_status['playerStamina'].to_f
-    player_mana    = game_status['playerMana'].to_f
+    choose_action_for(game_status, 'player', 'boss')
+  end
 
-    player_abilities = Set.new
-    (player_data['keywords'] || []).each do |kw_name|
-      kw = BossKeyword.find_by(name: kw_name)
-      next unless kw
-      # Attack-category keywords ARE abilities — they register by their own name.
-      player_abilities.add(kw_name) if kw.category == 'attack'
-      (kw.properties&.dig('abilities') || []).each { |a| player_abilities.add(a) }
-    end
+  # ── Abilities (buff/debuff, non-damaging) ─────────────────────────────────
 
-    candidates = []
+  # Execute an ability-category keyword action.  Applies stamina cost, cooldown,
+  # negation checks, then buffs on the caster and debuffs/forced-actions on the target.
+  # If negated the stamina is still spent (the attempt was made).
+  def self.apply_ability(game_status, action_taker, target, ability_name)
+    kw = BossKeyword.find_by(name: ability_name, category: 'ability')
+    return game_status unless kw
 
-    # Basic attack — always available if stamina allows
-    if player_stamina >= 10
-      dmg = DamageCalculator.calculate_damage(player_data, boss_data, { 'physical' => 10 })[:total_damage]
-      candidates << { action: 'attack', damage: dmg }
-    end
+    attrs        = kw.properties || {}
+    stamina_cost = (attrs['stamina_cost'] || 10).to_i
+    cooldown_val = (attrs['cooldown']     || 0).to_i
+    stamina_key  = "#{action_taker}Stamina"
 
-    # Spells
-    if player_mana >= 10 && player_abilities.include?('cast')
-      spells = player_abilities.reject { |a| a == 'cast' }.to_a
-      if spells.any?
-        spells.each do |spell|
-          base = SPELL_BASE_DAMAGE[spell] || { 'magic' => 12 }
-          dmg  = DamageCalculator.calculate_damage(player_data, boss_data, base)[:total_damage]
-          candidates << { action: "cast:#{spell}", damage: dmg }
+    return game_status if game_status[stamina_key].to_i < stamina_cost
+
+    caster_data = game_status[action_taker]
+    target_data = game_status[target]
+
+    caster_data['cooldowns'] ||= {}
+    return game_status if caster_data['cooldowns'][ability_name].to_i > 0
+
+    # Spend stamina before negation check — the attempt was made regardless
+    game_status[stamina_key] -= stamina_cost
+
+    # Negation checks
+    if (neg = attrs['negation_check'])
+      negated = false
+      if neg['target_has_property']
+        prop = neg['target_has_property']
+        negated = (target_data['keywords'] || []).any? do |kw_name|
+          BossKeyword.find_by(name: kw_name)&.properties&.dig(prop)
         end
-      else
-        dmg = DamageCalculator.calculate_damage(player_data, boss_data, { 'magic' => 12 })[:total_damage]
-        candidates << { action: 'cast', damage: dmg }
+      end
+      if !negated && neg['target_has_ability_immunity']
+        immunity = neg['target_has_ability_immunity']
+        negated = target_has_ability_immunity?(target_data, immunity)
+      end
+      return game_status if negated
+    end
+
+    # Set cooldown on caster
+    caster_data['cooldowns'][ability_name] = cooldown_val if cooldown_val > 0
+
+    # Caster effects (buffs)
+    if (caster_fx = attrs['on_success_caster'])
+      if (buff = caster_fx['add_buff'])
+        caster_data['active_buffs'] ||= {}
+        caster_data['active_buffs'][buff['name']] = buff['turns'].to_i
       end
     end
 
-    # Named attack-category abilities (whirlwind, smash, stab, cleave, etc.)
-    player_abilities.each do |ability|
-      next if %w[cast attack guard].include?(ability)
-      attack_kw = BossKeyword.find_by(name: ability, category: 'attack')
-      next unless attack_kw
-      attrs          = attack_kw.properties || {}
-      stamina_needed = (attrs['stamina_cost'] || 10).to_f
-      next unless player_stamina >= stamina_needed
-      hit_count  = (attrs['hit_count'] || 1).to_i
-      base_dmg   = attrs['base_damage_by_type'] || { 'physical' => 10 }
-      single_dmg = DamageCalculator.calculate_damage(player_data, boss_data, base_dmg)[:total_damage]
-      candidates << { action: ability, damage: single_dmg * hit_count }
+    # Target effects (forced action + debuffs)
+    if (target_fx = attrs['on_success_target'])
+      if (force = target_fx['force_action'])
+        game_status["#{target}ForcedNextAction"] = force
+      end
+      if (debuff = target_fx['add_debuff'])
+        target_data['active_debuffs'] ||= {}
+        target_data['active_debuffs'][debuff['name']] = {
+          'turns'      => debuff['turns'].to_i,
+          'multiplier' => debuff['multiplier']
+        }.compact
+      end
     end
 
-    best = candidates.max_by { |c| c[:damage] }
-    best ? best[:action] : 'guard'
+    game_status
+  end
+
+  # Tick buffs, debuffs, and cooldowns on one entity at end of round.
+  # Call once per entity per round (after both sides have acted and regen'd).
+  def self.tick_entity_effects(game_status, entity_key)
+    entity = game_status[entity_key]
+    return game_status unless entity
+
+    if (buffs = entity['active_buffs'])
+      buffs.transform_values! { |t| t - 1 }
+      buffs.reject! { |_, t| t <= 0 }
+    end
+
+    if (debuffs = entity['active_debuffs'])
+      debuffs.each { |name, data| debuffs[name] = data.merge('turns' => data['turns'] - 1) }
+      debuffs.reject! { |_, data| data['turns'] <= 0 }
+    end
+
+    if (cooldowns = entity['cooldowns'])
+      cooldowns.transform_values! { |t| [t - 1, 0].max }
+      cooldowns.reject! { |_, t| t <= 0 }
+    end
+
+    game_status
   end
 
   # ── Regeneration ───────────────────────────────────────────────────────────
@@ -388,6 +378,97 @@ class CombatService
     game_status[attacker_resource_key] += healing
     if attacker_data[attacker_max_key]
       game_status[attacker_resource_key] = [game_status[attacker_resource_key], attacker_data[attacker_max_key]].min
+    end
+  end
+
+  # Shared AI action scorer.  Both choose_boss_action and choose_player_action
+  # delegate here so every new ability type is automatically available to both sides.
+  private_class_method def self.choose_action_for(game_status, actor_key, target_key)
+    actor_data  = game_status[actor_key]
+    target_data = game_status[target_key]
+    stamina_cap = actor_key == 'player' ? game_status['playerStamina'].to_f : game_status['bossStamina'].to_f
+    mana_cap    = actor_key == 'player' ? game_status['playerMana'].to_f    : game_status['bossMana'].to_f
+
+    abilities = Set.new
+    (actor_data['keywords'] || []).each do |kw_name|
+      kw = BossKeyword.find_by(name: kw_name)
+      next unless kw
+      abilities.add(kw_name) if kw.category == 'attack'
+      (kw.properties&.dig('abilities') || []).each { |a| abilities.add(a) }
+    end
+
+    candidates = []
+
+    # Basic attack
+    if stamina_cap >= 10
+      dmg = DamageCalculator.calculate_damage(actor_data, target_data, { 'physical' => 10 })[:total_damage]
+      candidates << { action: 'attack', damage: dmg }
+    end
+
+    # Spells
+    if mana_cap >= 10 && abilities.include?('cast')
+      spells = abilities.reject { |a| a == 'cast' }.to_a
+      if spells.any?
+        spells.each do |spell|
+          base = SPELL_BASE_DAMAGE[spell] || { 'magic' => 12 }
+          dmg  = DamageCalculator.calculate_damage(actor_data, target_data, base)[:total_damage]
+          candidates << { action: "cast:#{spell}", damage: dmg }
+        end
+      else
+        dmg = DamageCalculator.calculate_damage(actor_data, target_data, { 'magic' => 12 })[:total_damage]
+        candidates << { action: 'cast', damage: dmg }
+      end
+    end
+
+    # Named abilities (attack-category and ability-category)
+    abilities.each do |ability|
+      next if %w[cast attack guard].include?(ability)
+
+      # Attack-category: scored by expected damage
+      attack_kw = BossKeyword.find_by(name: ability, category: 'attack')
+      if attack_kw
+        attrs = attack_kw.properties || {}
+        next unless stamina_cap >= (attrs['stamina_cost'] || 10).to_f
+        hit_count  = (attrs['hit_count'] || 1).to_i
+        base_dmg   = attrs['base_damage_by_type'] || { 'physical' => 10 }
+        single_dmg = DamageCalculator.calculate_damage(actor_data, target_data, base_dmg)[:total_damage]
+        candidates << { action: ability, damage: single_dmg * hit_count }
+        next
+      end
+
+      # Ability-category: scored by ai_utility_score, subject to cooldown + negation
+      ability_kw = BossKeyword.find_by(name: ability, category: 'ability')
+      next unless ability_kw
+      attrs = ability_kw.properties || {}
+      next unless stamina_cap >= (attrs['stamina_cost'] || 10).to_f
+      next if (actor_data['cooldowns'] || {})[ability].to_i > 0
+      next if ability_negated?(attrs['negation_check'], target_data)
+      candidates << { action: ability, damage: (attrs['ai_utility_score'] || 10).to_f }
+    end
+
+    best = candidates.max_by { |c| c[:damage] }
+    best ? best[:action] : 'guard'
+  end
+
+  # Returns true if the ability should be suppressed given current target state.
+  private_class_method def self.ability_negated?(negation_check, target_data)
+    return false unless negation_check
+    if negation_check['target_has_property']
+      prop = negation_check['target_has_property']
+      return true if (target_data['keywords'] || []).any? { |kn| BossKeyword.find_by(name: kn)&.properties&.dig(prop) }
+    end
+    if negation_check['target_has_ability_immunity']
+      immunity = negation_check['target_has_ability_immunity']
+      return true if target_has_ability_immunity?(target_data, immunity)
+    end
+    false
+  end
+
+  # Returns true if any keyword on the target grants immunity to the named ability.
+  private_class_method def self.target_has_ability_immunity?(target_data, ability_name)
+    (target_data['keywords'] || []).any? do |kw_name|
+      kw = BossKeyword.find_by(name: kw_name)
+      (kw&.properties&.dig('ability_immunities') || []).include?(ability_name)
     end
   end
 end
