@@ -1,4 +1,7 @@
 class DamageCalculator
+  # Physical damage sub-types that block and physical_immunity both negate.
+  PHYSICAL_SUBTYPES = %w[physical slashing blunt piercing].freeze
+
   # Calculate typed damage following the complete pipeline
   def self.calculate_damage(attacker_data, defender_data, ability_damage)
     # 1. Start with ability's base damage composition
@@ -56,11 +59,24 @@ class DamageCalculator
     #     physical_immunity (from fly) zeroes all melee/physical damage flavours:
     #     physical, slashing, blunt, and piercing.  Magical and elemental types
     #     (magic, fire, ice, holy, dark, …) are intentionally not blocked.
-    PHYSICAL_SUBTYPES = %w[physical slashing blunt piercing].freeze
     if (buffs = defender_data['active_buffs'])
       if buffs['physical_immunity'].to_i > 0
         PHYSICAL_SUBTYPES.each { |t| damage_by_type[t] = 0 if damage_by_type.key?(t) }
       end
+    end
+
+    # 5d. Block check — stacking block_chance keywords give a diminishing-returns
+    #     chance to completely negate all physical-subtype damage for this hit.
+    block_chance = get_block_chance(defender_data)
+    if block_chance > 0 && rand < block_chance
+      PHYSICAL_SUBTYPES.each { |t| damage_by_type[t] = 0 if damage_by_type.key?(t) }
+    end
+
+    # 5e. Evasion check — stacking evasion_chance keywords give a diminishing-returns
+    #     chance to negate all incoming damage entirely for this hit.
+    evasion_chance = get_evasion_chance(defender_data)
+    if evasion_chance > 0 && rand < evasion_chance
+      damage_by_type.each_key { |t| damage_by_type[t] = 0 }
     end
 
     # 6. Apply defender's incoming damage reduction by type
@@ -72,7 +88,11 @@ class DamageCalculator
     
     # 7. Sum all damage types for total damage
     total_damage = damage_by_type.values.sum
-    
+
+    # 7b. Apply flat damage reduction (additive from all keyword sources).
+    flat_reduction = get_flat_damage_reduction(defender_data)
+    total_damage = [total_damage - flat_reduction, 0].max
+
     # 8. Determine which resource to damage
     life_resource = get_life_resource(defender_data)
     
@@ -158,5 +178,50 @@ class DamageCalculator
     end
     
     'life' # default
+  end
+
+  # Combines per-keyword block_chance values with diminishing returns:
+  #   combined = 1 - (1 - base)^n
+  # All block keywords are expected to share the same base value (0.05).
+  def self.get_block_chance(entity_data)
+    base = 0.0
+    count = 0
+    (entity_data['keywords'] || []).each do |kw_name|
+      kw = BossKeyword.find_by(name: kw_name)
+      next unless kw
+      bc = (kw.properties || {})['block_chance'].to_f
+      next unless bc > 0
+      base  = bc
+      count += 1
+    end
+    return 0.0 if count.zero?
+    1.0 - (1.0 - base)**count
+  end
+
+  # Same diminishing-returns stacking as block, applied to all damage types.
+  def self.get_evasion_chance(entity_data)
+    base = 0.0
+    count = 0
+    (entity_data['keywords'] || []).each do |kw_name|
+      kw = BossKeyword.find_by(name: kw_name)
+      next unless kw
+      ec = (kw.properties || {})['evasion_chance'].to_f
+      next unless ec > 0
+      base  = ec
+      count += 1
+    end
+    return 0.0 if count.zero?
+    1.0 - (1.0 - base)**count
+  end
+
+  # Flat damage reduction is additive across all keyword sources.
+  def self.get_flat_damage_reduction(entity_data)
+    total = 0.0
+    (entity_data['keywords'] || []).each do |kw_name|
+      kw = BossKeyword.find_by(name: kw_name)
+      next unless kw
+      total += (kw.properties || {})['flat_damage_reduction'].to_f
+    end
+    total
   end
 end

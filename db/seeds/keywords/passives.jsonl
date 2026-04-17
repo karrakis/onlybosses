@@ -1,5 +1,5 @@
 {"name":"ethereal","category":"passive","rarity":2,"attributes":{"life_resource":"mana","mana_regen_multiplier":0.2,"multipliers":{"life":0.0},"damage_reduction_by_type":{"physical":0.5},"ability_immunities":["web"]}}
-{"name":"armoured","category":"passive","rarity":1,"attributes":{"damage_reduction_by_type":{"blunt":0.9,"piercing":0.9,"slashing":0.8}}}
+{"name":"armoured","category":"passive","rarity":1,"attributes":{"damage_reduction_by_type":{"blunt":0.95,"piercing":0.95,"slashing":0.9},"flat_damage_reduction":1}}
 {"name":"fragile","category":"passive","rarity":1,"attributes":{"multipliers":{"life":0.9},"damage_reduction_by_type":{"blunt":1.2}}}
 {"name":"mindshield","category":"passive","rarity":2,"attributes":{"damage_reduction_by_type":{"magic":0.9,"dark":0.95}}}
 {"name":"amplify","category":"passive","rarity":2,"attributes":{"damage_amplification":1.03}}
@@ -7,13 +7,14 @@
 {"name":"leech","category":"passive","rarity":2,"attributes":{"lifesteal":0.05}}
 {"name":"lucky","category":"passive","rarity":1,"attributes":{"damage_amplification":1.02}}
 {"name":"versatile","category":"passive","rarity":1,"attributes":{"multipliers":{"life":1.05,"stamina":1.05,"mana":1.05}}}
-{"name":"block","category":"passive","rarity":1,"attributes":{"damage_reduction_by_type":{"physical":0.85}}}
+{"name":"block","category":"passive","rarity":1,"attributes":{"block_chance":0.05}}
 {"name":"burn","category":"passive","rarity":2,"attributes":{"damage_output_by_type":{"fire":1.15}}}
 {"name":"chill","category":"passive","rarity":2,"attributes":{"damage_output_by_type":{"ice":1.15}}}
 {"name":"shock","category":"passive","rarity":2,"attributes":{"damage_output_by_type":{"lightning":1.15}}}
-{"name":"heartless","category":"passive","rarity":2,"attributes":{"damage_reduction_by_type":{"physical":0.9}}}
+{"name":"heartless","category":"passive","rarity":2,"attributes":{"flat_damage_reduction":2}}
 {"name":"towering","category":"passive","rarity":2,"attributes":{"multipliers":{"life":1.1}}}
 {"name":"nimble","category":"passive","rarity":2,"attributes":{"multipliers":{"stamina":1.1},"damage_output_by_type":{"physical":1.2}}}
 {"name":"regeneration","category":"passive","rarity":2,"attributes":{"health_regen_multiplier":2.0}}
 {"name":"revive","category":"passive","rarity":3,"attributes":{"revive_chance":0.5}}
 {"name":"chimerism","category":"passive","rarity":3,"attributes":{"race_slots":1}}
+{"name":"evasion","category":"passive","rarity":2,"attributes":{"evasion_chance":0.08}}
