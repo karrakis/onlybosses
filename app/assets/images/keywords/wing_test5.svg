@@ -1,0 +1,200 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 460" width="760" height="460">
+  <defs>
+
+    <!--
+      Feather unit matching feather.svg proportions.
+      Origin = quill tip at (0,0). Tip at (0,-207).
+      Peak half-width: 35px at y=-75 (~30% from base y=0 toward tip y=-207).
+      Barb curves: M 0,y  C +L*.25,y-L*.30  +L*.60,y+L*.05  +L*.85,y+L*.10
+      No vane fill — hairline strokes only for layered weave effect.
+    -->
+    <g id="f">
+
+      <!-- Rachis -->
+      <rect x="-1"   y="-205" width="2"   height="207" rx="1" fill="#8b6014"/>
+      <rect x="-0.3" y="-205" width="0.7" height="207" rx="0.35" fill="#d4a040" opacity="0.55"/>
+      <!-- Quill nub -->
+      <path d="M -1.5,0 Q 0,7 1.5,0 Z" fill="#c8963c"/>
+
+      <!-- Yellow barbs  y=0 → –50  (growing to peak, L=20..34) -->
+      <g stroke="#f5c800" stroke-width="0.9" fill="none" stroke-linecap="round">
+        <!-- y=0   L=20 -->
+        <path d="M 0,0   C  5,-6    12,1    17,1"/>
+        <path d="M 0,0   C -5,-6   -12,1   -17,1"/>
+        <!-- y=-10  L=24 -->
+        <path d="M 0,-10 C  6,-17   14,-9   20,-9"/>
+        <path d="M 0,-10 C -6,-17  -14,-9  -20,-9"/>
+        <!-- y=-20  L=28 -->
+        <path d="M 0,-20 C  7,-28   17,-19  24,-19"/>
+        <path d="M 0,-20 C -7,-28  -17,-19 -24,-19"/>
+        <!-- y=-30  L=32 -->
+        <path d="M 0,-30 C  8,-39   19,-29  27,-28.5"/>
+        <path d="M 0,-30 C -8,-39  -19,-29 -27,-28.5"/>
+        <!-- y=-40  L=34 -->
+        <path d="M 0,-40 C  9,-50   20,-39  29,-38.5"/>
+        <path d="M 0,-40 C -9,-50  -20,-39 -29,-38.5"/>
+        <!-- y=-50  L=35 -->
+        <path d="M 0,-50 C  9,-60   21,-49  30,-48.5"/>
+        <path d="M 0,-50 C -9,-60  -21,-49 -30,-48.5"/>
+      </g>
+
+      <!-- Green barbs  y=–60 → –120  (peak ±35 at –75, then tapering) -->
+      <g stroke="#3dba55" stroke-width="1.1" fill="none" stroke-linecap="round">
+        <!-- y=-60   L=35 -->
+        <path d="M 0,-60  C  9,-70   21,-59  30,-58.5"/>
+        <path d="M 0,-60  C -9,-70  -21,-59 -30,-58.5"/>
+        <!-- y=-70   L=35  (approaching peak) -->
+        <path d="M 0,-70  C  9,-80   21,-69  30,-68.5"/>
+        <path d="M 0,-70  C -9,-80  -21,-69 -30,-68.5"/>
+        <!-- y=-80   L=35  PEAK -->
+        <path d="M 0,-80  C  9,-90   21,-79  30,-78.5"/>
+        <path d="M 0,-80  C -9,-90  -21,-79 -30,-78.5"/>
+        <!-- y=-90   L=34 -->
+        <path d="M 0,-90  C  9,-100  20,-89  29,-88.5"/>
+        <path d="M 0,-90  C -9,-100 -20,-89 -29,-88.5"/>
+        <!-- y=-100  L=32 -->
+        <path d="M 0,-100 C  8,-110  19,-99  27,-98.5"/>
+        <path d="M 0,-100 C -8,-110 -19,-99 -27,-98.5"/>
+        <!-- y=-110  L=30 -->
+        <path d="M 0,-110 C  8,-120  18,-109 26,-108.5"/>
+        <path d="M 0,-110 C -8,-120 -18,-109-26,-108.5"/>
+        <!-- y=-120  L=28 -->
+        <path d="M 0,-120 C  7,-130  17,-119 24,-118.5"/>
+        <path d="M 0,-120 C -7,-130 -17,-119-24,-118.5"/>
+      </g>
+
+      <!-- Red barbs  y=–130 → –200  (shrinking rapidly to wisp) -->
+      <g stroke="#e53030" stroke-width="0.8" fill="none" stroke-linecap="round">
+        <!-- y=-130  L=24 -->
+        <path d="M 0,-130 C  6,-140  14,-129 20,-128.5"/>
+        <path d="M 0,-130 C -6,-140 -14,-129-20,-128.5"/>
+        <!-- y=-140  L=21 -->
+        <path d="M 0,-140 C  5,-150  13,-139 18,-138.5"/>
+        <path d="M 0,-140 C -5,-150 -13,-139-18,-138.5"/>
+        <!-- y=-150  L=16 -->
+        <path d="M 0,-150 C  4,-158  10,-149 14,-148.5"/>
+        <path d="M 0,-150 C -4,-158 -10,-149-14,-148.5"/>
+        <!-- y=-160  L=12 -->
+        <path d="M 0,-160 C  3,-168   7,-159 10,-158.5"/>
+        <path d="M 0,-160 C -3,-168  -7,-159-10,-158.5"/>
+        <!-- y=-170  L=8 -->
+        <path d="M 0,-170 C  2,-177   5,-169  7,-168.5"/>
+        <path d="M 0,-170 C -2,-177  -5,-169 -7,-168.5"/>
+        <!-- y=-180  L=5 -->
+        <path d="M 0,-180 C  1,-186   3,-179  4,-178.5"/>
+        <path d="M 0,-180 C -1,-186  -3,-179 -4,-178.5"/>
+        <!-- y=-190  L=2.5 -->
+        <path d="M 0,-190 C  0.6,-195  1.5,-189  2,-188.5" stroke-width="0.6"/>
+        <path d="M 0,-190 C -0.6,-195 -1.5,-189 -2,-188.5" stroke-width="0.6"/>
+        <!-- y=-200  wisp -->
+        <path d="M 0,-200 C  0.3,-204  0.6,-200  0.7,-200" stroke-width="0.5"/>
+        <path d="M 0,-200 C -0.3,-204 -0.6,-200 -0.7,-200" stroke-width="0.5"/>
+      </g>
+
+    </g>
+
+  </defs>
+
+  <rect width="760" height="460" fill="#16161e"/>
+
+  <!-- Faint guide arc -->
+  <path d="M 60,280 C 100,40 480,20 640,190"
+        fill="none" stroke="#6644aa" stroke-width="1.5" stroke-dasharray="6,5" opacity="0.25"/>
+
+  <!-- ═══════════════════════════════════════════════
+       LAYER 1 — ON the arc, tips point down
+       42 feathers, root → tip (tip feathers on top)
+       ═══════════════════════════════════════════════ -->
+  <use href="#f" transform="translate(68,246)  rotate(180) scale(1.00)"/>
+  <use href="#f" transform="translate(79,219)  rotate(180) scale(0.97)"/>
+  <use href="#f" transform="translate(93,195)  rotate(180) scale(0.93)"/>
+  <use href="#f" transform="translate(110,174) rotate(180) scale(0.90)"/>
+  <use href="#f" transform="translate(128,155) rotate(180) scale(0.86)"/>
+  <use href="#f" transform="translate(148,139) rotate(180) scale(0.83)"/>
+  <use href="#f" transform="translate(168,125) rotate(180) scale(0.80)"/>
+  <use href="#f" transform="translate(189,114) rotate(180) scale(0.77)"/>
+  <use href="#f" transform="translate(209,105) rotate(180) scale(0.75)"/>
+  <use href="#f" transform="translate(230,97)  rotate(180) scale(0.72)"/>
+  <use href="#f" transform="translate(250,91)  rotate(180) scale(0.69)"/>
+  <use href="#f" transform="translate(270,87)  rotate(180) scale(0.67)"/>
+  <use href="#f" transform="translate(289,83)  rotate(180) scale(0.65)"/>
+  <use href="#f" transform="translate(308,81)  rotate(180) scale(0.63)"/>
+  <use href="#f" transform="translate(326,79)  rotate(180) scale(0.61)"/>
+  <use href="#f" transform="translate(344,79)  rotate(180) scale(0.59)"/>
+  <use href="#f" transform="translate(361,79)  rotate(180) scale(0.57)"/>
+  <use href="#f" transform="translate(378,79)  rotate(180) scale(0.55)"/>
+  <use href="#f" transform="translate(394,80)  rotate(180) scale(0.53)"/>
+  <use href="#f" transform="translate(409,82)  rotate(180) scale(0.51)"/>
+  <use href="#f" transform="translate(424,84)  rotate(180) scale(0.50)"/>
+  <use href="#f" transform="translate(438,86)  rotate(180) scale(0.48)"/>
+  <use href="#f" transform="translate(452,89)  rotate(180) scale(0.47)"/>
+  <use href="#f" transform="translate(465,92)  rotate(180) scale(0.45)"/>
+  <use href="#f" transform="translate(478,96)  rotate(180) scale(0.44)"/>
+  <use href="#f" transform="translate(490,99)  rotate(180) scale(0.42)"/>
+  <use href="#f" transform="translate(502,103) rotate(180) scale(0.41)"/>
+  <use href="#f" transform="translate(513,107) rotate(180) scale(0.39)"/>
+  <use href="#f" transform="translate(523,112) rotate(180) scale(0.38)"/>
+  <use href="#f" transform="translate(534,116) rotate(180) scale(0.37)"/>
+  <use href="#f" transform="translate(543,121) rotate(180) scale(0.36)"/>
+  <use href="#f" transform="translate(553,125) rotate(180) scale(0.35)"/>
+  <use href="#f" transform="translate(562,130) rotate(180) scale(0.33)"/>
+  <use href="#f" transform="translate(570,135) rotate(180) scale(0.32)"/>
+  <use href="#f" transform="translate(578,140) rotate(180) scale(0.31)"/>
+  <use href="#f" transform="translate(586,145) rotate(180) scale(0.30)"/>
+  <use href="#f" transform="translate(593,149) rotate(180) scale(0.29)"/>
+  <use href="#f" transform="translate(600,154) rotate(180) scale(0.28)"/>
+  <use href="#f" transform="translate(606,159) rotate(180) scale(0.27)"/>
+  <use href="#f" transform="translate(613,164) rotate(180) scale(0.26)"/>
+  <use href="#f" transform="translate(618,169) rotate(180) scale(0.25)"/>
+  <use href="#f" transform="translate(624,174) rotate(180) scale(0.25)"/>
+
+  <!-- ═══════════════════════════════════════════════
+       LAYER 2 — displaced 0.25×feather-length upward
+       along arc normal, offset 0.5 feather along arc
+       43 feathers, root → tip
+       ═══════════════════════════════════════════════ -->
+  <use href="#f" transform="translate(108,246) rotate(180) scale(0.98)"/>
+  <use href="#f" transform="translate(117,225) rotate(180) scale(0.95)"/>
+  <use href="#f" transform="translate(128,205) rotate(180) scale(0.91)"/>
+  <use href="#f" transform="translate(142,187) rotate(180) scale(0.88)"/>
+  <use href="#f" transform="translate(158,171) rotate(180) scale(0.85)"/>
+  <use href="#f" transform="translate(175,157) rotate(180) scale(0.82)"/>
+  <use href="#f" transform="translate(192,145) rotate(180) scale(0.79)"/>
+  <use href="#f" transform="translate(210,135) rotate(180) scale(0.76)"/>
+  <use href="#f" transform="translate(229,127) rotate(180) scale(0.73)"/>
+  <use href="#f" transform="translate(247,120) rotate(180) scale(0.71)"/>
+  <use href="#f" transform="translate(266,114) rotate(180) scale(0.68)"/>
+  <use href="#f" transform="translate(284,109) rotate(180) scale(0.66)"/>
+  <use href="#f" transform="translate(302,106) rotate(180) scale(0.64)"/>
+  <use href="#f" transform="translate(319,103) rotate(180) scale(0.62)"/>
+  <use href="#f" transform="translate(336,101) rotate(180) scale(0.60)"/>
+  <use href="#f" transform="translate(353,100) rotate(180) scale(0.58)"/>
+  <use href="#f" transform="translate(369,100) rotate(180) scale(0.56)"/>
+  <use href="#f" transform="translate(384,100) rotate(180) scale(0.54)"/>
+  <use href="#f" transform="translate(399,100) rotate(180) scale(0.52)"/>
+  <use href="#f" transform="translate(414,102) rotate(180) scale(0.51)"/>
+  <use href="#f" transform="translate(428,103) rotate(180) scale(0.49)"/>
+  <use href="#f" transform="translate(442,105) rotate(180) scale(0.47)"/>
+  <use href="#f" transform="translate(455,107) rotate(180) scale(0.46)"/>
+  <use href="#f" transform="translate(467,110) rotate(180) scale(0.44)"/>
+  <use href="#f" transform="translate(479,113) rotate(180) scale(0.43)"/>
+  <use href="#f" transform="translate(491,116) rotate(180) scale(0.41)"/>
+  <use href="#f" transform="translate(502,119) rotate(180) scale(0.40)"/>
+  <use href="#f" transform="translate(513,123) rotate(180) scale(0.39)"/>
+  <use href="#f" transform="translate(523,127) rotate(180) scale(0.38)"/>
+  <use href="#f" transform="translate(533,131) rotate(180) scale(0.36)"/>
+  <use href="#f" transform="translate(542,135) rotate(180) scale(0.35)"/>
+  <use href="#f" transform="translate(551,139) rotate(180) scale(0.34)"/>
+  <use href="#f" transform="translate(560,143) rotate(180) scale(0.33)"/>
+  <use href="#f" transform="translate(568,147) rotate(180) scale(0.32)"/>
+  <use href="#f" transform="translate(576,152) rotate(180) scale(0.31)"/>
+  <use href="#f" transform="translate(583,156) rotate(180) scale(0.30)"/>
+  <use href="#f" transform="translate(590,161) rotate(180) scale(0.29)"/>
+  <use href="#f" transform="translate(597,165) rotate(180) scale(0.28)"/>
+  <use href="#f" transform="translate(603,170) rotate(180) scale(0.27)"/>
+  <use href="#f" transform="translate(609,174) rotate(180) scale(0.26)"/>
+  <use href="#f" transform="translate(615,179) rotate(180) scale(0.25)"/>
+  <use href="#f" transform="translate(620,183) rotate(180) scale(0.24)"/>
+  <use href="#f" transform="translate(626,188) rotate(180) scale(0.23)"/>
+
+</svg>

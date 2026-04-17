@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 420" width="160" height="420">
+
+  <!--
+    Default humanoid silhouette, facing left.
+    All white fill, black stroke, single black eye.
+
+    Draw order: back limbs first (screen-right = creature's left = far side),
+    then body, then front limbs (screen-left = creature's right = near side).
+
+    Facing left: screen-left is the FRONT side. Feet toe-points to the left.
+  -->
+
+  <g id="humanoid" fill="white" stroke="black" stroke-width="2" stroke-linejoin="round">
+
+    <!-- ═══════════════════════════════════════════════
+         BACK LIMBS (creature's left side, screen-right)
+         Drawn first so body sits on top of them.
+         ═══════════════════════════════════════════════ -->
+
+    <!-- BACK UPPER ARM -->
+    <path d="
+      M 110,104
+      C 122,110  130,130  132,158
+      L 120,162
+      C 118,135  112,116  100,108
+      Z
+    "/>
+
+    <!-- BACK FOREARM -->
+    <path d="
+      M 120,160
+      C 124,180  126,205  124,232
+      L 113,234
+      C 114,208  112,182  108,162
+      Z
+    "/>
+
+    <!-- BACK HAND (blobby mitt) -->
+    <ellipse cx="118" cy="244" rx="10" ry="12" transform="rotate(-10,118,244)"/>
+
+    <!-- BACK UPPER LEG -->
+    <path d="
+      M 83,256
+      C 84,270  86,295  85,330
+      L 98,330
+      C 99,295  100,270  100,256
+      Z
+    "/>
+
+    <!-- BACK LOWER LEG -->
+    <path d="
+      M 83,328
+      C 83,345  84,365  84,390
+      L 98,390
+      C 98,365  99,345  98,328
+      Z
+    "/>
+
+    <!-- BACK FOOT (toe points left) -->
+    <path d="
+      M 98,389 L 84,389
+      C 78,389  76,400  82,410
+      C 88,413  96,411  101,407
+      C 103,403  101,394  98,389
+      Z
+    "/>
+
+    <!-- ═══════════════════════════════════════════════
+         BODY (torso, hips, neck, head)
+         Drawn over back limbs, under front limbs.
+         ═══════════════════════════════════════════════ -->
+
+    <!-- TORSO -->
+    <path d="
+      M 50,100
+      C 38,105  34,120  36,145
+      C 38,168  42,185  48,195
+      L 50,230
+      L 110,230
+      L 112,195
+      C 118,185 122,168 124,145
+      C 126,120 122,105 110,100
+      Z
+    "/>
+
+    <!-- WAIST / HIP BAND -->
+    <path d="M 50,225 L 48,258 L 112,258 L 110,225 Z"/>
+
+    <!-- NECK -->
+    <path d="M 70,76 L 68,96 L 88,96 L 86,76 Z"/>
+
+    <!-- HEAD -->
+    <ellipse cx="78" cy="48" rx="28" ry="30"/>
+
+    <!-- EYE — screen-right (forward-facing) side of head.
+         Pupil offset rightward → creature looking to the side. -->
+    <circle cx="92" cy="46" r="5" fill="black" stroke="none"/>
+    <circle cx="94" cy="46" r="1.5" fill="white" stroke="none"/>
+
+    <!-- ═══════════════════════════════════════════════
+         FRONT LIMBS (creature's right side, screen-left)
+         Drawn last — sit in front of body.
+         ═══════════════════════════════════════════════ -->
+
+    <!-- FRONT UPPER ARM -->
+    <path d="
+      M 50,104
+      C 38,110  30,128  28,155
+      L 40,160
+      C 42,133  48,115  58,108
+      Z
+    "/>
+
+    <!-- FRONT FOREARM -->
+    <path d="
+      M 40,158
+      C 36,178  34,202  36,228
+      L 47,226
+      C 46,202  48,178  51,158
+      Z
+    "/>
+
+    <!-- FRONT HAND (blobby mitt) -->
+    <ellipse cx="41" cy="238" rx="10" ry="12" transform="rotate(10,41,238)"/>
+
+    <!-- FRONT UPPER LEG -->
+    <path d="
+      M 60,256
+      C 61,270  62,295  62,330
+      L 75,330
+      C 76,295  76,270  76,256
+      Z
+    "/>
+
+    <!-- FRONT LOWER LEG -->
+    <path d="
+      M 60,328
+      C 60,345  60,365  60,390
+      L 74,390
+      C 74,365  75,345  75,328
+      Z
+    "/>
+
+    <!-- FRONT FOOT (toe points left) -->
+    <path d="
+      M 74,389 L 60,389
+      C 54,389  52,400  58,410
+      C 64,413  72,411  77,407
+      C 79,403  77,394  74,389
+      Z
+    "/>
+
+  </g>
+
+</svg>

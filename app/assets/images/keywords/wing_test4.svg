@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 440" width="760" height="440">
+  <defs>
+
+    <!--
+      Single feather. Quill at (0,0), tip at (0,–150).
+      No filled vane — barb strokes only for hair-weave overlap effect.
+      Peak half-width ±36px at y=–45 (30% of 150).
+    -->
+    <g id="f">
+
+      <!-- Rachis -->
+      <line x1="0" y1="2"   x2="0"   y2="-148" stroke="#5c3808" stroke-width="2"/>
+      <line x1="0.5" y1="2" x2="0.5" y2="-148" stroke="#d4a040" stroke-width="0.8" opacity="0.45"/>
+      <!-- Quill nub -->
+      <path d="M -1.5,4 Q 0,10 1.5,4 Z" fill="#a06820"/>
+
+      <!-- Yellow  y=–6 → –35 -->
+      <g stroke="#f5c800" stroke-width="0.95" fill="none" stroke-linecap="round">
+        <path d="M 0,-6  C  2,-6    4,-8     4,-7.5"/>
+        <path d="M 0,-6  C -2,-6   -4,-8    -4,-7.5"/>
+        <path d="M 0,-14 C  5,-14  11,-18   13,-17"/>
+        <path d="M 0,-14 C -5,-14 -11,-18  -13,-17"/>
+        <path d="M 0,-22 C  9,-22  20,-27   23,-26"/>
+        <path d="M 0,-22 C -9,-22 -20,-27  -23,-26"/>
+        <path d="M 0,-30 C 12,-30  26,-35   31,-34"/>
+        <path d="M 0,-30 C-12,-30 -26,-35  -31,-34"/>
+        <path d="M 0,-35 C 14,-35  30,-40   35,-39"/>
+        <path d="M 0,-35 C-14,-35 -30,-40  -35,-39"/>
+      </g>
+
+      <!-- Green  y=–45 → –95  (peak ±36 at –45) -->
+      <g stroke="#3dba55" stroke-width="1.2" fill="none" stroke-linecap="round">
+        <path d="M 0,-45 C 16,-45  33,-50   36,-49"/>
+        <path d="M 0,-45 C-16,-45 -33,-50  -36,-49"/>
+        <path d="M 0,-55 C 14,-55  30,-60   34,-59"/>
+        <path d="M 0,-55 C-14,-55 -30,-60  -34,-59"/>
+        <path d="M 0,-65 C 13,-65  28,-70   31,-69"/>
+        <path d="M 0,-65 C-13,-65 -28,-70  -31,-69"/>
+        <path d="M 0,-75 C 11,-75  22,-80   26,-79"/>
+        <path d="M 0,-75 C-11,-75 -22,-80  -26,-79"/>
+        <path d="M 0,-85 C  8,-85  15,-89   18,-88"/>
+        <path d="M 0,-85 C -8,-85 -15,-89  -18,-88"/>
+        <path d="M 0,-95 C  4,-95   8,-98   10,-97"/>
+        <path d="M 0,-95 C -4,-95  -8,-98  -10,-97"/>
+      </g>
+
+      <!-- Red  y=–105 → tip -->
+      <g stroke="#e53030" stroke-width="0.85" fill="none" stroke-linecap="round">
+        <path d="M 0,-105 C  2,-105   5,-107   5,-106.5"/>
+        <path d="M 0,-105 C -2,-105  -5,-107  -5,-106.5"/>
+        <path d="M 0,-115 C  1,-115   2.5,-117  2.7,-116"/>
+        <path d="M 0,-115 C -1,-115  -2.5,-117 -2.7,-116"/>
+        <path d="M 0,-126 C  0.6,-126.5  1.1,-127  1.2,-126" stroke-width="0.6"/>
+        <path d="M 0,-126 C -0.6,-126.5 -1.1,-127 -1.2,-126" stroke-width="0.6"/>
+        <path d="M 0,-138 C  0.25,-139  0.4,-138.5  0.5,-138" stroke-width="0.5"/>
+        <path d="M 0,-138 C -0.25,-139 -0.4,-138.5 -0.5,-138" stroke-width="0.5"/>
+      </g>
+
+    </g>
+
+  </defs>
+
+  <rect width="760" height="440" fill="#16161e"/>
+
+  <!--
+    Arc: M 60,280 C 100,40 480,20 640,190    (x = 60+120t+1020t²-560t³,  y = 280-720t+660t²-30t³)
+    Concave side faces downward; feathers rotate(180) so tips hang down.
+
+    27 feathers: t=0.050→0.919 with adaptive Δt ≈ 0.052·scale(t).
+    Scale linear: 1.00 at t=0.050 → 0.30 at t=0.919.
+    Draw order root→tip so each feather shinGles over the previous.
+
+      t      (  x ,  y )   scale
+      0.050  ( 69, 246)    1.00
+      0.104  ( 83, 212)    0.96
+      0.156  (101, 184)    0.91
+      0.206  (123, 159)    0.87
+      0.254  (147, 139)    0.84
+      0.300  (173, 123)    0.80
+      0.344  (199, 109)    0.76
+      0.386  (226,  99)    0.73
+      0.426  (253,  91)    0.70
+      0.464  (279,  85)    0.67
+      0.501  (306,  81)    0.64
+      0.536  (331,  79)    0.61
+      0.570  (356,  79)    0.58
+      0.602  (380,  79)    0.56
+      0.633  (403,  81)    0.53
+      0.663  (425,  84)    0.51
+      0.692  (446,  88)    0.48
+      0.719  (465,  92)    0.46
+      0.745  (484,  98)    0.44
+      0.770  (501, 103)    0.42
+      0.794  (518, 109)    0.40
+      0.817  (534, 116)    0.38
+      0.839  (548, 123)    0.36
+      0.860  (561, 130)    0.35
+      0.880  (574, 137)    0.33
+      0.900  (586, 145)    0.32
+      0.919  (597, 153)    0.30
+  -->
+
+  <!-- Guide arc -->
+  <path d="M 60,280 C 100,40 480,20 640,190"
+        fill="none" stroke="#6644aa" stroke-width="1.5" stroke-dasharray="6,5" opacity="0.3"/>
+
+  <use href="#f" transform="translate(69,246)  rotate(180) scale(1.00)"/>
+  <use href="#f" transform="translate(83,212)  rotate(180) scale(0.96)"/>
+  <use href="#f" transform="translate(101,184) rotate(180) scale(0.91)"/>
+  <use href="#f" transform="translate(123,159) rotate(180) scale(0.87)"/>
+  <use href="#f" transform="translate(147,139) rotate(180) scale(0.84)"/>
+  <use href="#f" transform="translate(173,123) rotate(180) scale(0.80)"/>
+  <use href="#f" transform="translate(199,109) rotate(180) scale(0.76)"/>
+  <use href="#f" transform="translate(226,99)  rotate(180) scale(0.73)"/>
+  <use href="#f" transform="translate(253,91)  rotate(180) scale(0.70)"/>
+  <use href="#f" transform="translate(279,85)  rotate(180) scale(0.67)"/>
+  <use href="#f" transform="translate(306,81)  rotate(180) scale(0.64)"/>
+  <use href="#f" transform="translate(331,79)  rotate(180) scale(0.61)"/>
+  <use href="#f" transform="translate(356,79)  rotate(180) scale(0.58)"/>
+  <use href="#f" transform="translate(380,79)  rotate(180) scale(0.56)"/>
+  <use href="#f" transform="translate(403,81)  rotate(180) scale(0.53)"/>
+  <use href="#f" transform="translate(425,84)  rotate(180) scale(0.51)"/>
+  <use href="#f" transform="translate(446,88)  rotate(180) scale(0.48)"/>
+  <use href="#f" transform="translate(465,92)  rotate(180) scale(0.46)"/>
+  <use href="#f" transform="translate(484,98)  rotate(180) scale(0.44)"/>
+  <use href="#f" transform="translate(501,103) rotate(180) scale(0.42)"/>
+  <use href="#f" transform="translate(518,109) rotate(180) scale(0.40)"/>
+  <use href="#f" transform="translate(534,116) rotate(180) scale(0.38)"/>
+  <use href="#f" transform="translate(548,123) rotate(180) scale(0.36)"/>
+  <use href="#f" transform="translate(561,130) rotate(180) scale(0.35)"/>
+  <use href="#f" transform="translate(574,137) rotate(180) scale(0.33)"/>
+  <use href="#f" transform="translate(586,145) rotate(180) scale(0.32)"/>
+  <use href="#f" transform="translate(597,153) rotate(180) scale(0.30)"/>
+
+</svg>

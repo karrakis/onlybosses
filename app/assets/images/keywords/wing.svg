@@ -1,0 +1,204 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 -160 700 660" width="700" height="660"
+     id="wing-root">
+  <defs>
+
+    <!--
+      Feather definition (#f).
+      Quill at (0,0), tip at (0,-207). Peak half-width ±35px at y≈-80 (~30% from base).
+      No filled vane — barb strokes only, so overlapping feathers show hair-weave.
+    -->
+    <g id="f">
+
+      <!-- Rachis -->
+      <rect x="-1"   y="-205" width="2"   height="207" rx="1"    fill="#8b6014"/>
+      <rect x="-0.3" y="-205" width="0.7" height="207" rx="0.35" fill="#d4a040" opacity="0.55"/>
+      <!-- Quill nub -->
+      <path d="M -1.5,0 Q 0,7 1.5,0 Z" fill="#c8963c"/>
+
+      <!-- Yellow barbs  y=0 → –50 -->
+      <g stroke="#f5c800" stroke-width="0.9" fill="none" stroke-linecap="round">
+        <path d="M 0,0   C  5,-6    12,1    17,1"/>
+        <path d="M 0,0   C -5,-6   -12,1   -17,1"/>
+        <path d="M 0,-10 C  6,-17   14,-9   20,-9"/>
+        <path d="M 0,-10 C -6,-17  -14,-9  -20,-9"/>
+        <path d="M 0,-20 C  7,-28   17,-19  24,-19"/>
+        <path d="M 0,-20 C -7,-28  -17,-19 -24,-19"/>
+        <path d="M 0,-30 C  8,-39   19,-29  27,-28.5"/>
+        <path d="M 0,-30 C -8,-39  -19,-29 -27,-28.5"/>
+        <path d="M 0,-40 C  9,-50   20,-39  29,-38.5"/>
+        <path d="M 0,-40 C -9,-50  -20,-39 -29,-38.5"/>
+        <path d="M 0,-50 C  9,-60   21,-49  30,-48.5"/>
+        <path d="M 0,-50 C -9,-60  -21,-49 -30,-48.5"/>
+      </g>
+
+      <!-- Green barbs  y=–60 → –120  (peak ±35 at –80) -->
+      <g stroke="#3dba55" stroke-width="1.1" fill="none" stroke-linecap="round">
+        <path d="M 0,-60  C  9,-70   21,-59  30,-58.5"/>
+        <path d="M 0,-60  C -9,-70  -21,-59 -30,-58.5"/>
+        <path d="M 0,-70  C  9,-80   21,-69  30,-68.5"/>
+        <path d="M 0,-70  C -9,-80  -21,-69 -30,-68.5"/>
+        <path d="M 0,-80  C  9,-90   21,-79  30,-78.5"/>
+        <path d="M 0,-80  C -9,-90  -21,-79 -30,-78.5"/>
+        <path d="M 0,-90  C  9,-100  20,-89  29,-88.5"/>
+        <path d="M 0,-90  C -9,-100 -20,-89 -29,-88.5"/>
+        <path d="M 0,-100 C  8,-110  19,-99  27,-98.5"/>
+        <path d="M 0,-100 C -8,-110 -19,-99 -27,-98.5"/>
+        <path d="M 0,-110 C  8,-120  18,-109 26,-108.5"/>
+        <path d="M 0,-110 C -8,-120 -18,-109-26,-108.5"/>
+        <path d="M 0,-120 C  7,-130  17,-119 24,-118.5"/>
+        <path d="M 0,-120 C -7,-130 -17,-119-24,-118.5"/>
+      </g>
+
+      <!-- Red barbs  y=–130 → –200  (shrinking to wisps) -->
+      <g stroke="#e53030" stroke-width="0.8" fill="none" stroke-linecap="round">
+        <path d="M 0,-130 C  6,-140  14,-129 20,-128.5"/>
+        <path d="M 0,-130 C -6,-140 -14,-129-20,-128.5"/>
+        <path d="M 0,-140 C  5,-150  13,-139 18,-138.5"/>
+        <path d="M 0,-140 C -5,-150 -13,-139-18,-138.5"/>
+        <path d="M 0,-150 C  4,-158  10,-149 14,-148.5"/>
+        <path d="M 0,-150 C -4,-158 -10,-149-14,-148.5"/>
+        <path d="M 0,-160 C  3,-168   7,-159 10,-158.5"/>
+        <path d="M 0,-160 C -3,-168  -7,-159-10,-158.5"/>
+        <path d="M 0,-170 C  2,-177   5,-169  7,-168.5"/>
+        <path d="M 0,-170 C -2,-177  -5,-169 -7,-168.5"/>
+        <path d="M 0,-180 C  1,-186   3,-179  4,-178.5"/>
+        <path d="M 0,-180 C -1,-186  -3,-179 -4,-178.5"/>
+        <path d="M 0,-190 C  0.6,-195  1.5,-189  2,-188.5" stroke-width="0.6"/>
+        <path d="M 0,-190 C -0.6,-195 -1.5,-189 -2,-188.5" stroke-width="0.6"/>
+        <path d="M 0,-200 C  0.3,-204  0.6,-200  0.7,-200" stroke-width="0.5"/>
+        <path d="M 0,-200 C -0.3,-204 -0.6,-200 -0.7,-200" stroke-width="0.5"/>
+      </g>
+
+    </g>
+
+  </defs>
+
+  <!-- Background (remove for transparent embed) -->
+  <rect width="700" height="660" y="-160" fill="#16161e"/>
+
+  <!-- Faint guide arc (comment out in production) -->
+  <path id="arc-guide"
+        d="M 60,280 C 100,40 480,20 640,190"
+        fill="none" stroke="#6644aa" stroke-width="1"
+        stroke-dasharray="6,5" opacity="0.2"/>
+
+  <!-- Feather containers — JS populates these -->
+  <g id="layer1"/>
+  <g id="layer2"/>
+
+  <script type="text/javascript"><![CDATA[
+  (function () {
+    'use strict';
+
+    // ── Fixed control points ────────────────────────────────────────────────
+    const P0 = [60,  280];
+    const P3b = [640, 190];  // P3 baseline — animated each frame
+
+    // Animated control point baselines
+    const P1b = [100,  40];
+    const P2b = [480,  20];
+
+    // ── Flap parameters ─────────────────────────────────────────────────────
+    const PERIOD   = 1.6;   // seconds per full cycle
+    const AMP_P1y  = 72;    // root control amplitude (px up/down)
+    const AMP_P2y  = 95;    // tip control amplitude  (px up/down, slightly more)
+    const LAG_P2   = 0.15;  // P2 lags P1 by this many radians (wing mid flex)
+    const AMP_P3y  = 55;    // wingtip endpoint amplitude (px)
+    const LAG_P3   = 0.32;  // P3 lags P1 (tip trails the stroke)
+
+    // ── Bezier math ──────────────────────────────────────────────────────────
+    function B(t, p1, p2, p3) {
+      const mt = 1 - t;
+      return [
+        mt*mt*mt*P0[0] + 3*mt*mt*t*p1[0] + 3*mt*t*t*p2[0] + t*t*t*p3[0],
+        mt*mt*mt*P0[1] + 3*mt*mt*t*p1[1] + 3*mt*t*t*p2[1] + t*t*t*p3[1]
+      ];
+    }
+
+    function Bprime(t, p1, p2, p3) {
+      const mt = 1 - t;
+      return [
+        3*(mt*mt*(p1[0]-P0[0]) + 2*mt*t*(p2[0]-p1[0]) + t*t*(p3[0]-p2[0])),
+        3*(mt*mt*(p1[1]-P0[1]) + 2*mt*t*(p2[1]-p1[1]) + t*t*(p3[1]-p2[1]))
+      ];
+    }
+
+    // Inward normal (CCW 90° from tangent = toward concave top side)
+    function inwardNormal(t, p1, p2, p3) {
+      const [dx, dy] = Bprime(t, p1, p2, p3);
+      const len = Math.hypot(dx, dy);
+      return [-dy / len, dx / len];
+    }
+
+    // ── Feather layout constants ─────────────────────────────────────────────
+    // t-values computed by Python to guarantee correct arc-length spacing.
+    // These are fixed; only the world positions recompute each frame.
+    const LAYER1_T = [0.05,0.0923,0.1345,0.176,0.2162,0.2548,0.2916,0.3267,0.36,
+      0.3916,0.4218,0.4505,0.478,0.5042,0.5294,0.5536,0.5769,0.5993,0.6209,
+      0.6417,0.6619,0.6814,0.7003,0.7186,0.7363,0.7535,0.7701,0.7863,0.802,
+      0.8172,0.832,0.8463,0.8602,0.8737,0.8868,0.8995,0.9118,0.9237,0.9353,
+      0.9465,0.9573,0.9678];
+
+    const LAYER2_T = [0.0711,0.1135,0.1554,0.1963,0.2357,0.2734,0.3094,0.3436,
+      0.376,0.4069,0.4363,0.4644,0.4913,0.517,0.5416,0.5654,0.5882,0.6102,
+      0.6314,0.6519,0.6717,0.6909,0.7095,0.7275,0.745,0.7619,0.7783,0.7942,
+      0.8097,0.8246,0.8392,0.8533,0.867,0.8803,0.8932,0.9057,0.9178,0.9296,
+      0.9409,0.952,0.9626,0.973,0.983];
+
+    // Scale: 1.0 at t=0.05 → 0.20 at t=0.97
+    const scaleAt = t => Math.max(0.20, 1.0 - 0.74 * (t - 0.05) / 0.90);
+
+    // Layer 2 normal offset: 0.25 × feather length × scale
+    const FEATHER_LEN = 207;
+    const L2_OFFSET_FRAC = 0.25;
+
+    // ── Build <use> elements ─────────────────────────────────────────────────
+    const SVG_NS  = 'http://www.w3.org/2000/svg';
+    const XLINK   = 'http://www.w3.org/1999/xlink';
+
+    function makeUses(containerId, tArr) {
+      const g = document.getElementById(containerId);
+      return tArr.map(t => {
+        const el = document.createElementNS(SVG_NS, 'use');
+        el.setAttributeNS(XLINK, 'xlink:href', '#f');
+        el.setAttribute('href', '#f');
+        g.appendChild(el);
+        return { el, t, s: scaleAt(t) };
+      });
+    }
+
+    const uses1 = makeUses('layer1', LAYER1_T);
+    const uses2 = makeUses('layer2', LAYER2_T);
+
+    // ── Animation loop ───────────────────────────────────────────────────────
+    function frame(ms) {
+      const phase = (ms / 1000 / PERIOD) * Math.PI * 2;
+
+      // Animated control points this frame
+      const p1 = [P1b[0], P1b[1] + AMP_P1y * Math.sin(phase)];
+      const p2 = [P2b[0], P2b[1] + AMP_P2y * Math.sin(phase - LAG_P2)];
+      const p3 = [P3b[0], P3b[1] + AMP_P3y * Math.sin(phase - LAG_P3)];
+
+      for (const { el, t, s } of uses1) {
+        const [x, y] = B(t, p1, p2, p3);
+        el.setAttribute('transform',
+          `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(180) scale(${s.toFixed(2)})`);
+      }
+
+      for (const { el, t, s } of uses2) {
+        const [x, y] = B(t, p1, p2, p3);
+        const [nx, ny] = inwardNormal(t, p1, p2, p3);
+        const off = L2_OFFSET_FRAC * FEATHER_LEN * s;
+        el.setAttribute('transform',
+          `translate(${(x + nx*off).toFixed(1)},${(y + ny*off).toFixed(1)}) rotate(180) scale(${s.toFixed(2)})`);
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  })();
+  ]]></script>
+
+</svg>

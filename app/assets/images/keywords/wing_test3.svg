@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 420" width="760" height="420">
+  <defs>
+
+    <!--
+      Feather unit. Quill at (0,0), tip at (0,–150). No filled vane —
+      only barb strokes, so overlap between feathers shows as hair weave.
+      Barb widths reduced ×0.6 from v1 to fix over-wide middle.
+      Peak ±36px at y=–45 (30% of 150px length).
+    -->
+    <g id="f">
+
+      <!-- Rachis (stem) -->
+      <line x1="0" y1="2"   x2="0"   y2="-148" stroke="#5c3808" stroke-width="2"/>
+      <line x1="0.5" y1="2" x2="0.5" y2="-148" stroke="#d4a040" stroke-width="0.8" opacity="0.45"/>
+
+      <!-- Quill nub at base -->
+      <path d="M -1.5,4 Q 0,10 1.5,4 Z" fill="#a06820"/>
+
+      <!-- Yellow zone  y=–6 → –35 -->
+      <g stroke="#f5c800" stroke-width="0.95" fill="none" stroke-linecap="round">
+        <path d="M 0,-6  C  2,-6   4,-8    4,-7.5"/>
+        <path d="M 0,-6  C -2,-6  -4,-8   -4,-7.5"/>
+        <path d="M 0,-14 C  5,-14  11,-18  13,-17"/>
+        <path d="M 0,-14 C -5,-14 -11,-18 -13,-17"/>
+        <path d="M 0,-22 C  9,-22  20,-27  23,-26"/>
+        <path d="M 0,-22 C -9,-22 -20,-27 -23,-26"/>
+        <path d="M 0,-30 C 12,-30  26,-35  31,-34"/>
+        <path d="M 0,-30 C-12,-30 -26,-35 -31,-34"/>
+        <path d="M 0,-35 C 14,-35  30,-40  35,-39"/>
+        <path d="M 0,-35 C-14,-35 -30,-40 -35,-39"/>
+      </g>
+
+      <!-- Green zone  y=–45 → –95  (peak ±36 at y=–45) -->
+      <g stroke="#3dba55" stroke-width="1.2" fill="none" stroke-linecap="round">
+        <path d="M 0,-45 C 16,-45  33,-50  36,-49"/>
+        <path d="M 0,-45 C-16,-45 -33,-50 -36,-49"/>
+        <path d="M 0,-55 C 14,-55  30,-60  34,-59"/>
+        <path d="M 0,-55 C-14,-55 -30,-60 -34,-59"/>
+        <path d="M 0,-65 C 13,-65  28,-70  31,-69"/>
+        <path d="M 0,-65 C-13,-65 -28,-70 -31,-69"/>
+        <path d="M 0,-75 C 11,-75  22,-80  26,-79"/>
+        <path d="M 0,-75 C-11,-75 -22,-80 -26,-79"/>
+        <path d="M 0,-85 C  8,-85  15,-89  18,-88"/>
+        <path d="M 0,-85 C -8,-85 -15,-89 -18,-88"/>
+        <path d="M 0,-95 C  4,-95   8,-98  10,-97"/>
+        <path d="M 0,-95 C -4,-95  -8,-98 -10,-97"/>
+      </g>
+
+      <!-- Red zone  y=–105 → tip -->
+      <g stroke="#e53030" stroke-width="0.85" fill="none" stroke-linecap="round">
+        <path d="M 0,-105 C  2,-105   5,-107   5,-106.5"/>
+        <path d="M 0,-105 C -2,-105  -5,-107  -5,-106.5"/>
+        <path d="M 0,-115 C  1,-115   2.5,-117  2.7,-116"/>
+        <path d="M 0,-115 C -1,-115  -2.5,-117 -2.7,-116"/>
+        <path d="M 0,-126 C  0.6,-126.5  1.1,-127  1.2,-126" stroke-width="0.6"/>
+        <path d="M 0,-126 C -0.6,-126.5 -1.1,-127 -1.2,-126" stroke-width="0.6"/>
+        <path d="M 0,-138 C  0.25,-139  0.4,-138.5  0.5,-138" stroke-width="0.5"/>
+        <path d="M 0,-138 C -0.25,-139 -0.4,-138.5 -0.5,-138" stroke-width="0.5"/>
+      </g>
+
+    </g>
+
+  </defs>
+
+  <!-- Background -->
+  <rect width="760" height="420" fill="#16161e"/>
+
+  <!--
+    MAIN ARC:  M 60,280  C 100,40 480,20 640,190
+    Asymmetric 3/4-bow. Left root rises steeply, right tapers gently.
+    Concave side faces downward — feathers hang down (rotate 180).
+
+    TAPER:  continues from (640,190)  C 648,205 655,218 650,230
+    Opposite bow — bows downward. Convex side faces UPWARD.
+    Feathers on convex side point upward (rotate 0).
+    Length ~5% of main arc. Scale shrinks to 10% of root size.
+
+    Combined guide path shows the full S-curve at the tip.
+
+    Scale progression — linear root→tip:
+      Main:  t=0.1 → 1.00,  t=0.2 → 0.92,  …,  t=0.9 → 0.36
+      Taper: t≈0.25 → 0.28, t≈0.55 → 0.19, t≈0.85 → 0.10
+
+    Drawn root-first so wingtip feathers sit visually in front.
+  -->
+
+  <!-- Faint guide arc (main + taper) -->
+  <path d="M 60,280 C 100,40 480,20 640,190 C 648,205 655,218 650,230"
+        fill="none" stroke="#6644aa" stroke-width="1.5" stroke-dasharray="6,5" opacity="0.35"/>
+
+  <!-- ── Main arc feathers: rotate(180) = tip hangs downward ── -->
+  <use href="#f" transform="translate(82,215)  rotate(180) scale(1.00)"/>
+  <use href="#f" transform="translate(120,162) rotate(180) scale(0.92)"/>
+  <use href="#f" transform="translate(173,123) rotate(180) scale(0.84)"/>
+  <use href="#f" transform="translate(235,96)  rotate(180) scale(0.76)"/>
+  <use href="#f" transform="translate(305,81)  rotate(180) scale(0.68)"/>
+  <use href="#f" transform="translate(378,79)  rotate(180) scale(0.60)"/>
+  <use href="#f" transform="translate(452,89)  rotate(180) scale(0.52)"/>
+  <use href="#f" transform="translate(522,111) rotate(180) scale(0.44)"/>
+  <use href="#f" transform="translate(586,145) rotate(180) scale(0.36)"/>
+
+  <!-- ── Taper feathers: rotate(0) = tip points upward, convex topside ── -->
+  <use href="#f" transform="translate(646,201) scale(0.28)"/>
+  <use href="#f" transform="translate(651,213) scale(0.19)"/>
+  <use href="#f" transform="translate(652,225) scale(0.10)"/>
+
+</svg>

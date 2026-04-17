@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Creature Portrait Preview</title>
+  <style>
+    body { background: #16161e; display: flex; gap: 40px; padding: 40px; }
+
+    .portrait {
+      position: relative;
+      width: 160px;
+      height: 420px;
+    }
+
+    .portrait img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 160px;
+      height: 420px;
+    }
+
+    /* Wings sit behind — declared first in HTML but z-index explicit for clarity */
+    .wing-right {
+      /* root is mid-body horizontally, just below shoulders (~y=115 of 420) */
+      /* wing.svg is 700×820 in wing-space; scale down to match portrait width */
+      width: 280px;
+      height: 280px;
+      top: 80px;
+      left: 80px;   /* root at centre of humanoid */
+      z-index: 0;
+    }
+
+    .wing-left {
+      width: 280px;
+      height: 280px;
+      top: 80px;
+      right: 80px;
+      left: auto;
+      transform: scaleX(-1);
+      transform-origin: right center;
+      z-index: 0;
+    }
+
+    .creature {
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="portrait">
+    <img class="wing-right" src="wing.svg" alt="">
+    <img class="wing-left"  src="wing.svg" alt="">
+    <img class="creature"   src="humanoid.svg" alt="">
+  </div>
+</body>
+</html>

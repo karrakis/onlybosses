@@ -1,0 +1,431 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="-80 -170 660 690" width="660" height="690"
+     id="creature-portrait">
+
+  <defs>
+    <!--
+      Feather unit #f. Quill at (0,0), tip at (0,-207).
+      Peak half-width ±35px at y≈-80 (30% from base).
+      No filled vane — barb strokes only for hair-weave overlap.
+    -->
+    <g id="f">
+      <rect x="-1"   y="-205" width="2"   height="207" rx="1"    fill="#8b6014"/>
+      <rect x="-0.3" y="-205" width="0.7" height="207" rx="0.35" fill="#d4a040" opacity="0.55"/>
+      <path d="M -1.5,0 Q 0,7 1.5,0 Z" fill="#c8963c"/>
+
+      <g stroke="#f5c800" stroke-width="0.9" fill="none" stroke-linecap="round">
+        <path d="M 0,0   C  5,-6    12,1    17,1"/>   <path d="M 0,0   C -5,-6   -12,1   -17,1"/>
+        <path d="M 0,-10 C  6,-17   14,-9   20,-9"/>  <path d="M 0,-10 C -6,-17  -14,-9  -20,-9"/>
+        <path d="M 0,-20 C  7,-28   17,-19  24,-19"/> <path d="M 0,-20 C -7,-28  -17,-19 -24,-19"/>
+        <path d="M 0,-30 C  8,-39   19,-29  27,-28.5"/><path d="M 0,-30 C -8,-39  -19,-29 -27,-28.5"/>
+        <path d="M 0,-40 C  9,-50   20,-39  29,-38.5"/><path d="M 0,-40 C -9,-50  -20,-39 -29,-38.5"/>
+        <path d="M 0,-50 C  9,-60   21,-49  30,-48.5"/><path d="M 0,-50 C -9,-60  -21,-49 -30,-48.5"/>
+      </g>
+
+      <g stroke="#3dba55" stroke-width="1.1" fill="none" stroke-linecap="round">
+        <path d="M 0,-60  C  9,-70   21,-59  30,-58.5"/> <path d="M 0,-60  C -9,-70  -21,-59 -30,-58.5"/>
+        <path d="M 0,-70  C  9,-80   21,-69  30,-68.5"/> <path d="M 0,-70  C -9,-80  -21,-69 -30,-68.5"/>
+        <path d="M 0,-80  C  9,-90   21,-79  30,-78.5"/> <path d="M 0,-80  C -9,-90  -21,-79 -30,-78.5"/>
+        <path d="M 0,-90  C  9,-100  20,-89  29,-88.5"/> <path d="M 0,-90  C -9,-100 -20,-89 -29,-88.5"/>
+        <path d="M 0,-100 C  8,-110  19,-99  27,-98.5"/> <path d="M 0,-100 C -8,-110 -19,-99 -27,-98.5"/>
+        <path d="M 0,-110 C  8,-120  18,-109 26,-108.5"/><path d="M 0,-110 C -8,-120 -18,-109-26,-108.5"/>
+        <path d="M 0,-120 C  7,-130  17,-119 24,-118.5"/><path d="M 0,-120 C -7,-130 -17,-119-24,-118.5"/>
+      </g>
+
+      <g stroke="#e53030" stroke-width="0.8" fill="none" stroke-linecap="round">
+        <path d="M 0,-130 C  6,-140  14,-129 20,-128.5"/> <path d="M 0,-130 C -6,-140 -14,-129-20,-128.5"/>
+        <path d="M 0,-140 C  5,-150  13,-139 18,-138.5"/> <path d="M 0,-140 C -5,-150 -13,-139-18,-138.5"/>
+        <path d="M 0,-150 C  4,-158  10,-149 14,-148.5"/> <path d="M 0,-150 C -4,-158 -10,-149-14,-148.5"/>
+        <path d="M 0,-160 C  3,-168   7,-159 10,-158.5"/> <path d="M 0,-160 C -3,-168  -7,-159-10,-158.5"/>
+        <path d="M 0,-170 C  2,-177   5,-169  7,-168.5"/> <path d="M 0,-170 C -2,-177  -5,-169 -7,-168.5"/>
+        <path d="M 0,-180 C  1,-186   3,-179  4,-178.5"/> <path d="M 0,-180 C -1,-186  -3,-179 -4,-178.5"/>
+        <path d="M 0,-190 C  0.6,-195  1.5,-189  2,-188.5" stroke-width="0.6"/>
+        <path d="M 0,-190 C -0.6,-195 -1.5,-189 -2,-188.5" stroke-width="0.6"/>
+        <path d="M 0,-200 C  0.3,-204  0.6,-200  0.7,-200" stroke-width="0.5"/>
+        <path d="M 0,-200 C -0.3,-204 -0.6,-200 -0.7,-200" stroke-width="0.5"/>
+      </g>
+    </g>
+  </defs>
+
+  <!--
+    Wing attachment point: portrait (248, 165) — mid-spine, just below humanoid shoulders.
+    Humanoid placed at translate(170, 50).
+
+    Wing scale = 0.5. P0=(60,280) in wing-space maps to attachment via:
+      Right wing:  translate(218, 25) scale(0.5)          P0 → (248, 165)
+      Left wing:   translate(278, 25) scale(-0.5, 0.5)    P0 → (248, 165), extends left
+  -->
+
+  <!-- Dark background -->
+  <rect x="-80" y="-170" width="660" height="690" fill="#16161e"/>
+
+  <!-- ════════════════════════════════════════════
+       RIGHT WING — behind humanoid
+       ════════════════════════════════════════════ -->
+  <g id="wing-right" transform="translate(218,25) scale(0.5)">
+    <g id="layer1R"/>
+    <g id="layer2R"/>
+  </g>
+
+  <!-- ════════════════════════════════════════════
+       LEFT WING — behind humanoid, mirrored
+       ════════════════════════════════════════════ -->
+  <g id="wing-left" transform="translate(278,25) scale(-0.5,0.5)">
+    <g id="layer1L"/>
+    <g id="layer2L"/>
+  </g>
+
+  <!-- ════════════════════════════════════════════
+       HUMANOID — on top of both wings
+       Humanoid space 0..160 × 0..420, placed at translate(170,50)
+       ════════════════════════════════════════════ -->
+  <g id="creature-body" transform="translate(170,50)">
+    <g id="humanoid" fill="white" stroke="black" stroke-width="2" stroke-linejoin="round">
+
+      <!-- BACK UPPER ARM -->
+      <path d="M 110,104 C 122,110 130,130 132,158 L 120,162 C 118,135 112,116 100,108 Z"/>
+      <!-- BACK FOREARM -->
+      <path d="M 120,160 C 124,180 126,205 124,232 L 113,234 C 114,208 112,182 108,162 Z"/>
+      <!-- BACK HAND -->
+      <ellipse cx="118" cy="244" rx="10" ry="12" transform="rotate(-10,118,244)"/>
+      <!-- BACK UPPER LEG -->
+      <path d="M 83,256 C 84,270 86,295 85,330 L 98,330 C 99,295 100,270 100,256 Z"/>
+      <!-- BACK LOWER LEG -->
+      <path d="M 83,328 C 83,345 84,365 84,390 L 98,390 C 98,365 99,345 98,328 Z"/>
+      <!-- BACK FOOT -->
+      <path d="M 98,389 L 84,389 C 78,389 76,400 82,410 C 88,413 96,411 101,407 C 103,403 101,394 98,389 Z"/>
+
+      <!-- TORSO -->
+      <path d="M 50,100 C 38,105 34,120 36,145 C 38,168 42,185 48,195 L 50,230 L 110,230 L 112,195 C 118,185 122,168 124,145 C 126,120 122,105 110,100 Z"/>
+      <!-- WAIST / HIP BAND -->
+      <path d="M 50,225 L 48,258 L 112,258 L 110,225 Z"/>
+      <!-- NECK -->
+      <path d="M 70,76 L 68,96 L 88,96 L 86,76 Z"/>
+      <!-- HEAD -->
+      <ellipse cx="78" cy="48" rx="28" ry="30"/>
+      <!-- EYE -->
+      <circle cx="92" cy="46" r="5" fill="black" stroke="none"/>
+      <circle cx="94" cy="46" r="1.5" fill="white" stroke="none"/>
+
+      <!-- FRONT UPPER ARM -->
+      <path d="M 50,104 C 38,110 30,128 28,155 L 40,160 C 42,133 48,115 58,108 Z"/>
+      <!-- FRONT FOREARM -->
+      <path d="M 40,158 C 36,178 34,202 36,228 L 47,226 C 46,202 48,178 51,158 Z"/>
+      <!-- FRONT HAND -->
+      <ellipse cx="41" cy="238" rx="10" ry="12" transform="rotate(10,41,238)"/>
+      <!-- FRONT UPPER LEG -->
+      <path d="M 60,256 C 61,270 62,295 62,330 L 75,330 C 76,295 76,270 76,256 Z"/>
+      <!-- FRONT LOWER LEG -->
+      <path d="M 60,328 C 60,345 60,365 60,390 L 74,390 C 74,365 75,345 75,328 Z"/>
+      <!-- FRONT FOOT -->
+      <path d="M 74,389 L 60,389 C 54,389 52,400 58,410 C 64,413 72,411 77,407 C 79,403 77,394 74,389 Z"/>
+    </g>
+  </g>
+
+  <!-- Effects layer (buff overlays etc.) -->
+  <g id="effects-layer"/>
+
+  <script type="text/javascript"><![CDATA[
+  (function () {
+    'use strict';
+
+    // Wing bezier in wing.svg coordinate space.
+    // The #wing-right / #wing-left group transforms handle scaling + placement.
+    const P0  = [60,  280];
+    const P3b = [640, 190];
+    const P1b = [100,  40];
+    const P2b = [480,  20];
+
+    const PERIOD  = 1.6;
+    const AMP_P1y = 72;
+    const AMP_P2y = 95;
+    const AMP_P3y = 55;
+    const LAG_P2  = 0.15;
+    const LAG_P3  = 0.32;
+
+    function B(t, p1, p2, p3) {
+      const mt = 1 - t;
+      return [
+        mt*mt*mt*P0[0] + 3*mt*mt*t*p1[0] + 3*mt*t*t*p2[0] + t*t*t*p3[0],
+        mt*mt*mt*P0[1] + 3*mt*mt*t*p1[1] + 3*mt*t*t*p2[1] + t*t*t*p3[1]
+      ];
+    }
+
+    function Bprime(t, p1, p2, p3) {
+      const mt = 1 - t;
+      return [
+        3*(mt*mt*(p1[0]-P0[0]) + 2*mt*t*(p2[0]-p1[0]) + t*t*(p3[0]-p2[0])),
+        3*(mt*mt*(p1[1]-P0[1]) + 2*mt*t*(p2[1]-p1[1]) + t*t*(p3[1]-p2[1]))
+      ];
+    }
+
+    function inwardNormal(t, p1, p2, p3) {
+      const [dx, dy] = Bprime(t, p1, p2, p3);
+      const len = Math.hypot(dx, dy);
+      return [-dy / len, dx / len];
+    }
+
+    const LAYER1_T = [0.05,0.0923,0.1345,0.176,0.2162,0.2548,0.2916,0.3267,0.36,
+      0.3916,0.4218,0.4505,0.478,0.5042,0.5294,0.5536,0.5769,0.5993,0.6209,
+      0.6417,0.6619,0.6814,0.7003,0.7186,0.7363,0.7535,0.7701,0.7863,0.802,
+      0.8172,0.832,0.8463,0.8602,0.8737,0.8868,0.8995,0.9118,0.9237,0.9353,
+      0.9465,0.9573,0.9678];
+
+    const LAYER2_T = [0.0711,0.1135,0.1554,0.1963,0.2357,0.2734,0.3094,0.3436,
+      0.376,0.4069,0.4363,0.4644,0.4913,0.517,0.5416,0.5654,0.5882,0.6102,
+      0.6314,0.6519,0.6717,0.6909,0.7095,0.7275,0.745,0.7619,0.7783,0.7942,
+      0.8097,0.8246,0.8392,0.8533,0.867,0.8803,0.8932,0.9057,0.9178,0.9296,
+      0.9409,0.952,0.9626,0.973,0.983];
+
+    const scaleAt         = t => Math.max(0.20, 1.0 - 0.74 * (t - 0.05) / 0.90);
+    const FEATHER_LEN     = 207;
+    const L2_OFFSET_FRAC  = 0.25;
+
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    function makeUses(containerId, tArr) {
+      const g = document.getElementById(containerId);
+      return tArr.map(t => {
+        const el = document.createElementNS(SVG_NS, 'use');
+        el.setAttribute('href', '#f');
+        g.appendChild(el);
+        return { el, t, s: scaleAt(t) };
+      });
+    }
+
+    // Four layers: right and left wings share the same t-values and transform math.
+    // The parent #wing-right / #wing-left groups handle mirroring — JS writes
+    // wing-space transforms identically for both sides.
+    const uses1R = makeUses('layer1R', LAYER1_T);
+    const uses2R = makeUses('layer2R', LAYER2_T);
+    const uses1L = makeUses('layer1L', LAYER1_T);
+    const uses2L = makeUses('layer2L', LAYER2_T);
+
+    function applyLayer1(uses, p1, p2, p3) {
+      for (const { el, t, s } of uses) {
+        const [x, y] = B(t, p1, p2, p3);
+        el.setAttribute('transform',
+          `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(180) scale(${s.toFixed(2)})`);
+      }
+    }
+
+    function applyLayer2(uses, p1, p2, p3) {
+      for (const { el, t, s } of uses) {
+        const [x, y] = B(t, p1, p2, p3);
+        const [nx, ny] = inwardNormal(t, p1, p2, p3);
+        const off = L2_OFFSET_FRAC * FEATHER_LEN * s;
+        el.setAttribute('transform',
+          `translate(${(x + nx*off).toFixed(1)},${(y + ny*off).toFixed(1)}) rotate(180) scale(${s.toFixed(2)})`);
+      }
+    }
+
+    function frame(ms) {
+      const phase = (ms / 1000 / PERIOD) * Math.PI * 2;
+      const p1 = [P1b[0], P1b[1] + AMP_P1y * Math.sin(phase)];
+      const p2 = [P2b[0], P2b[1] + AMP_P2y * Math.sin(phase - LAG_P2)];
+      const p3 = [P3b[0], P3b[1] + AMP_P3y * Math.sin(phase - LAG_P3)];
+
+      applyLayer1(uses1R, p1, p2, p3);
+      applyLayer2(uses2R, p1, p2, p3);
+      applyLayer1(uses1L, p1, p2, p3);
+      applyLayer2(uses2L, p1, p2, p3);
+
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  })();
+  ]]></script>
+
+</svg>
+
+  <defs>
+    <!--
+      Feather unit #f. Quill at (0,0), tip at (0,-207).
+      Peak half-width ±35px at y≈-80 (30% from base).
+      No filled vane — barb strokes only for hair-weave overlap.
+    -->
+    <g id="f">
+      <rect x="-1"   y="-205" width="2"   height="207" rx="1"    fill="#8b6014"/>
+      <rect x="-0.3" y="-205" width="0.7" height="207" rx="0.35" fill="#d4a040" opacity="0.55"/>
+      <path d="M -1.5,0 Q 0,7 1.5,0 Z" fill="#c8963c"/>
+
+      <g stroke="#f5c800" stroke-width="0.9" fill="none" stroke-linecap="round">
+        <path d="M 0,0   C  5,-6    12,1    17,1"/>   <path d="M 0,0   C -5,-6   -12,1   -17,1"/>
+        <path d="M 0,-10 C  6,-17   14,-9   20,-9"/>  <path d="M 0,-10 C -6,-17  -14,-9  -20,-9"/>
+        <path d="M 0,-20 C  7,-28   17,-19  24,-19"/> <path d="M 0,-20 C -7,-28  -17,-19 -24,-19"/>
+        <path d="M 0,-30 C  8,-39   19,-29  27,-28.5"/><path d="M 0,-30 C -8,-39  -19,-29 -27,-28.5"/>
+        <path d="M 0,-40 C  9,-50   20,-39  29,-38.5"/><path d="M 0,-40 C -9,-50  -20,-39 -29,-38.5"/>
+        <path d="M 0,-50 C  9,-60   21,-49  30,-48.5"/><path d="M 0,-50 C -9,-60  -21,-49 -30,-48.5"/>
+      </g>
+
+      <g stroke="#3dba55" stroke-width="1.1" fill="none" stroke-linecap="round">
+        <path d="M 0,-60  C  9,-70   21,-59  30,-58.5"/> <path d="M 0,-60  C -9,-70  -21,-59 -30,-58.5"/>
+        <path d="M 0,-70  C  9,-80   21,-69  30,-68.5"/> <path d="M 0,-70  C -9,-80  -21,-69 -30,-68.5"/>
+        <path d="M 0,-80  C  9,-90   21,-79  30,-78.5"/> <path d="M 0,-80  C -9,-90  -21,-79 -30,-78.5"/>
+        <path d="M 0,-90  C  9,-100  20,-89  29,-88.5"/> <path d="M 0,-90  C -9,-100 -20,-89 -29,-88.5"/>
+        <path d="M 0,-100 C  8,-110  19,-99  27,-98.5"/> <path d="M 0,-100 C -8,-110 -19,-99 -27,-98.5"/>
+        <path d="M 0,-110 C  8,-120  18,-109 26,-108.5"/><path d="M 0,-110 C -8,-120 -18,-109-26,-108.5"/>
+        <path d="M 0,-120 C  7,-130  17,-119 24,-118.5"/><path d="M 0,-120 C -7,-130 -17,-119-24,-118.5"/>
+      </g>
+
+      <g stroke="#e53030" stroke-width="0.8" fill="none" stroke-linecap="round">
+        <path d="M 0,-130 C  6,-140  14,-129 20,-128.5"/> <path d="M 0,-130 C -6,-140 -14,-129-20,-128.5"/>
+        <path d="M 0,-140 C  5,-150  13,-139 18,-138.5"/> <path d="M 0,-140 C -5,-150 -13,-139-18,-138.5"/>
+        <path d="M 0,-150 C  4,-158  10,-149 14,-148.5"/> <path d="M 0,-150 C -4,-158 -10,-149-14,-148.5"/>
+        <path d="M 0,-160 C  3,-168   7,-159 10,-158.5"/> <path d="M 0,-160 C -3,-168  -7,-159-10,-158.5"/>
+        <path d="M 0,-170 C  2,-177   5,-169  7,-168.5"/> <path d="M 0,-170 C -2,-177  -5,-169 -7,-168.5"/>
+        <path d="M 0,-180 C  1,-186   3,-179  4,-178.5"/> <path d="M 0,-180 C -1,-186  -3,-179 -4,-178.5"/>
+        <path d="M 0,-190 C  0.6,-195  1.5,-189  2,-188.5" stroke-width="0.6"/>
+        <path d="M 0,-190 C -0.6,-195 -1.5,-189 -2,-188.5" stroke-width="0.6"/>
+        <path d="M 0,-200 C  0.3,-204  0.6,-200  0.7,-200" stroke-width="0.5"/>
+        <path d="M 0,-200 C -0.3,-204 -0.6,-200 -0.7,-200" stroke-width="0.5"/>
+      </g>
+    </g>
+  </defs>
+
+  <!--
+    Portrait canvas — 300×435px (ratio 1:1.45, matching a vertical wing).
+    Wing transform: rotate(90°CW) → scale(0.737) → translate(311,-24)
+    Maps wing P0=(60,280) → portrait (105,20) and P3=(640,190) → portrait (171,448).
+    Feathers extend leftward (off-canvas left edge is fine — visually crops cleanly).
+
+    Coordinate conventions:
+      - Creature body centred on x=195 (right ~65% of canvas)
+      - Creature "floor" at y=420, "head" at y=60
+      - Wing spine runs x≈105..252, y=20..448 (through body area)
+  -->
+
+  <!-- Background (remove for transparent embed) -->
+  <rect id="canvas-bg" x="-30" y="-300" width="890" height="765" fill="#16161e"/>
+
+  <!-- Construction guides (remove in production) -->
+  <!-- Creature safe zone: left portion x=20..280 -->
+  <rect x="20" y="20" width="260" height="400"
+        fill="none" stroke="#445566" stroke-width="1" stroke-dasharray="5,4" opacity="0.4"/>
+  <!-- Body centre -->
+  <line x1="150" y1="0" x2="150" y2="435"
+        stroke="#336655" stroke-width="1" stroke-dasharray="3,5" opacity="0.35"/>
+  <!-- Wing root (portrait right edge of creature area) -->
+  <line x1="300" y1="0" x2="300" y2="435"
+        stroke="#664488" stroke-width="1" stroke-dasharray="3,5" opacity="0.35"/>
+
+  <!--
+    Wing layer — feathers in wing.svg coordinate space (horizontal arc,
+    root P0 at left, tip P3 extending right, feathers hang down).
+    Transform maps P0 → portrait (300,250), full content height (407px) → 435px.
+      1. scale(1.069)
+      2. translate(235.87,-49.16)
+  -->
+  <g id="wing-layer" transform="translate(248.69,-119.46) scale(0.8552)">
+    <g id="layer1"/>
+    <g id="layer2"/>
+  </g>
+
+  <!-- Creature body (content goes here) -->
+  <g id="creature-body"/>
+
+  <!-- Overlay / effects layer -->
+  <g id="effects-layer"/>
+
+  <script type="text/javascript"><![CDATA[
+  (function () {
+    'use strict';
+
+    // Wing bezier control points (wing.svg coordinate space — transform on #wing-layer handles mapping)
+    const P0  = [60,  280];
+    const P3b = [640, 190];
+    const P1b = [100,  40];
+    const P2b = [480,  20];
+
+    // Flap parameters
+    const PERIOD  = 1.6;    // seconds per full cycle
+    const AMP_P1y = 72;     // root control amplitude (px)
+    const AMP_P2y = 95;     // mid control amplitude
+    const AMP_P3y = 55;     // tip endpoint amplitude
+    const LAG_P2  = 0.15;   // P2 lags P1 (rad)
+    const LAG_P3  = 0.32;   // P3 lags P1 (rad)
+
+    // Bezier evaluation
+    function B(t, p1, p2, p3) {
+      const mt = 1 - t;
+      return [
+        mt*mt*mt*P0[0] + 3*mt*mt*t*p1[0] + 3*mt*t*t*p2[0] + t*t*t*p3[0],
+        mt*mt*mt*P0[1] + 3*mt*mt*t*p1[1] + 3*mt*t*t*p2[1] + t*t*t*p3[1]
+      ];
+    }
+
+    function Bprime(t, p1, p2, p3) {
+      const mt = 1 - t;
+      return [
+        3*(mt*mt*(p1[0]-P0[0]) + 2*mt*t*(p2[0]-p1[0]) + t*t*(p3[0]-p2[0])),
+        3*(mt*mt*(p1[1]-P0[1]) + 2*mt*t*(p2[1]-p1[1]) + t*t*(p3[1]-p2[1]))
+      ];
+    }
+
+    function inwardNormal(t, p1, p2, p3) {
+      const [dx, dy] = Bprime(t, p1, p2, p3);
+      const len = Math.hypot(dx, dy);
+      return [-dy / len, dx / len];
+    }
+
+    // Feather t-value layout (Python arc-length walk, constant across all frames)
+    const LAYER1_T = [0.05,0.0923,0.1345,0.176,0.2162,0.2548,0.2916,0.3267,0.36,
+      0.3916,0.4218,0.4505,0.478,0.5042,0.5294,0.5536,0.5769,0.5993,0.6209,
+      0.6417,0.6619,0.6814,0.7003,0.7186,0.7363,0.7535,0.7701,0.7863,0.802,
+      0.8172,0.832,0.8463,0.8602,0.8737,0.8868,0.8995,0.9118,0.9237,0.9353,
+      0.9465,0.9573,0.9678];
+
+    const LAYER2_T = [0.0711,0.1135,0.1554,0.1963,0.2357,0.2734,0.3094,0.3436,
+      0.376,0.4069,0.4363,0.4644,0.4913,0.517,0.5416,0.5654,0.5882,0.6102,
+      0.6314,0.6519,0.6717,0.6909,0.7095,0.7275,0.745,0.7619,0.7783,0.7942,
+      0.8097,0.8246,0.8392,0.8533,0.867,0.8803,0.8932,0.9057,0.9178,0.9296,
+      0.9409,0.952,0.9626,0.973,0.983];
+
+    const scaleAt   = t => Math.max(0.20, 1.0 - 0.74 * (t - 0.05) / 0.90);
+    const FEATHER_LEN     = 207;
+    const L2_OFFSET_FRAC  = 0.25;
+
+    // Build <use> elements
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    function makeUses(containerId, tArr) {
+      const g = document.getElementById(containerId);
+      return tArr.map(t => {
+        const el = document.createElementNS(SVG_NS, 'use');
+        el.setAttribute('href', '#f');
+        g.appendChild(el);
+        return { el, t, s: scaleAt(t) };
+      });
+    }
+
+    const uses1 = makeUses('layer1', LAYER1_T);
+    const uses2 = makeUses('layer2', LAYER2_T);
+
+    // Animation loop
+    function frame(ms) {
+      const phase = (ms / 1000 / PERIOD) * Math.PI * 2;
+      const p1 = [P1b[0], P1b[1] + AMP_P1y * Math.sin(phase)];
+      const p2 = [P2b[0], P2b[1] + AMP_P2y * Math.sin(phase - LAG_P2)];
+      const p3 = [P3b[0], P3b[1] + AMP_P3y * Math.sin(phase - LAG_P3)];
+
+      for (const { el, t, s } of uses1) {
+        const [x, y] = B(t, p1, p2, p3);
+        el.setAttribute('transform',
+          `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(180) scale(${s.toFixed(2)})`);
+      }
+
+      for (const { el, t, s } of uses2) {
+        const [x, y] = B(t, p1, p2, p3);
+        const [nx, ny] = inwardNormal(t, p1, p2, p3);
+        const off = L2_OFFSET_FRAC * FEATHER_LEN * s;
+        el.setAttribute('transform',
+          `translate(${(x + nx*off).toFixed(1)},${(y + ny*off).toFixed(1)}) rotate(180) scale(${s.toFixed(2)})`);
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  })();
+  ]]></script>
+
+</svg>

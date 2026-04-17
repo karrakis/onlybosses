@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 420" width="700" height="420">
+  <defs>
+
+    <!--
+      Feather unit. Origin = quill (0,0). Tip points UP at (0,-150).
+      Peak width ±60px at y=-45.
+      When rotated 180°, tip points DOWN and quill stays at the
+      attachment point on the wing arc.
+    -->
+    <g id="f">
+
+      <!-- Vane silhouette (dark fill for depth layering) -->
+      <path d="
+        M 0,0
+        C -10,-10  -55,-25  -60,-45
+        C -62,-65  -38,-120  0,-150
+        C  38,-120  62,-65   60,-45
+        C  55,-25   10,-10   0,0 Z
+      " fill="#0e0e1a" opacity="0.88"/>
+
+      <!-- Rachis (stem) -->
+      <line x1="0" y1="2" x2="0" y2="-148" stroke="#5c3808" stroke-width="2"/>
+      <line x1="0.5" y1="2" x2="0.5" y2="-148" stroke="#d4a040" stroke-width="0.8" opacity="0.45"/>
+
+      <!-- Quill nub -->
+      <path d="M -1.5,4 Q 0,10 1.5,4 Z" fill="#a06820"/>
+
+      <!-- Yellow barbs y=–6 → –35 -->
+      <g stroke="#f5c800" stroke-width="0.95" fill="none" stroke-linecap="round">
+        <path d="M 0,-6  C  3,-6   6,-7.8   6,-7.5"/>
+        <path d="M 0,-6  C -3,-6  -6,-7.8  -6,-7.5"/>
+        <path d="M 0,-14 C  9,-14  19,-17.5  22,-17"/>
+        <path d="M 0,-14 C -9,-14 -19,-17.5 -22,-17"/>
+        <path d="M 0,-22 C 15,-22  33,-26   38,-25.5"/>
+        <path d="M 0,-22 C-15,-22 -33,-26  -38,-25.5"/>
+        <path d="M 0,-30 C 20,-30  44,-34.5  52,-34"/>
+        <path d="M 0,-30 C-20,-30 -44,-34.5 -52,-34"/>
+        <path d="M 0,-35 C 24,-35  50,-39.5  58,-39"/>
+        <path d="M 0,-35 C-24,-35 -50,-39.5 -58,-39"/>
+      </g>
+
+      <!-- Green barbs y=–45 → –95 (peak at –45) -->
+      <g stroke="#3dba55" stroke-width="1.2" fill="none" stroke-linecap="round">
+        <path d="M 0,-45 C 26,-45  54,-49.5  60,-49"/>
+        <path d="M 0,-45 C-26,-45 -54,-49.5 -60,-49"/>
+        <path d="M 0,-55 C 24,-55  50,-59.5  57,-59"/>
+        <path d="M 0,-55 C-24,-55 -50,-59.5 -57,-59"/>
+        <path d="M 0,-65 C 22,-65  46,-69.5  52,-69"/>
+        <path d="M 0,-65 C-22,-65 -46,-69.5 -52,-69"/>
+        <path d="M 0,-75 C 18,-75  38,-79   43,-78.5"/>
+        <path d="M 0,-75 C-18,-75 -38,-79  -43,-78.5"/>
+        <path d="M 0,-85 C 13,-85  26,-88.5  30,-88"/>
+        <path d="M 0,-85 C-13,-85 -26,-88.5 -30,-88"/>
+        <path d="M 0,-95 C  7,-95  13,-97.5  16,-97"/>
+        <path d="M 0,-95 C -7,-95 -13,-97.5 -16,-97"/>
+      </g>
+
+      <!-- Red barbs y=–105 → tip -->
+      <g stroke="#e53030" stroke-width="0.85" fill="none" stroke-linecap="round">
+        <path d="M 0,-105 C  3,-105   7,-107   8,-106.5"/>
+        <path d="M 0,-105 C -3,-105  -7,-107  -8,-106.5"/>
+        <path d="M 0,-115 C  2,-115   4,-116.5  4.5,-116"/>
+        <path d="M 0,-115 C -2,-115  -4,-116.5 -4.5,-116"/>
+        <path d="M 0,-126 C  1,-126.5  1.8,-126.5  2,-126" stroke-width="0.6"/>
+        <path d="M 0,-126 C -1,-126.5 -1.8,-126.5 -2,-126" stroke-width="0.6"/>
+        <path d="M 0,-138 C  0.4,-138.5  0.7,-138.3  0.8,-138" stroke-width="0.5"/>
+        <path d="M 0,-138 C -0.4,-138.5 -0.7,-138.3 -0.8,-138" stroke-width="0.5"/>
+      </g>
+
+    </g>
+
+  </defs>
+
+  <!-- Background -->
+  <rect width="700" height="420" fill="#16161e"/>
+
+  <!--
+    Wing arc: M 60,280 C 100,40 480,20 640,190
+    ─ Asymmetric 3/4-bow: left (root) side rises steeply from 280→79 (ΔY=201).
+      Right (tip) side descends more gently from 79→190 (ΔY=111).
+    ─ Concavity faces downward — feathers hang from the hollow side.
+
+    Cubic Bézier attachment points (t step = 0.1):
+      t=0.1  (82,  215)   t=0.6  (378, 79)
+      t=0.2  (120, 162)   t=0.7  (452, 89)
+      t=0.3  (173, 123)   t=0.8  (522, 111)
+      t=0.4  (235, 96)    t=0.9  (586, 145)
+      t=0.5  (305, 81)
+
+    All feathers: rotate(180) = tip points straight DOWN.
+    Peak half-width=60px, average horizontal gap≈63px → ~48% overlap.
+    Drawn root→tip so wingtip feathers sit on top (correct shingling).
+  -->
+
+  <!-- Faint guide arc -->
+  <path d="M 60,280 C 100,40 480,20 640,190"
+        fill="none" stroke="#6644aa" stroke-width="1.5" stroke-dasharray="6,5" opacity="0.4"/>
+
+  <!-- Feathers, root→tip -->
+  <use href="#f" transform="translate(82,215)  rotate(180)"/>
+  <use href="#f" transform="translate(120,162) rotate(180)"/>
+  <use href="#f" transform="translate(173,123) rotate(180)"/>
+  <use href="#f" transform="translate(235,96)  rotate(180)"/>
+  <use href="#f" transform="translate(305,81)  rotate(180)"/>
+  <use href="#f" transform="translate(378,79)  rotate(180)"/>
+  <use href="#f" transform="translate(452,89)  rotate(180)"/>
+  <use href="#f" transform="translate(522,111) rotate(180)"/>
+  <use href="#f" transform="translate(586,145) rotate(180)"/>
+
+</svg>

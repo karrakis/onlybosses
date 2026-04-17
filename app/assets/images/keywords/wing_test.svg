@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 420" width="600" height="420">
+  <defs>
+
+    <!--
+      Single feather unit.
+      Origin = base/quill (0,0). Tip points straight UP at (0,-150).
+      Peak width ±60px at y=-45 (exactly 30% of length).
+      Color zones: yellow y=0→-35, green y=-45→-95, red y=-105→-145.
+
+      The vane is a filled silhouette (dark bg, low opacity) so overlap
+      between feathers is clearly visible as depth.
+    -->
+    <g id="feather">
+
+      <!-- Vane silhouette: dark fill to show depth layering -->
+      <path d="
+        M 0,0
+        C -10,-10  -55,-25  -60,-45
+        C -62,-65  -38,-120  0,-150
+        C  38,-120  62,-65   60,-45
+        C  55,-25   10,-10   0,0 Z
+      " fill="#0e0e1a" opacity="0.88"/>
+
+      <!-- Stem (rachis): dark brown body with gold highlight -->
+      <line x1="0" y1="2" x2="0" y2="-148" stroke="#5c3808" stroke-width="2"/>
+      <line x1="0.5" y1="2" x2="0.5" y2="-148" stroke="#d4a040" stroke-width="0.8" opacity="0.45"/>
+
+      <!-- Quill nub at base -->
+      <path d="M -1.5,4 Q 0,10 1.5,4 Z" fill="#a06820"/>
+
+      <!-- ── Yellow zone: y = -6 → -35 ── -->
+      <g stroke="#f5c800" stroke-width="0.95" fill="none" stroke-linecap="round">
+        <!-- y=-6   w=6 -->
+        <path d="M 0,-6  C  3,-6   6,-7.8   6,-7.5"/>
+        <path d="M 0,-6  C -3,-6  -6,-7.8  -6,-7.5"/>
+        <!-- y=-14  w=22 -->
+        <path d="M 0,-14 C  9,-14  19,-17.5  22,-17"/>
+        <path d="M 0,-14 C -9,-14 -19,-17.5 -22,-17"/>
+        <!-- y=-22  w=38 -->
+        <path d="M 0,-22 C 15,-22  33,-26   38,-25.5"/>
+        <path d="M 0,-22 C-15,-22 -33,-26  -38,-25.5"/>
+        <!-- y=-30  w=52 -->
+        <path d="M 0,-30 C 20,-30  44,-34.5  52,-34"/>
+        <path d="M 0,-30 C-20,-30 -44,-34.5 -52,-34"/>
+        <!-- y=-35  w=58 -->
+        <path d="M 0,-35 C 24,-35  50,-39.5  58,-39"/>
+        <path d="M 0,-35 C-24,-35 -50,-39.5 -58,-39"/>
+      </g>
+
+      <!-- ── Green zone: y = -45 → -95, peak at -45 ── -->
+      <g stroke="#3dba55" stroke-width="1.2" fill="none" stroke-linecap="round">
+        <!-- y=-45  w=60  ← PEAK -->
+        <path d="M 0,-45 C 26,-45  54,-49.5  60,-49"/>
+        <path d="M 0,-45 C-26,-45 -54,-49.5 -60,-49"/>
+        <!-- y=-55  w=57 -->
+        <path d="M 0,-55 C 24,-55  50,-59.5  57,-59"/>
+        <path d="M 0,-55 C-24,-55 -50,-59.5 -57,-59"/>
+        <!-- y=-65  w=52 -->
+        <path d="M 0,-65 C 22,-65  46,-69.5  52,-69"/>
+        <path d="M 0,-65 C-22,-65 -46,-69.5 -52,-69"/>
+        <!-- y=-75  w=43 -->
+        <path d="M 0,-75 C 18,-75  38,-79   43,-78.5"/>
+        <path d="M 0,-75 C-18,-75 -38,-79  -43,-78.5"/>
+        <!-- y=-85  w=30 -->
+        <path d="M 0,-85 C 13,-85  26,-88.5  30,-88"/>
+        <path d="M 0,-85 C-13,-85 -26,-88.5 -30,-88"/>
+        <!-- y=-95  w=16 -->
+        <path d="M 0,-95 C  7,-95  13,-97.5  16,-97"/>
+        <path d="M 0,-95 C -7,-95 -13,-97.5 -16,-97"/>
+      </g>
+
+      <!-- ── Red zone: y = -105 → -145 ── -->
+      <g stroke="#e53030" stroke-width="0.85" fill="none" stroke-linecap="round">
+        <!-- y=-105  w=8 -->
+        <path d="M 0,-105 C  3,-105   7,-107   8,-106.5"/>
+        <path d="M 0,-105 C -3,-105  -7,-107  -8,-106.5"/>
+        <!-- y=-115  w=4.5 -->
+        <path d="M 0,-115 C  2,-115   4,-116.5  4.5,-116"/>
+        <path d="M 0,-115 C -2,-115  -4,-116.5 -4.5,-116"/>
+        <!-- y=-126  w=2 -->
+        <path d="M 0,-126 C  1,-126.5  1.8,-126.5  2,-126" stroke-width="0.6"/>
+        <path d="M 0,-126 C -1,-126.5 -1.8,-126.5 -2,-126" stroke-width="0.6"/>
+        <!-- y=-138  w=0.8 (wisp) -->
+        <path d="M 0,-138 C 0.4,-138.5 0.7,-138.3 0.8,-138" stroke-width="0.5"/>
+        <path d="M 0,-138 C-0.4,-138.5-0.7,-138.3-0.8,-138" stroke-width="0.5"/>
+      </g>
+
+    </g>
+
+  </defs>
+
+  <!-- ── Background ── -->
+  <rect width="600" height="420" fill="#16161e"/>
+
+  <!--
+    Wing edge guide curve:  M 250,20 C 450,80 450,320 250,380
+    This is a )-shape bowing right. Concave side faces LEFT.
+    Feathers attach on the LEFT side (concave), tips pointing left-inward.
+
+    Attachment points computed from cubic Bézier B(t):
+      t    point        tangent_angle   rotation (= angle - 180°)
+      0.05  (278,30)        23.2°          203.2°
+      0.125 (316,50)        33.5°          213.5°
+      0.25  (363,93)        51.9°          231.9°
+      0.375 (390,144)       70.9°          250.9°
+      0.5   (400,200)       90.0°          270.0°
+      0.625 (390,255)      109.1°          289.1°
+      0.75  (363,307)      128.1°          308.1°
+      0.875 (316,350)      146.5°          326.5°
+      0.95  (276,370)      156.8°          336.8°
+
+    Drawn top-to-bottom so lower (wingtip-side) feathers sit on top.
+  -->
+
+  <!-- Faint guide arc -->
+  <path d="M 250,20 C 450,80 450,320 250,380"
+        fill="none" stroke="#554455" stroke-width="1" stroke-dasharray="5,4" opacity="0.55"/>
+
+  <!-- Feathers: drawn in order so each feather overlaps the one above it -->
+  <use href="#feather" transform="translate(278,30)  rotate(203.2)"/>
+  <use href="#feather" transform="translate(316,50)  rotate(213.5)"/>
+  <use href="#feather" transform="translate(363,93)  rotate(231.9)"/>
+  <use href="#feather" transform="translate(390,144) rotate(250.9)"/>
+  <use href="#feather" transform="translate(400,200) rotate(270)"/>
+  <use href="#feather" transform="translate(390,255) rotate(289.1)"/>
+  <use href="#feather" transform="translate(363,307) rotate(308.1)"/>
+  <use href="#feather" transform="translate(316,350) rotate(326.5)"/>
+  <use href="#feather" transform="translate(276,370) rotate(336.8)"/>
+
+</svg>
