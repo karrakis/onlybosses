@@ -3,7 +3,7 @@ class DamageCalculator
   PHYSICAL_SUBTYPES = %w[physical slashing blunt piercing].freeze
 
   # Calculate typed damage following the complete pipeline
-  def self.calculate_damage(attacker_data, defender_data, ability_damage)
+  def self.calculate_damage(attacker_data, defender_data, ability_damage, options = {})
     # 1. Start with ability's base damage composition
     damage_by_type = ability_damage.dup
     
@@ -74,24 +74,43 @@ class DamageCalculator
 
     # 5e. Evasion check — stacking evasion_chance keywords give a diminishing-returns
     #     chance to negate all incoming damage entirely for this hit.
-    evasion_chance = get_evasion_chance(defender_data)
-    if evasion_chance > 0 && rand < evasion_chance
-      damage_by_type.each_key { |t| damage_by_type[t] = 0 }
+    #     Exception: light damage cannot be evaded (it moves too fast to dodge).
+    unless damage_by_type['light'].to_f > 0
+      evasion_chance = get_evasion_chance(defender_data)
+      if evasion_chance > 0 && rand < evasion_chance
+        damage_by_type.each_key { |t| damage_by_type[t] = 0 }
+      end
     end
 
-    # 6. Apply defender's incoming damage reduction by type
+    # Capture piercing total after attacker modifiers/immunity/block/evasion, but before
+    # type reductions, so piercing penetration scales on what actually arrives.
+    piercing_before_reduction = damage_by_type['piercing'].to_f
+
+    # 6. Apply defender's incoming damage reduction by type.
+    #     options[:ignore_physical_reduction_fraction] (e.g. 0.5 for smash) causes
+    #     physical-subtype reductions <1.0 to be partially bypassed on this hit.
     defender_reduction_mods = get_damage_reduction_by_type(defender_data)
+    ignore_frac = options[:ignore_physical_reduction_fraction].to_f
     damage_by_type.each do |type, amount|
       modifier = defender_reduction_mods[type] || 1.0
+      if ignore_frac > 0 && PHYSICAL_SUBTYPES.include?(type) && modifier < 1.0
+        # Pull the modifier back toward 1.0 by the ignore fraction
+        modifier = modifier + (1.0 - modifier) * ignore_frac
+      end
       damage_by_type[type] = amount * modifier
     end
     
     # 7. Sum all damage types for total damage
     total_damage = damage_by_type.values.sum
 
-    # 7b. Apply flat damage reduction (additive from all keyword sources).
+    # 7b. Apply flat damage reduction (additive from all keyword sources, applied once
+    #     per hit since calculate_damage is called per-hit by multi-hit attacks).
+    #     Piercing damage partially ignores flat DR: ceil(10% of piercing before
+    #     type reductions) is subtracted from the effective flat reduction.
     flat_reduction = get_flat_damage_reduction(defender_data)
-    total_damage = [total_damage - flat_reduction, 0].max
+    piercing_penetration = (piercing_before_reduction * 0.1).ceil
+    effective_flat_reduction = [flat_reduction - piercing_penetration, 0].max
+    total_damage = [total_damage - effective_flat_reduction, 0].max
 
     # 8. Determine which resource to damage
     life_resource = get_life_resource(defender_data)

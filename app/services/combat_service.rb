@@ -252,6 +252,10 @@ class CombatService
     hit_count    = (attrs['hit_count']    || 1).to_i
     base_damage  = attrs['base_damage_by_type'] || { 'physical' => 10 }
     force_next   = attrs['force_next_action']
+    attack_options = {}
+    if (frac = attrs['ignore_physical_reduction_fraction'])
+      attack_options[:ignore_physical_reduction_fraction] = frac.to_f
+    end
 
     stamina_key = "#{action_taker}Stamina"
     return game_status if game_status[stamina_key].nil? || game_status[stamina_key] < stamina_cost
@@ -272,7 +276,7 @@ class CombatService
     end
 
     hit_count.times do
-      damage_result = DamageCalculator.calculate_damage(attacker_data, defender_data, base_damage.dup)
+      damage_result = DamageCalculator.calculate_damage(attacker_data, defender_data, base_damage.dup, attack_options)
       hit_damage    = damage_result[:total_damage].ceil
       life_resource = damage_result[:life_resource]
 

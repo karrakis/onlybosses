@@ -1052,7 +1052,54 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         if (typeof attrs.race_slots === 'number') {
             parts.push(`+${attrs.race_slots} race slot${attrs.race_slots !== 1 ? 's' : ''}`);
         }
-        
+
+        if (typeof attrs.stamina_cost === 'number') {
+            parts.push(`${attrs.stamina_cost} stamina`);
+        }
+
+        if (typeof attrs.hit_count === 'number' && attrs.hit_count > 1) {
+            parts.push(`${attrs.hit_count} hits`);
+        }
+
+        if (typeof attrs.cooldown === 'number' && attrs.cooldown > 0) {
+            parts.push(`${attrs.cooldown}-turn cooldown`);
+        }
+
+        if (typeof attrs.block_chance === 'number') {
+            parts.push(`${(attrs.block_chance * 100).toFixed(0)}% block chance`);
+        }
+
+        if (typeof attrs.evasion_chance === 'number') {
+            parts.push(`${(attrs.evasion_chance * 100).toFixed(0)}% evasion`);
+        }
+
+        if (typeof attrs.flat_damage_reduction === 'number') {
+            parts.push(`${attrs.flat_damage_reduction} flat reduction per hit`);
+        }
+
+        if (typeof attrs.ignore_physical_reduction_fraction === 'number') {
+            parts.push(`Ignores ${(attrs.ignore_physical_reduction_fraction * 100).toFixed(0)}% of physical resistances`);
+        }
+
+        if (attrs.abilities && attrs.abilities.length > 0) {
+            const display = (attrs.abilities as string[])
+                .map((a) => a.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
+                .join(', ');
+            parts.push(`Grants: ${display}`);
+        }
+
+        if (attrs.can_hit_flying) {
+            parts.push('Can hit flying targets');
+        }
+
+        if (attrs.ability_immunities && (attrs.ability_immunities as string[]).length > 0) {
+            parts.push(`Immune to: ${(attrs.ability_immunities as string[]).join(', ')}`);
+        }
+
+        if (typeof attrs.description === 'string' && attrs.description) {
+            parts.push(attrs.description);
+        }
+
         return parts.join(' • ') || 'No special attributes';
     }
 
@@ -1181,6 +1228,53 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
 
         if (typeof attrs.race_slots === 'number') {
             parts.push(`+${attrs.race_slots} race slot${attrs.race_slots !== 1 ? 's' : ''}`);
+        }
+
+        if (typeof attrs.stamina_cost === 'number') {
+            parts.push(`${attrs.stamina_cost} stamina`);
+        }
+
+        if (typeof attrs.hit_count === 'number' && attrs.hit_count > 1) {
+            parts.push(`${attrs.hit_count} hits`);
+        }
+
+        if (typeof attrs.cooldown === 'number' && attrs.cooldown > 0) {
+            parts.push(`${attrs.cooldown}-turn cooldown`);
+        }
+
+        if (typeof attrs.block_chance === 'number') {
+            parts.push(`${(attrs.block_chance * 100).toFixed(0)}% block chance`);
+        }
+
+        if (typeof attrs.evasion_chance === 'number') {
+            parts.push(`${(attrs.evasion_chance * 100).toFixed(0)}% evasion`);
+        }
+
+        if (typeof attrs.flat_damage_reduction === 'number') {
+            parts.push(`${attrs.flat_damage_reduction} flat reduction per hit`);
+        }
+
+        if (typeof attrs.ignore_physical_reduction_fraction === 'number') {
+            parts.push(`Ignores ${(attrs.ignore_physical_reduction_fraction * 100).toFixed(0)}% of physical resistances`);
+        }
+
+        if (attrs.abilities && attrs.abilities.length > 0) {
+            const display = (attrs.abilities as string[])
+                .map((a) => a.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()))
+                .join(', ');
+            parts.push(`Grants: ${display}`);
+        }
+
+        if (attrs.can_hit_flying) {
+            parts.push('Can hit flying targets');
+        }
+
+        if (attrs.ability_immunities && (attrs.ability_immunities as string[]).length > 0) {
+            parts.push(`Immune to: ${(attrs.ability_immunities as string[]).join(', ')}`);
+        }
+
+        if (typeof attrs.description === 'string' && attrs.description) {
+            parts.push(attrs.description);
         }
         
         if (parts.length === 0) return 'No special attributes';
