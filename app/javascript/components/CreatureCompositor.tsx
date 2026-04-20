@@ -231,6 +231,56 @@ function FishTail({ ghost }: PartProps) {
   );
 }
 
+// ── Phoenix bird legs ───────────────────────────────────────────────────────────
+// Anchored at the humanoid hip positions (back cx=90 y=262, front cx=66 y=262).
+// Reversed-knee bird leg: thigh goes down+out, lower goes back up, claws fan outward.
+function PhoenixLegBack({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="none" stroke="black" strokeLinecap="round">
+      <path d="M 90,262 L 99,310" strokeWidth="7"/>
+      <path d="M 99,310 L 108,268" strokeWidth="5"/>
+      <path d="M 108,268 L 137,264" strokeWidth="3"/>
+      <path d="M 108,268 L 135,271" strokeWidth="2"/>
+      <path d="M 108,268 L 91,275"  strokeWidth="2"/>
+    </g>
+  );
+}
+
+function PhoenixLegFront({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="none" stroke="black" strokeLinecap="round">
+      <path d="M 66,262 L 57,310" strokeWidth="7"/>
+      <path d="M 57,310 L 48,268" strokeWidth="5"/>
+      <path d="M 48,268 L 19,264" strokeWidth="3"/>
+      <path d="M 48,268 L 21,271" strokeWidth="2"/>
+      <path d="M 48,268 L 65,275"  strokeWidth="2"/>
+    </g>
+  );
+}
+
+// Apex inside the torso area — about half the tail is hidden behind the torso/waist.
+// Drawn early in the stack so legs and torso both render on top.
+function PhoenixTail({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
+      <polygon points="78,180 26,400 130,400"/>
+    </g>
+  );
+}
+
+// Drawn before head so the cranium overlaps the beak base.
+function PhoenixBeak({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
+      <polygon points="134,45 102,38 102,55"/>
+    </g>
+  );
+}
+
 // ─── ═══════════════════════ BONE PARTS ═════════════════════════ ─────────────
 // Bone parts are always tagged data-layer="bone" and are EXEMPT from ghost fade.
 // They are rendered on top of flesh parts (to be visible when ghost fades flesh).
@@ -441,12 +491,17 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   const has = (k: string) => keywords.includes(k);
 
   // ── presence flags ─────────────────────────────────────────────
+  const isHuman   = has('human');
   const isCentaur  = has('centaur');
   const isMermaid  = has('mermaid');
+  const isPhoenix  = has('phoenix');
   const isSkeleton = has('skeleton');
   const isLich     = has('lich');
   const isGhost    = has('ghost');
   const hasWings   = has('fly');
+
+  // arms are a human/centaur feature — phoenixes have wings instead
+  const usesArms = isHuman || isCentaur;
 
   // ghost affects only flesh-tagged parts
   const ghost = isGhost;
@@ -455,6 +510,10 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   // bone-mode: skeleton or lich replace flesh limbs/torso with bone equivalents
   const boneMode = isSkeleton || isLich;
 
+  // human legs are an explicit feature — suppressed by mermaid (fish tail)
+  // and phoenix (bird legs instead). Centaur always gets them as forelegs.
+  const usesHumanLegs = !isMermaid && !isPhoenix;
+
   const parts: React.ReactNode[] = [];
 
   // ── 1. Wings go behind everything (handled by viewport as <object> layers)
@@ -462,7 +521,9 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   // ── 2. Back-most elements first ───────────────────────────────
   if (!boneMode) {
-    parts.push(<HumanoidArmBack key="arm-back" layer="flesh" ghost={ghost}/>);
+    if (usesArms) {
+      parts.push(<HumanoidArmBack key="arm-back" layer="flesh" ghost={ghost}/>);
+    }
   } else {
     parts.push(<SkeletonArmBack key="arm-back-bone"/>);
   }
@@ -473,11 +534,17 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     parts.push(<HorseLeg key="horse-leg-bn" cx={27} topY={222} ghost={ghost}/>);
   }
 
+  // Phoenix tail goes before the back leg so legs render on top of it.
+  // Apex is inside the torso area; torso is drawn later and covers the top half.
+  if (isPhoenix && !boneMode) {
+    parts.push(<PhoenixTail key="phoenix-tail" layer="flesh" ghost={ghost}/>);
+  }
+
   if (!boneMode) {
-    if (isMermaid) {
-      // No back leg — tail replaces legs
-    } else {
+    if (usesHumanLegs) {
       parts.push(<HumanoidLegBack key="leg-back" layer="flesh" ghost={ghost}/>);
+    } else if (isPhoenix) {
+      parts.push(<PhoenixLegBack key="bird-leg-back" layer="flesh" ghost={ghost}/>);
     }
   } else {
     if (!isMermaid) {
@@ -514,6 +581,10 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   }
 
   // ── 5. Head ───────────────────────────────────────────────────
+  // Phoenix beak goes before head so the cranium overlaps the beak base.
+  if (isPhoenix && !boneMode) {
+    parts.push(<PhoenixBeak key="phoenix-beak" layer="flesh" ghost={ghost}/>);
+  }
   if (boneMode) {
     parts.push(<SkeletonSkull key="skull"/>);
   } else {
@@ -528,14 +599,18 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   // ── 6. Front limbs (in front of body) ────────────────────────
   if (!boneMode) {
-    parts.push(<HumanoidArmFront key="arm-front" layer="flesh" ghost={ghost}/>);
+    if (usesArms) {
+      parts.push(<HumanoidArmFront key="arm-front" layer="flesh" ghost={ghost}/>);
+    }
   } else {
     parts.push(<SkeletonArmFront key="arm-front-bone"/>);
   }
 
   if (!boneMode) {
-    if (!isMermaid) {
+    if (usesHumanLegs) {
       parts.push(<HumanoidLegFront key="leg-front" layer="flesh" ghost={ghost}/>);
+    } else if (isPhoenix) {
+      parts.push(<PhoenixLegFront key="bird-leg-front" layer="flesh" ghost={ghost}/>);
     }
   } else {
     if (!isMermaid) {
@@ -550,9 +625,9 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   return {
     parts,
-    viewBox: isMermaid ? '-30 0 220 460' : isCentaur ? '0 0 160 405' : '0 0 160 420',
-    width:   isMermaid ? 190 : 160,
-    height:  isMermaid ? 460 : isCentaur ? 405 : 420,
+    viewBox: isMermaid ? '-30 0 220 460' : isCentaur ? '0 0 160 405' : isPhoenix ? '-20 0 200 360' : '0 0 160 420',
+    width:   isMermaid ? 190 : isPhoenix ? 180 : 160,
+    height:  isMermaid ? 460 : isCentaur ? 405 : isPhoenix ? 360 : 420,
     hasWings,
   };
 }

@@ -220,7 +220,7 @@ const CREATURE_SVG: Record<string, string> = {
 // Keywords handled by the compositor (inline SVG assembly)
 const COMPOSITOR_KEYWORDS = new Set([
   'human', 'golem', 'vampire', 'giant', 'goblin', 'troll', 'zombie', 'werewolf', 'minotaur',
-  'centaur', 'skeleton', 'lich', 'ghost', 'mermaid',
+  'centaur', 'skeleton', 'lich', 'ghost', 'mermaid', 'phoenix',
 ]);
 
 function usesCompositor(selected: string[]): boolean {
