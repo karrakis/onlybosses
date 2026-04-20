@@ -245,6 +245,63 @@ function HorseTail({ ghost }: PartProps) {
   );
 }
 
+// ── Bone centaur parts ──────────────────────────────────────────────────────────────
+// The horse barrel is replaced by an open ribcage + spine + pelvis basin.
+// The back two legs become double-drawn dark bone shafts with knob joints.
+
+function HorseRibcage() {
+  // Horse spine runs from the withers (junction with human torso, ~x=90,y=152)
+  // to the croup (~x=16,y=175). Six rib pairs fan out from it.
+  return (
+    <g data-layer="bone" fill="none" stroke="#ccc" strokeLinecap="round">
+      {/* Spine */}
+      <path d="M 90,152 C 70,148 40,155 16,172" strokeWidth="3" strokeDasharray="3,4"/>
+      {/* Ribs — right side (back of horse) */}
+      <path d="M 72,152 C 75,162 78,178 76,192" strokeWidth="2"/>
+      <path d="M 58,154 C 62,165 65,182 62,198" strokeWidth="2"/>
+      <path d="M 44,158 C 49,169 52,186 48,202" strokeWidth="2"/>
+      <path d="M 32,163 C 37,174 38,190 34,204" strokeWidth="1.5"/>
+      <path d="M 22,169 C 26,179 26,193 22,206" strokeWidth="1.5"/>
+      {/* Ribs — left side (belly of horse) */}
+      <path d="M 72,152 C 68,162 66,178 68,192" strokeWidth="1.5"/>
+      <path d="M 58,154 C 53,165 51,182 54,198" strokeWidth="1.5"/>
+      <path d="M 44,158 C 38,169 36,186 40,202" strokeWidth="1.5"/>
+      <path d="M 32,163 C 26,173 24,188 28,202" strokeWidth="1.2"/>
+      <path d="M 22,169 C 16,178 14,191 18,204" strokeWidth="1.2"/>
+      {/* Sternum bar */}
+      <path d="M 68,192 C 56,197 42,200 26,204" strokeWidth="2.5"/>
+    </g>
+  );
+}
+
+function HorsePelvis() {
+  // Basin centred around the croup/rump where back legs attach (~x=33 y=224).
+  return (
+    <g data-layer="bone" fill="#555" stroke="black" strokeWidth="1.8">
+      <path d="M 52,215 C 44,210 26,212 18,218 C 12,224 14,234 20,240
+               L 26,250 C 30,258 38,260 44,254 C 48,262 56,264 60,258
+               C 66,252 62,240 56,232 C 60,224 58,218 52,215 Z"/>
+    </g>
+  );
+}
+
+// Bone replacement for HorseLeg: dark double-drawn shaft + knob joints + hoof cap.
+function HorseLegBone({ cx, topY }: { cx: number; topY: number }) {
+  const kneeY = topY + 76;
+  const hoofY = topY + 152;
+  return (
+    <g data-layer="bone" strokeLinecap="round">
+      <line x1={cx}     y1={topY}   x2={cx - 2} y2={kneeY} stroke="black" strokeWidth="11"/>
+      <line x1={cx}     y1={topY}   x2={cx - 2} y2={kneeY} stroke="#666"  strokeWidth="7"/>
+      <line x1={cx - 2} y1={kneeY} x2={cx}     y2={hoofY} stroke="black" strokeWidth="9"/>
+      <line x1={cx - 2} y1={kneeY} x2={cx}     y2={hoofY} stroke="#666"  strokeWidth="5.5"/>
+      <line x1={cx - 6} y1={hoofY - 2} x2={cx + 6} y2={hoofY} stroke="#333" strokeWidth="9" />
+      <circle cx={cx - 2} cy={kneeY} r={6}   fill="#555" stroke="black" strokeWidth="1.5"/>
+      <circle cx={cx}     cy={topY}  r={5}   fill="#555" stroke="black" strokeWidth="1.5"/>
+    </g>
+  );
+}
+
 // ── Fish tail (mermaid) ───────────────────────────────────────────────────────
 function FishTail({ ghost }: PartProps) {
   return (
@@ -832,9 +889,15 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   }
 
   if (isCentaur) {
-    parts.push(<HorseTail key="horse-tail" layer="flesh" ghost={ghost}/>);
-    parts.push(<HorseLeg key="horse-leg-br" cx={38} topY={224} ghost={ghost}/>);
-    parts.push(<HorseLeg key="horse-leg-bn" cx={27} topY={222} ghost={ghost}/>);
+    if (boneMode) {
+      parts.push(<HorseTail key="horse-tail" layer="flesh" ghost={ghost}/>);
+      parts.push(<HorseLegBone key="horse-leg-br" cx={38} topY={224}/>);
+      parts.push(<HorseLegBone key="horse-leg-bn" cx={27} topY={222}/>);
+    } else {
+      parts.push(<HorseTail key="horse-tail" layer="flesh" ghost={ghost}/>);
+      parts.push(<HorseLeg key="horse-leg-br" cx={38} topY={224} ghost={ghost}/>);
+      parts.push(<HorseLeg key="horse-leg-bn" cx={27} topY={222} ghost={ghost}/>);
+    }
   }
 
   // Phoenix tail goes before the back leg so legs render on top of it.
@@ -875,7 +938,11 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     parts.push(<SpiderBody  key="spider-body"  ghost={ghost}/>);
     parts.push(<SpiderHairs key="spider-hairs" ghost={ghost}/>);
   } else if (isCentaur) {
-    parts.push(<HorseBarrel key="horse-barrel" layer="flesh" ghost={ghost}/>);
+    // In bone mode the barrel is suppressed (bones replace flesh entirely).
+    // Ghost overrides this: the faded barrel silhouette is a desirable effect.
+    if (!boneMode || ghost) {
+      parts.push(<HorseBarrel key="horse-barrel" layer="flesh" ghost={ghost}/>);
+    }
     if (!boneMode) {
       parts.push(<UprightTorso key="torso" layer="flesh" ghost={ghost}/>);
     }
@@ -889,6 +956,10 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   //        always in the foreground (centaur lich/skeleton fix) ────────────
   // boneSpider: ribcage/pelvis still render over the humanoid torso.
   if (boneMode) {
+    if (isCentaur) {
+      parts.push(<HorseRibcage key="horse-ribcage"/>);
+      parts.push(<HorsePelvis key="horse-pelvis"/>);
+    }
     parts.push(<SkeletonRibcage key="ribcage"/>);
     parts.push(<SkeletonPelvis key="pelvis"/>);
     if (isLich) {
