@@ -288,12 +288,21 @@ function PhoenixLegFront({ ghost }: PartProps) {
 }
 
 // Apex inside the torso area — about half the tail is hidden behind the torso/waist.
+// A clipPath at y=258 (bottom of the waist band) hard-clips the top so the apex
+// never becomes visible when the torso ghosts out.
 // Drawn early in the stack so legs and torso both render on top.
 function PhoenixTail({ ghost }: PartProps) {
   return (
-    <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
-      <polygon points="78,180 26,400 130,400"/>
+    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+      <defs>
+        <clipPath id="cc-tailClip">
+          {/* Allow everything from the waist-band bottom downward */}
+          <rect x="-50" y="258" width="300" height="200"/>
+        </clipPath>
+      </defs>
+      <polygon points="78,180 26,400 130,400"
+               fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round"
+               clipPath="url(#cc-tailClip)"/>
     </g>
   );
 }
@@ -539,6 +548,150 @@ function PhoenixFlames() {
   );
 }
 
+// ─── Giant Spider ────────────────────────────────────────────────────────────
+// All spider parts use a nested inner transform that, combined with the
+// compositor's outer translate(160,0) scale(-1,1), reproduces the original
+// standalone SVG's translate(174,-64) scale(-1.2,1.2) exactly.
+// This lets us copy original-SVG coordinates directly into path data.
+const SPIDER_T = 'translate(-14,-64) scale(1.2,1.2)';
+
+function SpiderLegs({ ghost }: { ghost?: boolean }) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+      <g transform={SPIDER_T} fill="none" strokeLinecap="round">
+        {/* Black outlines */}
+        <g stroke="black">
+          <path d="M 100,158 L 156,112" strokeWidth="12"/>
+          <path d="M 156,112 L 200, 62" strokeWidth="8"/>
+          <path d="M 104,178 L 164,158" strokeWidth="12"/>
+          <path d="M 164,158 L 184,126" strokeWidth="8"/>
+          <path d="M 106,208 L 162,228" strokeWidth="12"/>
+          <path d="M 162,228 L 181,256" strokeWidth="8"/>
+          <path d="M  99,250 L 153,282" strokeWidth="12"/>
+          <path d="M 153,282 L 172,306" strokeWidth="8"/>
+          <path d="M  56,158 L   0,112" strokeWidth="12"/>
+          <path d="M   0,112 L -44, 62" strokeWidth="8"/>
+          <path d="M  52,178 L  -8,158" strokeWidth="12"/>
+          <path d="M  -8,158 L -28,126" strokeWidth="8"/>
+          <path d="M  50,208 L  -6,228" strokeWidth="12"/>
+          <path d="M  -6,228 L -25,256" strokeWidth="8"/>
+          <path d="M  57,250 L   3,282" strokeWidth="12"/>
+          <path d="M   3,282 L -16,306" strokeWidth="8"/>
+        </g>
+        {/* White fills */}
+        <g stroke="white">
+          <path d="M 100,158 L 156,112" strokeWidth="10"/>
+          <path d="M 156,112 L 200, 62" strokeWidth="6"/>
+          <path d="M 104,178 L 164,158" strokeWidth="10"/>
+          <path d="M 164,158 L 184,126" strokeWidth="6"/>
+          <path d="M 106,208 L 162,228" strokeWidth="10"/>
+          <path d="M 162,228 L 181,256" strokeWidth="6"/>
+          <path d="M  99,250 L 153,282" strokeWidth="10"/>
+          <path d="M 153,282 L 172,306" strokeWidth="6"/>
+          <path d="M  56,158 L   0,112" strokeWidth="10"/>
+          <path d="M   0,112 L -44, 62" strokeWidth="6"/>
+          <path d="M  52,178 L  -8,158" strokeWidth="10"/>
+          <path d="M  -8,158 L -28,126" strokeWidth="6"/>
+          <path d="M  50,208 L  -6,228" strokeWidth="10"/>
+          <path d="M  -6,228 L -25,256" strokeWidth="6"/>
+          <path d="M  57,250 L   3,282" strokeWidth="10"/>
+          <path d="M   3,282 L -16,306" strokeWidth="6"/>
+        </g>
+      </g>
+    </g>
+  );
+}
+
+function SpiderBody({ ghost }: { ghost?: boolean }) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+      <g transform={SPIDER_T} fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
+        <ellipse cx="78" cy="118" rx="21" ry="20"/>
+        <path d="M 78,130 C 120,132 107,292 78,295 C 49,292 36,132 78,130 Z"/>
+      </g>
+    </g>
+  );
+}
+
+// Fine single-pixel hairs distributed around the body and head perimeter.
+function SpiderHairs({ ghost }: { ghost?: boolean }) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+      <g transform={SPIDER_T} fill="none" stroke="black" strokeWidth="1" strokeLinecap="round">
+        {/* Head */}
+        <line x1="78"  y1="98"  x2="78"  y2="91" />
+        <line x1="93"  y1="103" x2="97"  y2="97" />
+        <line x1="63"  y1="103" x2="59"  y2="97" />
+        <line x1="99"  y1="118" x2="106" y2="116"/>
+        <line x1="57"  y1="118" x2="50"  y2="116"/>
+        {/* Body top */}
+        <line x1="78"  y1="130" x2="78"  y2="123"/>
+        <line x1="90"  y1="131" x2="93"  y2="124"/>
+        <line x1="66"  y1="131" x2="63"  y2="124"/>
+        {/* Body right side */}
+        <line x1="120" y1="145" x2="126" y2="143"/>
+        <line x1="121" y1="162" x2="128" y2="160"/>
+        <line x1="122" y1="180" x2="129" y2="178"/>
+        <line x1="123" y1="198" x2="130" y2="196"/>
+        <line x1="122" y1="215" x2="129" y2="213"/>
+        <line x1="120" y1="232" x2="127" y2="230"/>
+        <line x1="116" y1="250" x2="122" y2="248"/>
+        <line x1="109" y1="265" x2="115" y2="263"/>
+        <line x1="100" y1="278" x2="105" y2="276"/>
+        {/* Body left side */}
+        <line x1="36"  y1="145" x2="30"  y2="143"/>
+        <line x1="35"  y1="162" x2="28"  y2="160"/>
+        <line x1="34"  y1="180" x2="27"  y2="178"/>
+        <line x1="33"  y1="198" x2="26"  y2="196"/>
+        <line x1="34"  y1="215" x2="27"  y2="213"/>
+        <line x1="36"  y1="232" x2="29"  y2="230"/>
+        <line x1="40"  y1="250" x2="33"  y2="248"/>
+        <line x1="47"  y1="265" x2="40"  y2="263"/>
+        <line x1="56"  y1="278" x2="50"  y2="276"/>
+        {/* Body bottom */}
+        <line x1="78"  y1="295" x2="78"  y2="302"/>
+        <line x1="89"  y1="293" x2="92"  y2="299"/>
+        <line x1="67"  y1="293" x2="64"  y2="299"/>
+      </g>
+    </g>
+  );
+}
+
+// 8 eyes arranged in two arcs on the head — top arc + bottom arc.
+function SpiderEyes({ ghost }: { ghost?: boolean }) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+      <g transform={SPIDER_T}>
+        <circle cx="65" cy="112" r="2.5" fill="black" stroke="none"/>
+        <circle cx="73" cy="108" r="2.5" fill="black" stroke="none"/>
+        <circle cx="83" cy="108" r="2.5" fill="black" stroke="none"/>
+        <circle cx="91" cy="112" r="2.5" fill="black" stroke="none"/>
+        <circle cx="66" cy="123" r="2.5" fill="black" stroke="none"/>
+        <circle cx="74" cy="120" r="2.5" fill="black" stroke="none"/>
+        <circle cx="82" cy="120" r="2.5" fill="black" stroke="none"/>
+        <circle cx="90" cy="123" r="2.5" fill="black" stroke="none"/>
+      </g>
+    </g>
+  );
+}
+
+function SpiderJoints({ ghost }: { ghost?: boolean }) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+      <g transform={SPIDER_T}>
+        <circle cx="156" cy="112" r="6" fill="black" stroke="none"/>
+        <circle cx="164" cy="158" r="6" fill="black" stroke="none"/>
+        <circle cx="162" cy="228" r="6" fill="black" stroke="none"/>
+        <circle cx="153" cy="282" r="6" fill="black" stroke="none"/>
+        <circle cx="0"   cy="112" r="6" fill="black" stroke="none"/>
+        <circle cx="-8"  cy="158" r="6" fill="black" stroke="none"/>
+        <circle cx="-6"  cy="228" r="6" fill="black" stroke="none"/>
+        <circle cx="3"   cy="282" r="6" fill="black" stroke="none"/>
+      </g>
+    </g>
+  );
+}
+
 // ─── ═══════════════════════ WING PARTS ═════════════════════════ ─────────────
 // Wings are rendered as <object> layers in the viewport, not inline SVG.
 // This component exists only so the compositor can signal "include wings".
@@ -571,13 +724,14 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   const isCentaur  = has('centaur');
   const isMermaid  = has('mermaid');
   const isPhoenix  = has('phoenix');
+  const isSpider   = has('giant_spider');
   const isSkeleton = has('skeleton');
   const isLich     = has('lich');
   const isGhost    = has('ghost');
   const hasWings   = has('fly');
 
-  // arms are a human/centaur feature — phoenixes have wings instead
-  const usesArms = isHuman || isCentaur;
+  // arms are a human/centaur feature — phoenixes and spiders don't have arms
+  const usesArms = (isHuman || isCentaur) && !isSpider;
 
   // ghost affects only flesh-tagged parts
   const ghost = isGhost;
@@ -586,9 +740,9 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   // bone-mode: skeleton or lich replace flesh limbs/torso with bone equivalents
   const boneMode = isSkeleton || isLich;
 
-  // human legs are an explicit feature — suppressed by mermaid (fish tail)
-  // and phoenix (bird legs instead). Centaur always gets them as forelegs.
-  const usesHumanLegs = !isMermaid && !isPhoenix;
+  // human legs are an explicit feature — suppressed by mermaid (fish tail),
+  // phoenix (bird legs instead), and spider (8 spider legs instead).
+  const usesHumanLegs = !isMermaid && !isPhoenix && !isSpider;
 
   const parts: React.ReactNode[] = [];
 
@@ -600,7 +754,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     if (usesArms) {
       parts.push(<HumanoidArmBack key="arm-back" layer="flesh" ghost={ghost}/>);
     }
-  } else {
+  } else if (!isSpider) {
     parts.push(<SkeletonArmBack key="arm-back-bone"/>);
   }
 
@@ -619,13 +773,13 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   if (!boneMode) {
     if (usesHumanLegs) {
       parts.push(<HumanoidLegBack key="leg-back" layer="flesh" ghost={ghost}/>);
-    } else if (isPhoenix) {
+    } else if (isPhoenix && !isSpider) {
+      // For spider+phoenix the back leg is deferred to section 6 so it renders
+      // in front of the spider abdomen, not behind it.
       parts.push(<PhoenixLegBack key="bird-leg-back" layer="flesh" ghost={ghost}/>);
     }
-  } else {
-    if (!isMermaid) {
-      parts.push(<SkeletonLegBack key="leg-back-bone"/>);
-    }
+  } else if (!isMermaid && !isSpider) {
+    parts.push(<SkeletonLegBack key="leg-back-bone"/>);
   }
 
   // ── 3. Ribcage / pelvis drawn under torso (visible through ghost torso) ──
@@ -635,6 +789,14 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   // ── 4. Main body ──────────────────────────────────────────────
   if (isMermaid) {
     parts.push(<FishTail key="fish-tail" layer="flesh" ghost={ghost}/>);
+  } else if (isSpider) {
+    // Draw order: horse barrel (if centaur) → legs (over barrel) → abdomen (covers leg roots).
+    if (isCentaur) {
+      parts.push(<HorseBarrel key="horse-barrel" layer="flesh" ghost={ghost}/>);
+    }
+    parts.push(<SpiderLegs  key="spider-legs"  ghost={ghost}/>);
+    parts.push(<SpiderBody  key="spider-body"  ghost={ghost}/>);
+    parts.push(<SpiderHairs key="spider-hairs" ghost={ghost}/>);
   } else if (isCentaur) {
     parts.push(<HorseBarrel key="horse-barrel" layer="flesh" ghost={ghost}/>);
     if (!boneMode) {
@@ -648,7 +810,8 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   // ── 4b. Skeleton internals — rendered AFTER horse barrel so they are
   //        always in the foreground (centaur lich/skeleton fix) ────────────
-  if (boneMode) {
+  // Not applied to spider: spider body has no humanoid ribcage.
+  if (boneMode && !isSpider) {
     parts.push(<SkeletonRibcage key="ribcage"/>);
     parts.push(<SkeletonPelvis key="pelvis"/>);
     if (isLich) {
@@ -658,10 +821,14 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   // ── 5. Head ───────────────────────────────────────────────────
   // Phoenix beak goes before head so the cranium overlaps the beak base.
-  if (isPhoenix && !boneMode) {
+  if (isPhoenix && !boneMode && !isSpider) {
     parts.push(<PhoenixBeak key="phoenix-beak" layer="flesh" ghost={ghost}/>);
   }
-  if (boneMode) {
+  if (isSpider) {
+    // SpiderBody already contains the head ellipse; only add eyes and joints.
+    parts.push(<SpiderEyes   key="spider-eyes"   ghost={ghost}/>);
+    parts.push(<SpiderJoints key="spider-joints" ghost={ghost}/>);
+  } else if (boneMode) {
     parts.push(<SkeletonSkull key="skull"/>);
   } else {
     parts.push(<HumanoidHead key="head" layer="flesh" ghost={ghost}/>);
@@ -678,7 +845,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     if (usesArms) {
       parts.push(<HumanoidArmFront key="arm-front" layer="flesh" ghost={ghost}/>);
     }
-  } else {
+  } else if (!isSpider) {
     parts.push(<SkeletonArmFront key="arm-front-bone"/>);
   }
 
@@ -686,16 +853,18 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     if (usesHumanLegs) {
       parts.push(<HumanoidLegFront key="leg-front" layer="flesh" ghost={ghost}/>);
     } else if (isPhoenix) {
+      if (isSpider) {
+        // Both bird legs deferred here so they render in front of spider abdomen.
+        parts.push(<PhoenixLegBack  key="bird-leg-back"  layer="flesh" ghost={ghost}/>);
+      }
       parts.push(<PhoenixLegFront key="bird-leg-front" layer="flesh" ghost={ghost}/>);
     }
-  } else {
-    if (!isMermaid) {
-      parts.push(<SkeletonLegFront key="leg-front-bone"/>);
-    }
+  } else if (!isMermaid && !isSpider) {
+    parts.push(<SkeletonLegFront key="leg-front-bone"/>);
   }
 
   // ── 7. Joint knobs always last ────────────────────────────────
-  if (boneMode) {
+  if (boneMode && !isSpider) {
     parts.push(<SkeletonJointKnobs key="joint-knobs" includeHips={!isMermaid}/>);
   }
 
@@ -706,9 +875,9 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   return {
     parts,
-    viewBox: isMermaid ? '-30 0 220 460' : isCentaur ? '0 0 160 405' : isPhoenix ? '-20 -30 200 450' : '0 0 160 420',
-    width:   isMermaid ? 190 : isPhoenix ? 180 : 160,
-    height:  isMermaid ? 460 : isCentaur ? 405 : isPhoenix ? 405 : 420,
+    viewBox: isMermaid ? '-30 0 220 460' : isSpider ? '-70 0 310 330' : isCentaur ? '0 0 160 405' : isPhoenix ? '-20 -30 200 450' : '0 0 160 420',
+    width:   isMermaid ? 190 : isSpider ? 260 : isPhoenix ? 180 : 160,
+    height:  isMermaid ? 460 : isSpider ? 280 : isCentaur ? 405 : isPhoenix ? 405 : 420,
     hasWings,
   };
 }
