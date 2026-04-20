@@ -52,6 +52,33 @@ const COMPOSITOR_CSS = `
 .ghost-flesh { animation: ghost-fade 3s ease-in-out infinite; }
 .eye-orb     { animation: eye-grow  2.2s ease-in-out infinite; }
 .eye-glow    { animation: eye-pulse 2.2s ease-in-out infinite; }
+@keyframes phoenix-glow {
+  0%,100% { filter: drop-shadow(0 0 4px #ff5500) drop-shadow(0 0 10px #cc2200); }
+  50%     { filter: drop-shadow(0 0 15px #ff8800) drop-shadow(0 0 30px #ff3300); }
+}
+.phoenix-on-fire { animation: phoenix-glow 1.8s ease-in-out infinite; }
+@keyframes flame-a {
+  0%,100% { transform: translateY(0)    rotate(-3deg); opacity: 0.9; }
+  50%     { transform: translateY(-6px) rotate( 4deg); opacity: 0.7; }
+}
+@keyframes flame-b {
+  0%,100% { transform: translateY(0)    rotate( 4deg); opacity: 0.85; }
+  50%     { transform: translateY(-9px) rotate(-4deg); opacity: 0.65; }
+}
+@keyframes flame-c {
+  0%,100% { transform: translateY(0)    rotate(-5deg); opacity: 0.8; }
+  50%     { transform: translateY(-5px) rotate( 6deg); opacity: 0.9; }
+}
+.flame-a { animation: flame-a 0.45s ease-in-out infinite;        transform-box: fill-box; transform-origin: bottom center; }
+.flame-b { animation: flame-b 0.65s ease-in-out 0.15s infinite;  transform-box: fill-box; transform-origin: bottom center; }
+.flame-c { animation: flame-c 0.55s ease-in-out 0.30s infinite;  transform-box: fill-box; transform-origin: bottom center; }
+@keyframes smoke-rise {
+  0%   { transform: translateY(0);     opacity: 0.28; }
+  100% { transform: translateY(-80px); opacity: 0;    }
+}
+.smoke-a { animation: smoke-rise 2.5s ease-out infinite; }
+.smoke-b { animation: smoke-rise 2.5s ease-out 0.83s infinite; }
+.smoke-c { animation: smoke-rise 2.5s ease-out 1.67s infinite; }
 `;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -463,6 +490,55 @@ function LichEyes() {
   );
 }
 
+// ─── Phoenix flames ── rendered on top of all body parts ────────────────────
+// One flame gradient + smoke blur filter shared across all tongues.
+// Flame paths: base sits on the body contour, tip points toward lower y (up).
+function PhoenixFlames() {
+  return (
+    <g data-layer="ethereal">
+      <defs>
+        <linearGradient id="cc-flameGrad" x1="0" y1="1" x2="0" y2="0" gradientUnits="objectBoundingBox">
+          <stop offset="0%"   stopColor="#ff3300" stopOpacity="0.9"/>
+          <stop offset="50%"  stopColor="#ff8800" stopOpacity="0.7"/>
+          <stop offset="100%" stopColor="#ffee55" stopOpacity="0"/>
+        </linearGradient>
+        <filter id="cc-smokeBlur"><feGaussianBlur stdDeviation="5"/></filter>
+      </defs>
+
+      {/* ── Head crown ── */}
+      <path className="flame-b" d="M 73,23 C 71,8 76,-11 78,-17 C 80,-11 85,8 83,23 Z"   fill="url(#cc-flameGrad)"/>
+      <path className="flame-a" d="M 62,28 C 60,15 64,-1 66,-7   C 68,-1 72,15 70,28 Z"  fill="url(#cc-flameGrad)"/>
+      <path className="flame-c" d="M 86,28 C 84,15 88,-1 90,-7   C 92,-1 96,15 94,28 Z"  fill="url(#cc-flameGrad)"/>
+
+      {/* ── Shoulders ── */}
+      <path className="flame-a" d="M 109,88 C 107,78 111,68 114,62 C 117,68 121,78 119,88 Z" fill="url(#cc-flameGrad)"/>
+      <path className="flame-c" d="M 103,84 C 101,76 104,70 107,64 C 110,70 113,76 111,84 Z" fill="url(#cc-flameGrad)"/>
+      <path className="flame-b" d="M 37,88 C 35,78 39,68 42,62   C 45,68 49,78 47,88 Z"     fill="url(#cc-flameGrad)"/>
+      <path className="flame-a" d="M 45,84 C 43,76 46,70 49,64   C 52,70 55,76 53,84 Z"     fill="url(#cc-flameGrad)"/>
+
+      {/* ── Torso sides ── */}
+      <path className="flame-b" d="M 117,200 C 115,190 118,178 122,172 C 126,178 129,190 127,200 Z" fill="url(#cc-flameGrad)"/>
+      <path className="flame-a" d="M 29,200 C 27,190 30,178 34,172   C 38,178 41,190 39,200 Z"   fill="url(#cc-flameGrad)"/>
+
+      {/* ── Hip / waist ── */}
+      <path className="flame-c" d="M 100,270 C 98,262 101,254 104,248 C 107,254 110,262 108,270 Z" fill="url(#cc-flameGrad)"/>
+      <path className="flame-a" d="M 48,270 C 46,262 49,254 52,248   C 55,254 58,262 56,270 Z"   fill="url(#cc-flameGrad)"/>
+
+      {/* ── Tail tip ── */}
+      <path className="flame-b" d="M 72,400 C 70,387 74,372 78,365   C 82,372 86,387 84,400 Z"    fill="url(#cc-flameGrad)"/>
+      <path className="flame-a" d="M 53,395 C 51,383 54,371 58,365   C 62,371 65,383 63,395 Z"    fill="url(#cc-flameGrad)"/>
+      <path className="flame-c" d="M 93,395 C 91,383 94,371 98,365   C 102,371 105,383 103,395 Z" fill="url(#cc-flameGrad)"/>
+      <path className="flame-c" d="M 36,385 C 34,374 37,366 40,360   C 43,366 46,374 44,385 Z"    fill="url(#cc-flameGrad)"/>
+      <path className="flame-a" d="M 112,385 C 110,374 113,366 116,360 C 119,366 122,374 120,385 Z" fill="url(#cc-flameGrad)"/>
+
+      {/* ── Smoke rising above head ── */}
+      <circle className="smoke-a" cx="76" cy="-18" r="11" fill="#999" filter="url(#cc-smokeBlur)"/>
+      <circle className="smoke-b" cx="84" cy="-22" r="9"  fill="#aaa" filter="url(#cc-smokeBlur)"/>
+      <circle className="smoke-c" cx="70" cy="-20" r="8"  fill="#888" filter="url(#cc-smokeBlur)"/>
+    </g>
+  );
+}
+
 // ─── ═══════════════════════ WING PARTS ═════════════════════════ ─────────────
 // Wings are rendered as <object> layers in the viewport, not inline SVG.
 // This component exists only so the compositor can signal "include wings".
@@ -623,11 +699,16 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     parts.push(<SkeletonJointKnobs key="joint-knobs" includeHips={!isMermaid}/>);
   }
 
+  // ── 8. Flames on top of everything ───────────────────────────
+  if (isPhoenix) {
+    parts.push(<PhoenixFlames key="phoenix-flames"/>);
+  }
+
   return {
     parts,
-    viewBox: isMermaid ? '-30 0 220 460' : isCentaur ? '0 0 160 405' : isPhoenix ? '-20 0 200 360' : '0 0 160 420',
+    viewBox: isMermaid ? '-30 0 220 460' : isCentaur ? '0 0 160 405' : isPhoenix ? '-20 -30 200 450' : '0 0 160 420',
     width:   isMermaid ? 190 : isPhoenix ? 180 : 160,
-    height:  isMermaid ? 460 : isCentaur ? 405 : isPhoenix ? 360 : 420,
+    height:  isMermaid ? 460 : isCentaur ? 405 : isPhoenix ? 405 : 420,
     hasWings,
   };
 }
@@ -652,6 +733,7 @@ export default function CreatureCompositor({ keywords, animStyle = {} }: Creatur
   }, []);
 
   const { parts, viewBox, width, height } = compositeCreature(keywords);
+  const isOnFire = keywords.includes('phoenix');
 
   return (
     <svg
@@ -661,7 +743,7 @@ export default function CreatureCompositor({ keywords, animStyle = {} }: Creatur
       height={height}
       style={{ overflow: 'visible', ...animStyle }}
     >
-      <g transform="translate(160,0) scale(-1,1)">
+      <g transform="translate(160,0) scale(-1,1)" className={isOnFire ? 'phoenix-on-fire' : undefined}>
         {parts}
       </g>
     </svg>
