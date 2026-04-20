@@ -197,7 +197,6 @@ const HUMANOID_CREATURES = new Set([
 ]);
 
 // Creatures with their own dedicated base SVG
-const HARPY_SVG        = '/assets/keywords/harpy.svg';
 const GHOST_SVG        = '/assets/keywords/ghost.svg';
 const SKELETON_SVG     = '/assets/keywords/skeleton.svg';
 const LICH_SVG         = '/assets/keywords/lich.svg';
@@ -208,7 +207,6 @@ const GIANT_SPIDER_SVG = '/assets/keywords/giant_spider.svg';
 // Creatures with their own dedicated base SVG
 const CREATURE_SVG: Record<string, string> = {
   phoenix:      PHOENIX_SVG,
-  harpy:        HARPY_SVG,
   ghost:        GHOST_SVG,
   skeleton:     SKELETON_SVG,
   lich:         LICH_SVG,
@@ -220,7 +218,7 @@ const CREATURE_SVG: Record<string, string> = {
 // Keywords handled by the compositor (inline SVG assembly)
 const COMPOSITOR_KEYWORDS = new Set([
   'human', 'golem', 'vampire', 'giant', 'goblin', 'troll', 'zombie', 'werewolf', 'minotaur',
-  'centaur', 'skeleton', 'lich', 'ghost', 'mermaid', 'phoenix', 'giant_spider',
+  'centaur', 'skeleton', 'lich', 'ghost', 'mermaid', 'phoenix', 'giant_spider', 'harpy', 'giant_rat', 'giant_snake',
 ]);
 
 function usesCompositor(selected: string[]): boolean {

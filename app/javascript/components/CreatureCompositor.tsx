@@ -197,10 +197,10 @@ function HumanoidLegFront({ ghost }: PartProps) {
 }
 
 // ── Horse barrel ──────────────────────────────────────────────────────────────
-function HorseBarrel({ ghost }: PartProps) {
+function HorseBarrel({ ghost, fill = 'white' }: PartProps & { fill?: string }) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill="white" stroke="black" stroke-width="2">
+       fill={fill} stroke="black" stroke-width="2">
       <path d="M 90,152 C 84,136 65,128 42,130
                C 22,132 8,148 8,172 C 8,200 18,222 38,228
                C 56,232 78,228 90,220 C 96,210 96,168 90,152 Z"/>
@@ -212,20 +212,20 @@ function HorseBarrel({ ghost }: PartProps) {
 }
 
 // ── Horse legs ────────────────────────────────────────────────────────────────
-function HorseLeg({ cx, topY, ghost }: { cx: number; topY: number; ghost?: boolean }) {
+function HorseLeg({ cx, topY, ghost, fill = 'white' }: { cx: number; topY: number; ghost?: boolean; fill?: string }) {
   const kneeY = topY + 76;
   const hoofY = topY + 152;
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill="white" stroke="black" stroke-width="2">
+       fill={fill} stroke="black" stroke-width="2">
       <line x1={cx} y1={topY}   x2={cx - 2} y2={kneeY} stroke="black" strokeWidth="10" strokeLinecap="round"/>
-      <line x1={cx} y1={topY}   x2={cx - 2} y2={kneeY} stroke="white" strokeWidth="6"  strokeLinecap="round"/>
+      <line x1={cx} y1={topY}   x2={cx - 2} y2={kneeY} stroke={fill}  strokeWidth="6"  strokeLinecap="round"/>
       <line x1={cx - 2} y1={kneeY} x2={cx}  y2={hoofY} stroke="black" strokeWidth="8"  strokeLinecap="round"/>
-      <line x1={cx - 2} y1={kneeY} x2={cx}  y2={hoofY} stroke="white" strokeWidth="4.5" strokeLinecap="round"/>
+      <line x1={cx - 2} y1={kneeY} x2={cx}  y2={hoofY} stroke={fill}  strokeWidth="4.5" strokeLinecap="round"/>
       {/* hoof */}
       <line x1={cx - 6} y1={hoofY - 2} x2={cx + 6} y2={hoofY} stroke="#333" strokeWidth="9" strokeLinecap="round"/>
       {/* knee knob */}
-      <circle cx={cx - 2} cy={kneeY} r="5.5" fill="white" stroke="black" strokeWidth="1.5"/>
+      <circle cx={cx - 2} cy={kneeY} r="5.5" fill={fill} stroke="black" strokeWidth="1.5"/>
     </g>
   );
 }
@@ -234,13 +234,13 @@ function HorseLeg({ cx, topY, ghost }: { cx: number; topY: number; ghost?: boole
 function HorseTail({ ghost }: PartProps) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill="none" stroke="black" strokeLinecap="round">
+       fill="none" strokeLinecap="round">
       <path d="M 11,176 C 3,190 2,212 6,232 C 10,246 15,255 11,268 C 8,278 4,284 4,294"
-            strokeWidth="7"/>
+            stroke="black" strokeWidth="7"/>
       <path d="M 14,178 C 8,192 8,212 12,228 C 16,240 21,248 18,260 C 15,269 11,276 12,284"
-            strokeWidth="4"/>
+            stroke="black" strokeWidth="4"/>
       <path d="M 17,180 C 12,195 13,213 16,228 C 19,238 22,244 20,255"
-            strokeWidth="2.5"/>
+            stroke="black" strokeWidth="2.5"/>
     </g>
   );
 }
@@ -378,6 +378,149 @@ function PhoenixBeak({ ghost }: PartProps) {
     <g data-layer="flesh" className={partClass('flesh', ghost)}
        fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
       <polygon points="134,45 102,38 102,55"/>
+    </g>
+  );
+}
+
+// ─── Harpy parts ──────────────────────────────────────────────────────────────
+
+// ── Harpy crest — five feather plumes radiating from the crown ───────────────
+// Geometry copied from feather.svg: quill/rachis + yellow barbs (base) +
+// green barbs (mid) + red barbs (tip).  One <defs> symbol reused five times
+// with rotate+scale transforms to fan them from the crown.
+// Quill pivot in feather-space: (50, 230).
+// Each entry: [rotateDeg, baseCx, baseCy, scale]
+function HarpyCrest({ ghost }: PartProps) {
+  const feathers: [number, number, number, number][] = [
+    [-25, 70, 25, 0.20],
+    [-12, 74, 21, 0.23],
+    [  0, 78, 19, 0.25],
+    [ 12, 82, 21, 0.23],
+    [ 25, 86, 25, 0.20],
+  ];
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+      <defs>
+        <g id="cc-feather">
+          {/* Quill (calamus) */}
+          <path d="M 49,225 Q 49.2,233 50,242 Q 50.8,233 51,225 Z" fill="#c8963c"/>
+          {/* Rachis stem + highlight */}
+          <rect x="49" y="14" width="2" height="211" rx="1" fill="#8b6014"/>
+          <rect x="49.4" y="14" width="0.7" height="211" rx="0.35" fill="#d4a040" opacity="0.55"/>
+          {/* Yellow barbs — base zone */}
+          <g stroke="#f5c800" strokeWidth="0.9" fill="none" strokeLinecap="round">
+            <path d="M 50,215 C 56,207 66,218 72,218"/>
+            <path d="M 50,215 C 44,207 34,218 28,218"/>
+            <path d="M 50,205 C 57,196 67,206 75,208"/>
+            <path d="M 50,205 C 43,196 33,206 25,208"/>
+            <path d="M 50,195 C 58,186 69,197 76,198"/>
+            <path d="M 50,195 C 42,186 31,197 24,198"/>
+            <path d="M 50,185 C 58,175 70,187 78,188"/>
+            <path d="M 50,185 C 42,175 30,187 22,188"/>
+            <path d="M 50,175 C 59,165 70,177 79,178"/>
+            <path d="M 50,175 C 41,165 30,177 21,178"/>
+          </g>
+          {/* Green barbs — mid zone */}
+          <g stroke="#3dba55" strokeWidth="1.1" fill="none" strokeLinecap="round">
+            <path d="M 50,165 C 59,154 71,167 80,169"/>
+            <path d="M 50,165 C 41,154 29,167 20,169"/>
+            <path d="M 50,155 C 59,144 71,157 80,159"/>
+            <path d="M 50,155 C 41,144 29,157 20,159"/>
+            <path d="M 50,145 C 59,134 71,147 80,149"/>
+            <path d="M 50,145 C 41,134 29,147 20,149"/>
+            <path d="M 50,135 C 59,125 70,137 79,138"/>
+            <path d="M 50,135 C 41,125 30,137 21,138"/>
+            <path d="M 50,125 C 58,115 69,127 77,128"/>
+            <path d="M 50,125 C 42,115 31,127 23,128"/>
+            <path d="M 50,115 C 58,106 68,117 76,118"/>
+            <path d="M 50,115 C 42,106 32,117 24,118"/>
+          </g>
+          {/* Red barbs — tip zone */}
+          <g stroke="#e53030" strokeWidth="0.8" fill="none" strokeLinecap="round">
+            <path d="M 50,105 C 57,97 67,106 74,108"/>
+            <path d="M 50,105 C 43,97 33,106 26,108"/>
+            <path d="M 50,95 C 56,88 64,96 70,97"/>
+            <path d="M 50,95 C 44,88 36,96 30,97"/>
+            <path d="M 50,85 C 55,79 63,86 68,87"/>
+            <path d="M 50,85 C 45,79 37,86 32,87"/>
+            <path d="M 50,75 C 54,70 60,76 64,77"/>
+            <path d="M 50,75 C 46,70 40,76 36,77"/>
+            <path d="M 50,65 C 53,61 57,66 60,66"/>
+            <path d="M 50,65 C 47,61 43,66 40,66"/>
+            <path d="M 50,55 C 52,53 54,55 55,56"/>
+            <path d="M 50,55 C 48,53 46,55 45,56"/>
+            <path d="M 50,45 C 51,43 53,45 54,45" strokeWidth="0.6"/>
+            <path d="M 50,45 C 49,43 47,45 46,45" strokeWidth="0.6"/>
+            <path d="M 50,35 C 51,33 52,34 52,35" strokeWidth="0.5"/>
+            <path d="M 50,35 C 49,33 48,34 48,35" strokeWidth="0.5"/>
+          </g>
+        </g>
+      </defs>
+      {feathers.map(([rot, cx, cy, s], i) => (
+        <use key={i} href="#cc-feather"
+          transform={`translate(${cx},${cy}) rotate(${rot}) scale(${s}) translate(-50,-230)`}/>
+      ))}
+    </g>
+  );
+}
+
+// ── Harpy teeth — sharp triangular fangs at the jaw line ─────────────────────
+// Flesh-only: not drawn in bone mode (SkeletonSkull has its own teeth).
+function HarpyTeeth({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="white" stroke="black" strokeWidth="0.8" strokeLinejoin="round">
+      <polygon points="70,70 73,78 76,70"/>
+      <polygon points="76,70 79,78 82,70"/>
+      <polygon points="82,70 85,78 88,70"/>
+      <polygon points="88,70 91,78 94,70"/>
+      <polygon points="94,70 97,78 100,70"/>
+    </g>
+  );
+}
+
+// ── Harpy legs — humanoid shafts with talon claws replacing the flat foot ────
+// Three forward talons + one rear talon from an ankle knob.
+function HarpyLegBack({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
+      {/* Thigh */}
+      <path d="M 83,256 C 84,270 86,295 85,330 L 98,330
+               C 99,295 100,270 100,256 Z"/>
+      {/* Shin */}
+      <path d="M 83,328 C 83,345 84,365 84,390 L 98,390
+               C 98,365 99,345 98,328 Z"/>
+      {/* Ankle knob */}
+      <circle cx="91" cy="390" r="5" fill="white" stroke="black" strokeWidth="2"/>
+      {/* Forward talons (3) */}
+      <path d="M 91,390 L 112,394 L 120,407" fill="none" stroke="black" strokeWidth="3"   strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M 91,390 L 111,404 L 116,418" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M 91,390 L 106,413 L 108,426" fill="none" stroke="black" strokeWidth="2"   strokeLinecap="round" strokeLinejoin="round"/>
+      {/* Rear talon (1) */}
+      <path d="M 91,390 L 72,394 L 64,406"   fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </g>
+  );
+}
+
+function HarpyLegFront({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
+      {/* Thigh */}
+      <path d="M 60,256 C 61,270 62,295 62,330 L 75,330
+               C 76,295 76,270 76,256 Z"/>
+      {/* Shin */}
+      <path d="M 60,328 C 60,345 60,365 60,390 L 74,390
+               C 74,365 75,345 75,328 Z"/>
+      {/* Ankle knob */}
+      <circle cx="67" cy="390" r="5" fill="white" stroke="black" strokeWidth="2"/>
+      {/* Forward talons (3) */}
+      <path d="M 67,390 L 88,394 L 96,407"   fill="none" stroke="black" strokeWidth="3"   strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M 67,390 L 87,404 L 92,418"   fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M 67,390 L 82,413 L 84,426"   fill="none" stroke="black" strokeWidth="2"   strokeLinecap="round" strokeLinejoin="round"/>
+      {/* Rear talon (1) */}
+      <path d="M 67,390 L 48,394 L 40,406"   fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
     </g>
   );
 }
@@ -542,7 +685,7 @@ function LichCrown() {
   );
 }
 
-function LichEyes() {
+function LichEyes({ eyes = [{ cx: 91, cy: 40 }, { cx: 63, cy: 40 }] }: { eyes?: { cx: number; cy: number }[] }) {
   return (
     <g data-layer="ethereal">
       <defs>
@@ -556,10 +699,12 @@ function LichEyes() {
           <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
       </defs>
-      <circle className="eye-glow" cx="91" cy="40" r="12" fill="url(#cc-eyeGlow)" stroke="none" filter="url(#cc-redBloom)"/>
-      <circle className="eye-glow" cx="63" cy="40" r="12" fill="url(#cc-eyeGlow)" stroke="none" filter="url(#cc-redBloom)"/>
-      <circle className="eye-orb"  cx="91" cy="40" r="7"  fill="#dd2222" stroke="#ff6666" strokeWidth="0.8" filter="url(#cc-redBloom)"/>
-      <circle className="eye-orb"  cx="63" cy="40" r="7"  fill="#dd2222" stroke="#ff6666" strokeWidth="0.8" filter="url(#cc-redBloom)"/>
+      {eyes.map(({ cx, cy }, i) => (
+        <g key={i}>
+          <circle className="eye-glow" cx={cx} cy={cy} r="12" fill="url(#cc-eyeGlow)" stroke="none" filter="url(#cc-redBloom)"/>
+          <circle className="eye-orb"  cx={cx} cy={cy} r="7"  fill="#dd2222" stroke="#ff6666" strokeWidth="0.8" filter="url(#cc-redBloom)"/>
+        </g>
+      ))}
     </g>
   );
 }
@@ -609,6 +754,503 @@ function PhoenixFlames() {
       <circle className="smoke-a" cx="76" cy="-18" r="11" fill="#999" filter="url(#cc-smokeBlur)"/>
       <circle className="smoke-b" cx="84" cy="-22" r="9"  fill="#aaa" filter="url(#cc-smokeBlur)"/>
       <circle className="smoke-c" cx="70" cy="-20" r="8"  fill="#888" filter="url(#cc-smokeBlur)"/>
+    </g>
+  );
+}
+
+// ─── Giant Rat ───────────────────────────────────────────────────────────────
+// Upright bipedal posture — standing on hind legs so the body occupies the
+// same canvas zone as the humanoid torso, sitting in front of wing layers.
+//
+// Draw order: RatTail → RatLegBack (hind, back one) → RatBody →
+//             RatHead → RatLegBack (hind, front one) → RatLegFront×2 (paws)
+// Standard viewBox 0 0 160 420.
+
+function RatTail({ ghost, anchorX = 20, anchorY = 250 }: PartProps & { anchorX?: number; anchorY?: number }) {
+  // Tail path authored with root at (20, 250). Translate to anchor.
+  const dx = anchorX - 20;
+  const dy = anchorY - 250;
+  const t = (x: number, y: number) => `${x + dx},${y + dy}`;
+
+  // Two curvature states: tight (curled) ↔ loose (slightly unfurled)
+  const tight = `M ${t(20,250)} C ${t(6,268)} ${t(2,298)} ${t(10,328)} C ${t(18,355)} ${t(38,366)} ${t(54,360)} C ${t(70,354)} ${t(78,332)} ${t(70,310)} C ${t(64,290)} ${t(50,282)} ${t(46,265)}`;
+  const loose  = `M ${t(20,250)} C ${t(9,264)} ${t(7,292)} ${t(15,320)} C ${t(23,348)} ${t(42,360)} ${t(57,356)} C ${t(70,350)} ${t(76,330)} ${t(70,312)} C ${t(64,294)} ${t(50,282)} ${t(46,265)}`;
+
+  const anim = (
+    <animate attributeName="d"
+             values={`${tight};${loose};${tight}`}
+             dur="2.4s" repeatCount="indefinite"
+             calcMode="spline" keyTimes="0;0.5;1"
+             keySplines="0.42,0,0.58,1;0.42,0,0.58,1"/>
+  );
+
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="none" stroke="#c8963c" strokeLinecap="round">
+      <path d={tight} strokeWidth="6">{anim}</path>
+      <path d={tight} stroke="#e8b870" strokeWidth="3">{anim}</path>
+      <path d={`M ${t(8,288)} C ${t(12,286)} ${t(14,290)} ${t(12,292)}`}  strokeWidth="1" stroke="#a87030"/>
+      <path d={`M ${t(12,314)} C ${t(16,312)} ${t(18,316)} ${t(16,318)}`}  strokeWidth="1" stroke="#a87030"/>
+      <path d={`M ${t(22,342)} C ${t(26,340)} ${t(28,344)} ${t(26,346)}`}  strokeWidth="1" stroke="#a87030"/>
+      <path d={`M ${t(42,360)} C ${t(46,358)} ${t(48,362)} ${t(46,364)}`}  strokeWidth="1" stroke="#a87030"/>
+    </g>
+  );
+}
+
+// Digitigrade standing hind leg.
+// cx = hip x, topY = hip y.  Thigh down + slightly out → knee → shin back
+// vertical → ankle → metatarsal extends forward (high pre-flip x = screen-left).
+function RatLegBack({ cx, topY, ghost }: { cx: number; topY: number; ghost?: boolean }) {
+  const kneeX = cx + 8;   const kneeY = topY + 72;
+  const ankleX = cx;      const ankleY = topY + 128;
+  const footX = cx + 28;  const footY = topY + 146;
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)} strokeLinecap="round">
+      <path d={`M ${cx},${topY} L ${kneeX},${kneeY}`}       stroke="black" strokeWidth="16"/>
+      <path d={`M ${cx},${topY} L ${kneeX},${kneeY}`}       stroke="white" strokeWidth="12"/>
+      <path d={`M ${kneeX},${kneeY} L ${ankleX},${ankleY}`} stroke="black" strokeWidth="12"/>
+      <path d={`M ${kneeX},${kneeY} L ${ankleX},${ankleY}`} stroke="white" strokeWidth="8"/>
+      <path d={`M ${ankleX},${ankleY} L ${footX},${footY}`} stroke="black" strokeWidth="9"/>
+      <path d={`M ${ankleX},${ankleY} L ${footX},${footY}`} stroke="white" strokeWidth="5.5"/>
+      <path d={`M ${footX},${footY} L ${footX+14},${footY-5}`}  fill="none" stroke="black" strokeWidth="3.5"/>
+      <path d={`M ${footX},${footY} L ${footX+14},${footY+3}`}  fill="none" stroke="black" strokeWidth="3"/>
+      <path d={`M ${footX},${footY} L ${footX+13},${footY+12}`} fill="none" stroke="black" strokeWidth="2.5"/>
+      <circle cx={kneeX}  cy={kneeY}  r="7" fill="white" stroke="black" strokeWidth="2"/>
+      <circle cx={ankleX} cy={ankleY} r="5" fill="white" stroke="black" strokeWidth="1.5"/>
+    </g>
+  );
+}
+
+// Short stubby paw — T-rex / rearing-rodent pose.
+// cx = shoulder x, topY = shoulder y.
+function RatLegFront({ cx, topY, ghost }: { cx: number; topY: number; ghost?: boolean }) {
+  const elbowX = cx + 14; const elbowY = topY + 44;
+  const pawX   = cx + 18; const pawY   = topY + 76;
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)} strokeLinecap="round">
+      <path d={`M ${cx},${topY} L ${elbowX},${elbowY}`}   stroke="black" strokeWidth="12"/>
+      <path d={`M ${cx},${topY} L ${elbowX},${elbowY}`}   stroke="white" strokeWidth="8"/>
+      <path d={`M ${elbowX},${elbowY} L ${pawX},${pawY}`} stroke="black" strokeWidth="10"/>
+      <path d={`M ${elbowX},${elbowY} L ${pawX},${pawY}`} stroke="white" strokeWidth="6.5"/>
+      <ellipse cx={pawX} cy={pawY+12} rx="10" ry="8"
+               fill="white" stroke="black" strokeWidth="1.5"/>
+      <path d={`M ${pawX+5},${pawY+17} L ${pawX+11},${pawY+23}`} fill="none" stroke="black" strokeWidth="2"/>
+      <path d={`M ${pawX},${pawY+20}   L ${pawX+4},${pawY+27}`}  fill="none" stroke="black" strokeWidth="2"/>
+      <path d={`M ${pawX-6},${pawY+17} L ${pawX-9},${pawY+23}`}  fill="none" stroke="black" strokeWidth="2"/>
+      <circle cx={elbowX} cy={elbowY} r="5.5" fill="white" stroke="black" strokeWidth="1.5"/>
+    </g>
+  );
+}
+
+// Upright pear-shaped body — wide belly, narrow shoulders, no separate torso/neck.
+function RatBody({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
+      <path d="M 62,82 C 46,90 34,114 30,150 C 26,182 28,222 40,250
+               C 50,268 64,278 78,279 C 92,278 106,268 116,250
+               C 128,222 130,182 126,150 C 122,114 110,90 94,82 Z"/>
+      <path d="M 56,132 C 54,128 57,125 60,128" fill="none" strokeWidth="1" strokeLinecap="round"/>
+      <path d="M 76,92 C 74,88 77,85 80,88"    fill="none" strokeWidth="1" strokeLinecap="round"/>
+      <path d="M 96,88 C 94,84 97,81 100,84"   fill="none" strokeWidth="1" strokeLinecap="round"/>
+      <path d="M 118,148 C 116,144 119,141 122,144" fill="none" strokeWidth="1" strokeLinecap="round"/>
+      <path d="M 38,242 C 36,238 39,235 42,238" fill="none" strokeWidth="1" strokeLinecap="round"/>
+      <path d="M 64,268 C 62,264 65,261 68,264" fill="none" strokeWidth="1" strokeLinecap="round"/>
+      <path d="M 92,274 C 90,270 93,267 96,270" fill="none" strokeWidth="1" strokeLinecap="round"/>
+    </g>
+  );
+}
+
+// Round rat head at the top of the canvas — two ears, whiskers, buckteeth.
+// Cranium centred cx=76 cy=52.  Muzzle protrudes toward high x (→ screen-left = facing dir).
+function RatHead({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="white" stroke="black" strokeLinejoin="round">
+      {/* Far ear — drawn before cranium so cranium overlaps the base */}
+      <ellipse cx="88" cy="25" rx="9"  ry="14"
+               fill="#f0c8c8" stroke="black" strokeWidth="1.5"
+               transform="rotate(14,88,25)"/>
+      <ellipse cx="88" cy="25" rx="6"  ry="10"
+               fill="#e89898" stroke="none"
+               transform="rotate(14,88,25)"/>
+      {/* Near ear — also before cranium */}
+      <ellipse cx="62" cy="21" rx="12" ry="18"
+               fill="#f0c8c8" stroke="black" strokeWidth="1.5"
+               transform="rotate(-10,62,21)"/>
+      <ellipse cx="62" cy="21" rx="8"  ry="13"
+               fill="#e89898" stroke="none"
+               transform="rotate(-10,62,21)"/>
+      {/* Cranium */}
+      <ellipse cx="76" cy="52" rx="28" ry="30" strokeWidth="2"/>
+      {/* Muzzle */}
+      <path d="M 86,57 C 96,53 112,55 118,63
+               C 124,71 122,81 112,85
+               C 102,89 86,87 80,79
+               C 74,71 76,59 86,57 Z"
+            strokeWidth="2"/>
+      {/* Nostril */}
+      <ellipse cx="116" cy="67" rx="3" ry="2.5" fill="#f0c0c0" stroke="black" strokeWidth="1"/>
+      {/* Eye */}
+      <circle cx="62" cy="46" r="7"  fill="black" stroke="none"/>
+      <circle cx="60" cy="44" r="2"  fill="white" stroke="none"/>
+      {/* Buckteeth */}
+      <rect x="102" y="83" width="7"   height="11" rx="1.5" fill="#fffde8" stroke="#888" strokeWidth="1"/>
+      <rect x="111" y="83" width="7"   height="11" rx="1.5" fill="#fffde8" stroke="#888" strokeWidth="1"/>
+      <line x1="109" y1="83" x2="109" y2="94" stroke="#aaa" strokeWidth="0.8"/>
+      {/* Whiskers */}
+      <g fill="none" stroke="#666" strokeWidth="0.8" strokeLinecap="round">
+        <line x1="108" y1="61" x2="134" y2="55"/>
+        <line x1="108" y1="66" x2="136" y2="66"/>
+        <line x1="108" y1="71" x2="133" y2="76"/>
+        <line x1="106" y1="61" x2="82"  y2="56"/>
+        <line x1="106" y1="66" x2="80"  y2="66"/>
+        <line x1="106" y1="71" x2="82"  y2="76"/>
+      </g>
+    </g>
+  );
+}
+
+// ── Rat chimera overlays — ears and whiskers only, drawn over the other creature's head ──
+function RatEars({ ghost, dy = 0 }: PartProps & { dy?: number }) {
+  const e = (cx: number, cy: number) => ({ cx, cy: cy + dy });
+  const fe = e(88, 25);
+  const ne = e(62, 21);
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+      <ellipse cx={fe.cx} cy={fe.cy} rx="9"  ry="14"
+               fill="#f0c8c8" stroke="black" strokeWidth="1.5"
+               transform={`rotate(14,${fe.cx},${fe.cy})`}/>
+      <ellipse cx={fe.cx} cy={fe.cy} rx="6"  ry="10"
+               fill="#e89898" stroke="none"
+               transform={`rotate(14,${fe.cx},${fe.cy})`}/>
+      <ellipse cx={ne.cx} cy={ne.cy} rx="12" ry="18"
+               fill="#f0c8c8" stroke="black" strokeWidth="1.5"
+               transform={`rotate(-10,${ne.cx},${ne.cy})`}/>
+      <ellipse cx={ne.cx} cy={ne.cy} rx="8"  ry="13"
+               fill="#e89898" stroke="none"
+               transform={`rotate(-10,${ne.cx},${ne.cy})`}/>
+    </g>
+  );
+}
+
+function RatWhiskers({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="none" stroke="#666" strokeWidth="0.8" strokeLinecap="round">
+      <line x1="108" y1="61" x2="134" y2="55"/>
+      <line x1="108" y1="66" x2="136" y2="66"/>
+      <line x1="108" y1="71" x2="133" y2="76"/>
+      <line x1="106" y1="61" x2="82"  y2="56"/>
+      <line x1="106" y1="66" x2="80"  y2="66"/>
+      <line x1="106" y1="71" x2="82"  y2="76"/>
+    </g>
+  );
+}
+
+// ── Rat bone-mode parts ───────────────────────────────────────────────────────
+
+function RatRibcage() {
+  return (
+    <g data-layer="bone" fill="none" stroke="#ccc" strokeLinecap="round">
+      <line x1="78" y1="82" x2="78" y2="258" strokeWidth="2.5" strokeDasharray="3,4"/>
+      <path d="M 78,98  C 88,95  102,101 112,109" strokeWidth="2.5"/>
+      <path d="M 78,98  C 68,95  54,101  44,109"  strokeWidth="2.5"/>
+      <path d="M 78,112 C 90,105 108,108 116,115" strokeWidth="2"/>
+      <path d="M 78,128 C 91,120 112,122 119,130" strokeWidth="2"/>
+      <path d="M 78,144 C 91,136 113,138 120,146" strokeWidth="2"/>
+      <path d="M 78,160 C 91,152 112,153 119,162" strokeWidth="2"/>
+      <path d="M 78,174 C 90,166 109,168 116,177" strokeWidth="2"/>
+      <path d="M 116,115 C 119,140 120,158 116,177" strokeWidth="3"/>
+      <path d="M 78,112 C 66,105 48,108  40,115" strokeWidth="1.5"/>
+      <path d="M 78,128 C 65,120 44,122  37,130" strokeWidth="1.5"/>
+      <path d="M 78,144 C 65,136 43,138  36,146" strokeWidth="1.5"/>
+      <path d="M 78,160 C 65,152 44,153  37,162" strokeWidth="1.5"/>
+      <path d="M 78,174 C 66,166 47,168  40,177" strokeWidth="1.5"/>
+    </g>
+  );
+}
+
+function RatPelvis() {
+  return (
+    <g data-layer="bone" fill="#555" stroke="black" strokeWidth="2">
+      <path d="M 52,244 C 48,236 56,228 78,226 C 100,228 108,236 104,244
+               L 108,258 C 106,270 98,274 90,270 C 86,278 70,278 66,270
+               C 58,274 50,270 48,258 Z"/>
+    </g>
+  );
+}
+
+function RatSkullHead() {
+  return (
+    <g data-layer="bone">
+      <ellipse cx="88" cy="25" rx="7" ry="12" fill="#333" stroke="#555" strokeWidth="1.5"
+               transform="rotate(14,88,25)"/>
+      <ellipse cx="62" cy="21" rx="9" ry="14" fill="#333" stroke="#555" strokeWidth="1.5"
+               transform="rotate(-10,62,21)"/>
+      <ellipse cx="76" cy="52" rx="28" ry="30" fill="#555" stroke="black" strokeWidth="2"/>
+      <path d="M 86,57 C 96,53 112,55 118,63 C 124,71 122,81 112,85
+               C 102,89 86,87 80,79 C 74,71 76,59 86,57 Z"
+            fill="#555" stroke="black" strokeWidth="2"/>
+      <ellipse cx="62" cy="46" rx="9"  ry="9" fill="#1a0000" stroke="none"/>
+      <ellipse cx="90" cy="54" rx="7"  ry="7" fill="#1a0000" stroke="none"/>
+      <ellipse cx="116" cy="67" rx="4" ry="3" fill="#333" stroke="none"/>
+      <rect x="102" y="83" width="7"  height="10" rx="1.5" fill="#888" stroke="#444" strokeWidth="0.8"/>
+      <rect x="111" y="83" width="7"  height="10" rx="1.5" fill="#888" stroke="#444" strokeWidth="0.8"/>
+      <line x1="109" y1="83" x2="109" y2="93" stroke="#666" strokeWidth="0.8"/>
+    </g>
+  );
+}
+
+function RatLegBackBone({ cx, topY }: { cx: number; topY: number }) {
+  const kneeX = cx + 8;   const kneeY = topY + 72;
+  const ankleX = cx;      const ankleY = topY + 128;
+  const footX = cx + 28;  const footY = topY + 146;
+  return (
+    <g data-layer="bone" strokeLinecap="round">
+      <path d={`M ${cx},${topY} L ${kneeX},${kneeY}`}       stroke="black" strokeWidth="16"/>
+      <path d={`M ${cx},${topY} L ${kneeX},${kneeY}`}       stroke="#666"  strokeWidth="11"/>
+      <path d={`M ${kneeX},${kneeY} L ${ankleX},${ankleY}`} stroke="black" strokeWidth="12"/>
+      <path d={`M ${kneeX},${kneeY} L ${ankleX},${ankleY}`} stroke="#666"  strokeWidth="8"/>
+      <path d={`M ${ankleX},${ankleY} L ${footX},${footY}`} stroke="black" strokeWidth="9"/>
+      <path d={`M ${ankleX},${ankleY} L ${footX},${footY}`} stroke="#666"  strokeWidth="5.5"/>
+      <path d={`M ${footX},${footY} L ${footX+14},${footY-5}`}  stroke="black" strokeWidth="3.5" strokeLinecap="round"/>
+      <path d={`M ${footX},${footY} L ${footX+14},${footY+3}`}  stroke="black" strokeWidth="3"   strokeLinecap="round"/>
+      <path d={`M ${footX},${footY} L ${footX+13},${footY+12}`} stroke="black" strokeWidth="2.5" strokeLinecap="round"/>
+      <circle cx={kneeX}  cy={kneeY}  r={8} fill="#555" stroke="black" strokeWidth="1.5"/>
+      <circle cx={ankleX} cy={ankleY} r={6} fill="#555" stroke="black" strokeWidth="1.5"/>
+      <circle cx={cx}     cy={topY}   r={6} fill="#555" stroke="black" strokeWidth="1.5"/>
+    </g>
+  );
+}
+
+function RatLegFrontBone({ cx, topY }: { cx: number; topY: number }) {
+  const elbowX = cx + 14; const elbowY = topY + 44;
+  const pawX   = cx + 18; const pawY   = topY + 76;
+  return (
+    <g data-layer="bone" strokeLinecap="round">
+      <path d={`M ${cx},${topY} L ${elbowX},${elbowY}`}   stroke="black" strokeWidth="12"/>
+      <path d={`M ${cx},${topY} L ${elbowX},${elbowY}`}   stroke="#666"  strokeWidth="8"/>
+      <path d={`M ${elbowX},${elbowY} L ${pawX},${pawY}`} stroke="black" strokeWidth="10"/>
+      <path d={`M ${elbowX},${elbowY} L ${pawX},${pawY}`} stroke="#666"  strokeWidth="6"/>
+      <path d={`M ${pawX+5},${pawY+17} L ${pawX+11},${pawY+23}`} stroke="black" strokeWidth="2" strokeLinecap="round"/>
+      <path d={`M ${pawX},${pawY+20}   L ${pawX+4},${pawY+27}`}  stroke="black" strokeWidth="2" strokeLinecap="round"/>
+      <path d={`M ${pawX-6},${pawY+17} L ${pawX-9},${pawY+23}`}  stroke="black" strokeWidth="2" strokeLinecap="round"/>
+      <circle cx={elbowX} cy={elbowY} r={6}  fill="#555" stroke="black" strokeWidth="1.5"/>
+      <circle cx={cx}     cy={topY}   r={6}  fill="#555" stroke="black" strokeWidth="1.5"/>
+    </g>
+  );
+}
+
+// ─── Giant Snake ─────────────────────────────────────────────────────────────
+// Cobra-style: coiled lower body (y≈316–420), raised neck tube (y≈76–306),
+// hood fans from neck upward and the head forms its upper cap (y≈76–212),
+// cobra head (y≈18–76).
+//
+// Pre-flip coords (right-facing): snout at HIGH x (~113), back of skull LOW x.
+// Spider leg attachments fall at standard shoulder anchors (cx=110/46, y=112)
+// which sit inside the hood/neck zone — no special-casing needed.
+// Standard viewBox 0 0 160 420.
+
+// ── Five coiled loops — backmost layer.  Each loop is a round tube drawn as
+// two arc half-strokes.  A solid fill base eliminates any donut-hole gaps.
+// Loops A–E: A = innermost/top, E = outermost/bottom. Drawn E→A so inner loops
+// paint on top of outer ones. The neck (SnakeBody) renders after and appears
+// to drop into the top hole of loop A.
+function SnakeCoil({ ghost }: PartProps) {
+  const cx = 78;
+  type Loop = { cy: number; rx: number; ry: number; tw: number };
+  const loops: Loop[] = [
+    { cy: 304, rx: 28, ry:  9, tw: 14 },  // A — innermost / top
+    { cy: 318, rx: 38, ry: 12, tw: 18 },  // B
+    { cy: 332, rx: 48, ry: 15, tw: 22 },  // C
+    { cy: 346, rx: 58, ry: 18, tw: 26 },  // D
+    { cy: 360, rx: 68, ry: 20, tw: 30 },  // E — outermost / bottom
+  ];
+  // sweep=1 from left  → lower/front arc (passes through bottom)
+  // sweep=1 from right → upper/back  arc (passes through top)
+  const frontArc = (l: Loop) =>
+    `M ${cx - l.rx},${l.cy} A ${l.rx},${l.ry} 0 0,1 ${cx + l.rx},${l.cy}`;
+  const backArc  = (l: Loop) =>
+    `M ${cx + l.rx},${l.cy} A ${l.rx},${l.ry} 0 0,1 ${cx - l.rx},${l.cy}`;
+
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)} fill="none" strokeLinecap="butt">
+      {/* All loops E→A fully interleaved: each inner loop paints on top of
+          the outer one, eliminating any back-arc bleed. */}
+      {[...loops].reverse().map((l, i) => (
+        <React.Fragment key={`loop-${i}`}>
+          <path d={backArc(l)}  stroke="black"   strokeWidth={l.tw + 4}/>
+          <path d={backArc(l)}  stroke="#1a3810" strokeWidth={l.tw}/>
+          <path d={backArc(l)}  stroke="#2d5a1e" strokeWidth={l.tw - 5}/>
+          <path d={frontArc(l)} stroke="black"   strokeWidth={l.tw + 4}/>
+          <path d={frontArc(l)} stroke="#2d5a1e" strokeWidth={l.tw}/>
+          <path d={frontArc(l)} stroke="#4a8c2e" strokeWidth={Math.max(4, l.tw - 8)}/>
+          <path d={frontArc(l)} stroke="#c8b85a" strokeWidth={Math.max(2, Math.round(l.tw * 0.30))} opacity="0.65"/>
+        </React.Fragment>
+      ))}
+    </g>
+  );
+}
+
+// ── Neck tube — rises from coil top (y=306) straight up to head base (y=76).
+// The section inside the hood (y=76–212) is covered by SnakeHood above it.
+function SnakeBody({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+      {/* Tube outline — ~26px wide */}
+      <path d="M 91,76 C 93,150 92,235 91,306 L 65,306 C 64,235 63,150 65,76 Z"
+            fill="#2d5a1e" stroke="black" strokeWidth="2" strokeLinejoin="round"/>
+      {/* Belly stripe */}
+      <path d="M 87,79 C 88,150 87,235 87,306 L 69,306 C 68,235 68,150 69,79 Z"
+            fill="#c8b85a" stroke="none" opacity="0.75"/>
+      {/* Scale marks on the exposed section below the hood (y≈213–306) */}
+      <path d="M 89,220 C 92,216 96,218 94,222" fill="none" stroke="#1e3c14" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M 89,238 C 92,234 96,236 94,240" fill="none" stroke="#1e3c14" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M 88,256 C 91,252 95,254 93,258" fill="none" stroke="#1e3c14" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M 87,274 C 90,270 94,272 92,276" fill="none" stroke="#1e3c14" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M 86,292 C 89,288 93,290 91,294" fill="none" stroke="#1e3c14" strokeWidth="1.2" strokeLinecap="round"/>
+    </g>
+  );
+}
+
+// ── Front face of innermost coil loop A — drawn after the neck so it wraps
+// visually in front of the neck base where the two meet around y=300.
+function SnakeCoilFront({ ghost }: PartProps) {
+  // Loop A: cy=300, rx=28, ry=8, tw=14
+  const arc = `M 50,300 A 28,8 0 0,1 106,300`;
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)} fill="none" strokeLinecap="butt">
+      <path d={arc} stroke="black"   strokeWidth={18}/>
+      <path d={arc} stroke="#2d5a1e" strokeWidth={14}/>
+      <path d={arc} stroke="#4a8c2e" strokeWidth={6}/>
+      <path d={arc} stroke="#c8b85a" strokeWidth={4} opacity="0.65"/>
+    </g>
+  );
+}
+
+// ── Cobra hood — fan that STARTS at the head ceiling (y=18) and expands
+// downward.  The head is drawn after and forms the natural upper cap of the
+// fan; the hood's outer wings peek out beside the head crown above y=76.
+function SnakeHood({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+      {/* Outer dark silhouette — same top y as head crown */}
+      <path d="M 62,18
+               C 24,30 8,68 8,106
+               C 8,138 26,170 52,190
+               C 64,198 72,204 78,206
+               C 84,204 92,198 104,190
+               C 130,170 148,138 148,106
+               C 148,68 132,30 94,18 Z"
+            fill="#2d5a1e" stroke="black" strokeWidth="2" strokeLinejoin="round"/>
+      {/* Inner front-facing gold/cream surface */}
+      <path d="M 68,22
+               C 32,34 18,70 18,106
+               C 18,136 36,166 60,184
+               C 70,193 75,197 78,198
+               C 81,197 86,193 96,184
+               C 120,166 138,136 138,106
+               C 138,70 124,34 88,22 Z"
+            fill="#c8a830" stroke="none"/>
+      {/* Spectacle markings — in the visible mid-hood zone below the head */}
+      <ellipse cx="58" cy="112" rx="14" ry="16" fill="none" stroke="#3a2800" strokeWidth="2.5" opacity="0.82"/>
+      <ellipse cx="98" cy="112" rx="14" ry="16" fill="none" stroke="#3a2800" strokeWidth="2.5" opacity="0.82"/>
+      <path d="M 72,105 C 73,101 83,101 84,105" fill="none" stroke="#3a2800" strokeWidth="2" opacity="0.82"/>
+      <ellipse cx="58" cy="112" rx="10" ry="11" fill="#3a2800" opacity="0.22"/>
+      <ellipse cx="98" cy="112" rx="10" ry="11" fill="#3a2800" opacity="0.22"/>
+    </g>
+  );
+}
+
+// ── Cobra head — elongated snout pushed further forward (high x pre-flip).
+// Eye at cx=94,cy=44. Hood is drawn before this and peaks out at same ceiling y=18.
+function SnakeHead({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+      {/* Head profile — snout tip at x≈124, elongated jaw */}
+      <path d="M 124,44
+               C 128,34 122,18 106,14
+               C 90,10 70,12 56,22
+               C 42,30 36,44 40,58
+               C 44,70 56,76 74,76
+               C 88,76 106,72 116,66
+               C 128,60 128,54 124,44 Z"
+            fill="#2d5a1e" stroke="black" strokeWidth="2.5" strokeLinejoin="round"/>
+      {/* Mouth line — jaw crease from snout tip to chin */}
+      <path d="M 124,44 C 122,56 114,68 100,72"
+            fill="none" stroke="black" strokeWidth="1.5" strokeLinecap="round"/>
+      {/* Scale ridges on crown */}
+      <path d="M 82,12 C 94,10 108,14 116,22" fill="none" stroke="#1e3c14" strokeWidth="2"   strokeLinecap="round"/>
+      <path d="M 64,14 C 76,10 90,10 102,14"  fill="none" stroke="#1e3c14" strokeWidth="1.5" strokeLinecap="round"/>
+      {/* Eye — amber iris, vertical slit pupil */}
+      <circle cx="94" cy="44" r="7" fill="#cc8800" stroke="black" strokeWidth="1.5"/>
+      <ellipse cx="94" cy="44" rx="2.5" ry="6" fill="#1a0000"/>
+      <circle cx="95.5" cy="41" r="1.2" fill="white" stroke="none"/>
+      {/* Nostril slit — shifted forward to match snout */}
+      <ellipse cx="120" cy="52" rx="2" ry="3.5" fill="#1a0000"
+               stroke="black" strokeWidth="1" transform="rotate(-25,120,52)"/>
+      {/* Forked tongue */}
+      <path d="M 126,45 L 144,38" stroke="#cc0000" strokeWidth="2"   strokeLinecap="round" fill="none"/>
+      <path d="M 144,38 L 152,31" stroke="#cc0000" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+      <path d="M 144,38 L 152,45" stroke="#cc0000" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+    </g>
+  );
+}
+
+// ── Snake bone parts ──────────────────────────────────────────────────────────
+
+// Spine + curved ribs. Ribs are wider in the hood zone (representing hood ribs)
+// and narrow below. Spine runs full length to coil junction.
+function SnakeRibcage() {
+  // [spineY, halfWidth] — wider in hood zone (y≈90–210), narrower below
+  const ribs: [number, number][] = [
+    [ 90, 15], [104, 22], [118, 30], [132, 36], [146, 38],
+    [160, 36], [174, 30], [188, 22], [202, 15],
+    [216, 12], [230, 10], [244,  8], [258,  7], [272,  5], [290,  4],
+  ];
+  return (
+    <g data-layer="bone" fill="none" stroke="#ccc" strokeLinecap="round">
+      <line x1="78" y1="76" x2="78" y2="306" strokeWidth="2.5" strokeDasharray="3,4"/>
+      {ribs.map(([y, hw], i) => (
+        <React.Fragment key={i}>
+          <path d={`M 78,${y} Q ${78 + hw * 0.6},${y - 4} ${78 + hw},${y + 5}`} strokeWidth="1.8"/>
+          <path d={`M 78,${y} Q ${78 - hw * 0.6},${y - 4} ${78 - hw},${y + 5}`} strokeWidth="1.4"/>
+        </React.Fragment>
+      ))}
+    </g>
+  );
+}
+
+// Elongated cobra skull — matches SnakeHead profile in bone gray, with fang.
+function SnakeSkullHead() {
+  return (
+    <g data-layer="bone">
+      {/* Skull outline */}
+      <path d="M 124,44
+               C 128,34 122,18 106,14
+               C 90,10 70,12 56,22
+               C 42,30 36,44 40,58
+               C 44,70 56,76 74,76
+               C 88,76 106,72 116,66
+               C 128,60 128,54 124,44 Z"
+            fill="#555" stroke="black" strokeWidth="2"/>
+      {/* Jaw / mouth line */}
+      <path d="M 124,44 C 122,56 114,68 100,72"
+            fill="none" stroke="black" strokeWidth="1.5" strokeLinecap="round"/>
+      {/* Eye socket */}
+      <ellipse cx="94" cy="44" rx="11" ry="10" fill="#1a0000" stroke="none"/>
+      {/* Nasal cavity */}
+      <ellipse cx="120" cy="52" rx="3" ry="4" fill="#333" stroke="none"
+               transform="rotate(-25,120,52)"/>
+      {/* Fang — long curved hollow tube */}
+      <path d="M 120,52 C 126,58 128,68 123,76"
+            fill="none" stroke="#888" strokeWidth="3" strokeLinecap="round"/>
+      <path d="M 120,52 C 125,57 126,66 122,74"
+            fill="none" stroke="#aaa" strokeWidth="1.5" strokeLinecap="round"/>
+      {/* Cheekbone ridge */}
+      <path d="M 90,26 C 100,22 112,26 118,34"
+            fill="none" stroke="#888" strokeWidth="1.5" strokeLinecap="round"/>
     </g>
   );
 }
@@ -850,25 +1492,35 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   const isMermaid  = has('mermaid');
   const isPhoenix  = has('phoenix');
   const isSpider   = has('giant_spider');
+  const isHarpy    = has('harpy');
+  const isRat      = has('giant_rat');
+  const isSnake    = has('giant_snake');
   const isSkeleton = has('skeleton');
   const isLich     = has('lich');
   const isGhost    = has('ghost');
   const hasWings   = has('fly');
+
+  // Centaur hindquarters inherit the dominant flesh color of the combined creature.
+  const horseFlesh = isSnake ? { base: '#2d5a1e', hi: '#4a8c2e' }
+                   : isRat   ? { base: '#c8963c', hi: '#e8b870' }
+                   :           { base: 'white',   hi: 'white'   };
+
+  // If rat is combined with another body-defining creature, only ears + whiskers + tail carry over.
+  const ratChimera = isRat && (isHuman || isCentaur || isMermaid || isPhoenix || isSpider || isHarpy || isSnake);
 
   // arms are a human/centaur feature — phoenixes and spiders don't have arms
   // (unless spider+boneMode, where bone arms are drawn regardless)
   const boneMode = isSkeleton || isLich;
   const boneSpider = isSpider && boneMode;
 
-  const usesArms = (isHuman || isCentaur) && !(isSpider && !boneMode);
+  const usesArms = (isHuman || isCentaur) && !(isSpider && !boneMode) && !isHarpy && !isRat && !(isSnake && !isCentaur);
 
   // ghost affects only flesh-tagged parts
   const ghost = isGhost;
 
   // human legs are an explicit feature — suppressed by mermaid (fish tail),
-  // phoenix (bird legs instead), and spider-only (8 spider legs instead).
-  // spider+boneMode: bone legs still render (spider adds EXTRA legs on top).
-  const usesHumanLegs = !isMermaid && !isPhoenix && !(isSpider && !boneMode);
+  // phoenix (bird legs instead), spider-only, and rat (own 4-leg plan).
+  const usesHumanLegs = !isMermaid && !isPhoenix && !(isSpider && !boneMode) && !isRat && !isSnake;
 
   const parts: React.ReactNode[] = [];
 
@@ -876,49 +1528,78 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   // Nothing to add inline for wings.
 
   // ── 2. Back-most elements first ───────────────────────────────
-  if (!boneMode) {
+  // Centaur hindquarters go before snake coil so coil renders on top of them.
+  if (isCentaur) {
+    if (boneMode) {
+      // No barrel in bone mode — all 4 leg bones go here (no layering around barrel needed)
+      if (!isRat) parts.push(<HorseTail    key="horse-tail"    layer="flesh" ghost={ghost}/>);
+      parts.push(<HorseLegBone key="horse-leg-br"   cx={38} topY={224}/>);  // back far
+      parts.push(<HorseLegBone key="horse-leg-ffar" cx={80} topY={220}/>);  // front far
+      parts.push(<HorseLegBone key="horse-leg-bn"   cx={27} topY={222}/>);  // back near
+      parts.push(<HorseLegBone key="horse-leg-fnear" cx={72} topY={218}/>); // front near
+    } else {
+      // Far-side legs (behind barrel) go here; near-side legs deferred to section 4 (after barrel)
+      if (!isRat) parts.push(<HorseTail key="horse-tail"   layer="flesh" ghost={ghost}/>);
+      parts.push(<HorseLeg key="horse-leg-br"   cx={38} topY={224} ghost={ghost} fill={horseFlesh.base}/>);  // back far
+      parts.push(<HorseLeg key="horse-leg-ffar" cx={80} topY={220} ghost={ghost} fill={horseFlesh.base}/>);  // front far
+      // Near-side legs + barrel deferred to section 4
+    }
+  }
+
+  // Snake coil — backmost layer for upright cobra. Centaur body wins: no coil when centaur.
+  if (isSnake && !isSpider && !isCentaur && !boneMode) {
+    parts.push(<SnakeCoil key="snake-coil" layer="flesh" ghost={ghost}/>);
+  }
+  if (isRat) {
+    // Always keep rat tail (replaces horse tail when centaur chimera).
+    // Anchor: centaur hip → horse tail root (11,176); snake → neck base (78,306); pure rat → default (20,250).
+    const ratTailAnchor = isCentaur ? { anchorX: 11, anchorY: 176 }
+                        : isSnake   ? { anchorX: 78, anchorY: 306 }
+                        : isSpider  ? { anchorX: 80, anchorY: 290 }
+                        :             {};
+    parts.push(<RatTail key="rat-tail" layer="flesh" ghost={ghost} {...ratTailAnchor}/>);
+    // Legs only for pure rat — chimera uses the other creature's body plan
+    if (!ratChimera) {
+      if (!boneMode) {
+        parts.push(<RatLegBack key="rat-hl-back" cx={90} topY={258} ghost={ghost}/>);
+      } else {
+        parts.push(<RatLegBackBone key="rat-hl-back-b" cx={90} topY={258}/>);
+      }
+    }
+  } else if (!boneMode) {
     if (usesArms) {
       parts.push(<HumanoidArmBack key="arm-back" layer="flesh" ghost={ghost}/>);
     }
-  } else {
+  } else if (!isRat) {
     // boneSpider: bonus arms go behind the torso (back pair) alongside regular arm
     if (boneSpider) {
       parts.push(<SpiderBonusArms key="spider-bonus-arms"/>);
     }
-    parts.push(<SkeletonArmBack key="arm-back-bone"/>);
-  }
-
-  if (isCentaur) {
-    if (boneMode) {
-      parts.push(<HorseTail key="horse-tail" layer="flesh" ghost={ghost}/>);
-      parts.push(<HorseLegBone key="horse-leg-br" cx={38} topY={224}/>);
-      parts.push(<HorseLegBone key="horse-leg-bn" cx={27} topY={222}/>);
-    } else {
-      parts.push(<HorseTail key="horse-tail" layer="flesh" ghost={ghost}/>);
-      parts.push(<HorseLeg key="horse-leg-br" cx={38} topY={224} ghost={ghost}/>);
-      parts.push(<HorseLeg key="horse-leg-bn" cx={27} topY={222} ghost={ghost}/>);
+    if (!isSnake) {
+      parts.push(<SkeletonArmBack key="arm-back-bone"/>);
     }
   }
 
-  // Phoenix tail goes before the back leg so legs render on top of it.
-  // Apex is inside the torso area; torso is drawn later and covers the top half.
-  if (isPhoenix && !boneMode) {
-    parts.push(<PhoenixTail key="phoenix-tail" layer="flesh" ghost={ghost}/>);
-  }
-
-  if (!boneMode) {
-    if (usesHumanLegs) {
-      parts.push(<HumanoidLegBack key="leg-back" layer="flesh" ghost={ghost}/>);
-    } else if (isPhoenix && !isSpider) {
-      // For spider+phoenix the back leg is deferred to section 6 so it renders
-      // in front of the spider abdomen, not behind it.
-      parts.push(<PhoenixLegBack key="bird-leg-back" layer="flesh" ghost={ghost}/>);
+  if (!isRat) {
+    if (!boneMode) {
+      if (usesHumanLegs) {
+        parts.push(isHarpy
+          ? <HarpyLegBack  key="leg-back" layer="flesh" ghost={ghost}/>
+          : <HumanoidLegBack key="leg-back" layer="flesh" ghost={ghost}/>
+        );
+      } else if (isPhoenix && !isSpider) {
+        // For spider+phoenix the back leg is deferred to section 6 so it renders
+        // in front of the spider abdomen, not behind it.
+        parts.push(<PhoenixLegBack key="bird-leg-back" layer="flesh" ghost={ghost}/>);
+      }
+    } else if (!isMermaid) {
+      if (boneSpider) {
+        parts.push(<SpiderBonusLegs key="spider-bonus-legs"/>);
+      }
+      if (!isSnake) {
+        parts.push(<SkeletonLegBack key="leg-back-bone"/>);
+      }
     }
-  } else if (!isMermaid) {
-    if (boneSpider) {
-      parts.push(<SpiderBonusLegs key="spider-bonus-legs"/>);
-    }
-    parts.push(<SkeletonLegBack key="leg-back-bone"/>);
   }
 
   // ── 3. Ribcage / pelvis drawn under torso (visible through ghost torso) ──
@@ -926,13 +1607,23 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   // in centaur combos the skeleton floats in front of the horse barrel.
 
   // ── 4. Main body ──────────────────────────────────────────────
-  if (isMermaid) {
+  if (isRat && !ratChimera) {
+    if (!boneMode) {
+      parts.push(<RatBody key="rat-body" layer="flesh" ghost={ghost}/>);
+    }
+  } else if (isSnake && !isSpider && !isCentaur) {
+    if (!boneMode) {
+      parts.push(<SnakeBody key="snake-body" layer="flesh" ghost={ghost}/>);
+    }
+  } else if (isMermaid) {
     parts.push(<FishTail key="fish-tail" layer="flesh" ghost={ghost}/>);
   } else if (isSpider && !boneMode) {
     // Pure spider (no bone mode): spider body plan takes over.
-    // Draw order: horse barrel (if centaur) → legs (over barrel) → abdomen.
+    // Draw order: horse barrel (if centaur) → near-side horse legs → spider legs → abdomen.
     if (isCentaur) {
-      parts.push(<HorseBarrel key="horse-barrel" layer="flesh" ghost={ghost}/>);
+      parts.push(<HorseBarrel key="horse-barrel" layer="flesh" ghost={ghost} fill={horseFlesh.base}/>);
+      parts.push(<HorseLeg key="horse-leg-bn"    cx={27} topY={222} ghost={ghost} fill={horseFlesh.base}/>);  // back near
+      parts.push(<HorseLeg key="horse-leg-fnear" cx={72} topY={218} ghost={ghost} fill={horseFlesh.base}/>);  // front near
     }
     parts.push(<SpiderLegs  key="spider-legs"  ghost={ghost}/>);
     parts.push(<SpiderBody  key="spider-body"  ghost={ghost}/>);
@@ -941,10 +1632,17 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     // In bone mode the barrel is suppressed (bones replace flesh entirely).
     // Ghost overrides this: the faded barrel silhouette is a desirable effect.
     if (!boneMode || ghost) {
-      parts.push(<HorseBarrel key="horse-barrel" layer="flesh" ghost={ghost}/>);
+      parts.push(<HorseBarrel key="horse-barrel" layer="flesh" ghost={ghost} fill={horseFlesh.base}/>);
     }
     if (!boneMode) {
-      parts.push(<UprightTorso key="torso" layer="flesh" ghost={ghost}/>);
+      // Near-side legs in front of barrel, behind upright torso
+      parts.push(<HorseLeg key="horse-leg-bn"    cx={27} topY={222} ghost={ghost} fill={horseFlesh.base}/>);  // back near
+      parts.push(<HorseLeg key="horse-leg-fnear" cx={72} topY={218} ghost={ghost} fill={horseFlesh.base}/>);  // front near
+      // Snake hood fills y=18–206 and replaces the human torso visually.
+      // Harpy/phoenix/rat-chimera still need the torso for their upper body.
+      if (!isSnake) {
+        parts.push(<UprightTorso key="torso" layer="flesh" ghost={ghost}/>);
+      }
     }
   } else {
     if (!boneMode) {
@@ -952,57 +1650,111 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     }
   }
 
-  // ── 4b. Skeleton internals — rendered AFTER horse barrel so they are
-  //        always in the foreground (centaur lich/skeleton fix) ────────────
-  // boneSpider: ribcage/pelvis still render over the humanoid torso.
+  // ── 4b. Skeleton internals ──────────────────────────────────────────────
   if (boneMode) {
     if (isCentaur) {
       parts.push(<HorseRibcage key="horse-ribcage"/>);
       parts.push(<HorsePelvis key="horse-pelvis"/>);
     }
-    parts.push(<SkeletonRibcage key="ribcage"/>);
-    parts.push(<SkeletonPelvis key="pelvis"/>);
+    if (isRat && !ratChimera) {
+      parts.push(<RatRibcage key="rat-ribcage"/>);
+      parts.push(<RatPelvis  key="rat-pelvis"/>);
+    } else if (isSnake) {
+      parts.push(<SnakeRibcage key="snake-ribcage"/>);
+    } else {
+      parts.push(<SkeletonRibcage key="ribcage"/>);
+      parts.push(<SkeletonPelvis key="pelvis"/>);
+    }
     if (isLich) {
       parts.push(<SkeletonCracks key="cracks"/>);
     }
   }
 
   // ── 5. Head ───────────────────────────────────────────────────
-  // Phoenix beak goes before head so the cranium overlaps the beak base.
-  if (isPhoenix && !boneMode && !isSpider) {
-    parts.push(<PhoenixBeak key="phoenix-beak" layer="flesh" ghost={ghost}/>);
+  // Harpy crest sits above the skull — draw before head in both flesh and bone modes.
+  if (isHarpy) {
+    parts.push(<HarpyCrest key="harpy-crest" layer="flesh" ghost={ghost}/>);
   }
-  if (isSpider && !boneMode) {
-    // Pure spider: SpiderBody has the head ellipse; add eyes.
+  // Phoenix beak removed — fire + talons + wings are sufficient.
+  // Rat chimera: ears go BEFORE the head so the head renders on top of them.
+  // dy shifts ears to match each head's crown height (rat crown ≈ y=22).
+  if (ratChimera && !boneMode && !isSpider) {
+    const earDy = isSnake ? -12 : -4;  // snake crown ≈ y=10; humanoid crown ≈ y=18
+    parts.push(<RatEars key="rat-ears" layer="flesh" ghost={ghost} dy={earDy}/>);
+  }
+  if (isRat && !ratChimera) {
+    if (!boneMode) {
+      parts.push(<RatHead key="rat-head" layer="flesh" ghost={ghost}/>);
+    } else {
+      parts.push(<RatSkullHead key="rat-skull"/>);
+    }
+  } else if (isSnake) {
+    if (!boneMode) {
+      parts.push(<SnakeHood key="snake-hood" layer="flesh" ghost={ghost}/>);
+      parts.push(<SnakeHead key="snake-head" layer="flesh" ghost={ghost}/>);
+    } else {
+      parts.push(<SnakeSkullHead key="snake-skull"/>);
+    }
+  } else if (isSpider && !boneMode) {
     parts.push(<SpiderEyes key="spider-eyes" ghost={ghost}/>);
   } else if (boneMode) {
     parts.push(<SkeletonSkull key="skull"/>);
     if (boneSpider) {
-      // Extra 6 spider eyes around the skull sockets.
       parts.push(<SpiderBoneEyes key="spider-bone-eyes"/>);
     }
   } else {
     parts.push(<HumanoidHead key="head" layer="flesh" ghost={ghost}/>);
   }
+  // Rat chimera: whiskers after head so they show on top.
+  if (ratChimera && !boneMode && !isSpider) {
+    parts.push(<RatWhiskers key="rat-whiskers" layer="flesh" ghost={ghost}/>);
+  }
+
+  // Harpy teeth are flesh-only; bone mode skull carries its own teeth.
+  if (isHarpy && !boneMode) {
+    parts.push(<HarpyTeeth key="harpy-teeth" layer="flesh" ghost={ghost}/>);
+  }
 
   // Lich crown + glowing eyes sit over skull
   if (isLich) {
     parts.push(<LichCrown key="lich-crown"/>);
-    parts.push(<LichEyes key="lich-eyes"/>);
+    // Side-profile skulls have only one visible eye — avoid a floating second glow.
+    const lichEyes = isSnake ? [{ cx: 94, cy: 44 }]
+                   : isRat   ? [{ cx: 62, cy: 46 }]
+                   :           undefined;  // default: two front-facing sockets
+    parts.push(<LichEyes key="lich-eyes" eyes={lichEyes}/>);
   }
 
   // ── 6. Front limbs (in front of body) ────────────────────────
-  if (!boneMode) {
-    if (usesArms) {
-      parts.push(<HumanoidArmFront key="arm-front" layer="flesh" ghost={ghost}/>);
+  if (!isRat) {
+    if (!boneMode) {
+      if (usesArms) {
+        parts.push(<HumanoidArmFront key="arm-front" layer="flesh" ghost={ghost}/>);
+      }
+    } else {
+      if (!isSnake) {
+        parts.push(<SkeletonArmFront key="arm-front-bone"/>);
+      }
     }
-  } else {
-    parts.push(<SkeletonArmFront key="arm-front-bone"/>);
   }
 
-  if (!boneMode) {
+  if (isRat && !ratChimera) {
+    // Front hind leg (nearer to viewer, in front of body) + both stubby paws
+    if (!boneMode) {
+      parts.push(<RatLegBack  key="rat-hl-front"  cx={66}  topY={258} ghost={ghost}/>);
+      parts.push(<RatLegFront key="rat-paw-back"  cx={110} topY={112} ghost={ghost}/>);
+      parts.push(<RatLegFront key="rat-paw-front" cx={46}  topY={112} ghost={ghost}/>);
+    } else {
+      parts.push(<RatLegBackBone  key="rat-hl-front-b"  cx={66}  topY={258}/>);
+      parts.push(<RatLegFrontBone key="rat-paw-back-b"  cx={110} topY={112}/>);
+      parts.push(<RatLegFrontBone key="rat-paw-front-b" cx={46}  topY={112}/>);
+    }
+  } else if (!boneMode) {
     if (usesHumanLegs) {
-      parts.push(<HumanoidLegFront key="leg-front" layer="flesh" ghost={ghost}/>);
+      parts.push(isHarpy
+        ? <HarpyLegFront  key="leg-front" layer="flesh" ghost={ghost}/>
+        : <HumanoidLegFront key="leg-front" layer="flesh" ghost={ghost}/>
+      );
     } else if (isPhoenix) {
       if (isSpider) {
         // Both bird legs deferred here so they render in front of spider abdomen.
@@ -1010,12 +1762,12 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       }
       parts.push(<PhoenixLegFront key="bird-leg-front" layer="flesh" ghost={ghost}/>);
     }
-  } else if (!isMermaid) {
+  } else if (!isMermaid && !isSnake) {
     parts.push(<SkeletonLegFront key="leg-front-bone"/>);
   }
 
   // ── 7. Joint knobs always last ────────────────────────────────
-  if (boneMode) {
+  if (boneMode && !isRat && !isSnake) {
     parts.push(<SkeletonJointKnobs key="joint-knobs" includeHips={!isMermaid}/>);
   }
 
@@ -1026,9 +1778,9 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   return {
     parts,
-    viewBox: isMermaid ? '-30 0 220 460' : (isSpider && !boneMode) ? '-70 0 310 330' : boneSpider ? '-30 -10 220 450' : isCentaur ? '0 0 160 405' : isPhoenix ? '-20 -30 200 450' : '0 0 160 420',
+    viewBox: isMermaid ? '-30 0 220 460' : (isSpider && !boneMode) ? '-70 0 310 330' : boneSpider ? '-30 -10 220 450' : isCentaur ? '0 0 160 405' : isPhoenix ? '-20 -30 200 450' : isHarpy ? '0 -50 160 480' : isRat ? '0 0 160 420' : '0 0 160 420',
     width:   isMermaid ? 190 : (isSpider && !boneMode) ? 260 : isPhoenix ? 180 : 160,
-    height:  isMermaid ? 460 : (isSpider && !boneMode) ? 280 : isCentaur ? 405 : isPhoenix ? 405 : 420,
+    height:  isMermaid ? 460 : (isSpider && !boneMode) ? 280 : isCentaur ? 405 : isPhoenix ? 405 : isHarpy ? 480 : 420,
     hasWings,
   };
 }
