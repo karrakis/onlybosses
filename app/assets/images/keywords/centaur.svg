@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 405" width="160" height="405">
+
+  <!--
+    Centaur base model.
+    Humanoid upper body (matching humanoid.svg proportions) fused with
+    a horse lower body. Horse barrel extends screen-right (pre-flip low x).
+    Draw order: hair → back arm → horse tail → back horse legs →
+                horse body → human torso → far front leg → near front leg →
+                head → face → front arm → joint knobs.
+    Faces left via translate(160,0) scale(-1,1).
+  -->
+
+  <g id="centaur" fill="white" stroke="black" stroke-width="2" stroke-linejoin="round"
+     transform="translate(160,0) scale(-1,1)">
+
+    <!-- ══════════════════════════════════════
+         HAIR (behind head, pre-flip low x → screen right)
+         ══════════════════════════════════════ -->
+    <path d="M 74,18 C 54,22 40,34 34,52 C 30,64 32,78 40,88 C 44,94 50,98 56,100"
+          fill="none" stroke="black" stroke-width="7" stroke-linecap="round"/>
+    <path d="M 77,17 C 60,20 48,30 42,46 C 38,58 38,74 46,85 C 50,91 56,95 62,97"
+          fill="none" stroke="black" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- ══════════════════════════════════════
+         BACK ARM (creature's left, drawn before torso)
+         ══════════════════════════════════════ -->
+    <line x1="110" y1="112" x2="122" y2="162" stroke="black" stroke-width="9"   stroke-linecap="round" fill="none"/>
+    <line x1="110" y1="112" x2="122" y2="162" stroke="white" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+    <line x1="122" y1="162" x2="117" y2="232" stroke="black" stroke-width="7"   stroke-linecap="round" fill="none"/>
+    <line x1="122" y1="162" x2="117" y2="232" stroke="white" stroke-width="4"   stroke-linecap="round" fill="none"/>
+    <ellipse cx="116" cy="243" rx="8" ry="10" fill="white" stroke="black" stroke-width="1.5"/>
+
+    <!-- ══════════════════════════════════════
+         HORSE TAIL (at rear, pre-flip low x → screen right)
+         ══════════════════════════════════════ -->
+    <path d="M 11,176 C 3,190 2,212 6,232 C 10,246 15,255 11,268 C 8,278 4,284 4,294"
+          fill="none" stroke="black" stroke-width="7" stroke-linecap="round"/>
+    <path d="M 14,178 C 8,192 8,212 12,228 C 16,240 21,248 18,260 C 15,269 11,276 12,284"
+          fill="none" stroke="black" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 17,180 C 12,195 13,213 16,228 C 19,238 22,244 20,255"
+          fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- ══════════════════════════════════════
+         BACK HORSE LEGS (behind horse body)
+         ══════════════════════════════════════ -->
+    <!-- Far back leg -->
+    <line x1="38" y1="224" x2="36" y2="300" stroke="black" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <line x1="38" y1="224" x2="36" y2="300" stroke="white" stroke-width="6"  stroke-linecap="round" fill="none"/>
+    <line x1="36" y1="300" x2="38" y2="376" stroke="black" stroke-width="8"  stroke-linecap="round" fill="none"/>
+    <line x1="36" y1="300" x2="38" y2="376" stroke="white" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    <!-- Hoof -->
+    <line x1="31" y1="374" x2="43" y2="376" stroke="#333" stroke-width="9"  stroke-linecap="round" fill="none"/>
+
+    <!-- Near back leg -->
+    <line x1="27" y1="222" x2="25" y2="298" stroke="black" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <line x1="27" y1="222" x2="25" y2="298" stroke="white" stroke-width="6"  stroke-linecap="round" fill="none"/>
+    <line x1="25" y1="298" x2="27" y2="374" stroke="black" stroke-width="8"  stroke-linecap="round" fill="none"/>
+    <line x1="25" y1="298" x2="27" y2="374" stroke="white" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    <line x1="21" y1="372" x2="33" y2="374" stroke="#333" stroke-width="9"  stroke-linecap="round" fill="none"/>
+
+    <!-- ══════════════════════════════════════
+         HORSE BODY
+         Front top (~x=90,y=152) blends into human waist (~y=162).
+         Rear rounds off at low x.
+         ══════════════════════════════════════ -->
+    <path d="
+      M 90,152
+      C 84,136 65,128 42,130
+      C 22,132 8,148 8,172
+      C 8,200 18,222 38,228
+      C 56,232 78,228 90,220
+      C 96,210 96,168 90,152 Z
+    " fill="white" stroke="black" stroke-width="2"/>
+
+    <!-- ══════════════════════════════════════
+         HUMAN TORSO
+         Shoulder width at top (~y=84), waist at bottom (~y=162)
+         covering the horse front-top junction.
+         ══════════════════════════════════════ -->
+    <path d="
+      M 106,84
+      C 110,104 110,140 94,162
+      L 72,162
+      C 52,140 50,104 60,86
+      Z
+    " fill="white" stroke="black" stroke-width="2"/>
+
+    <!-- Waist / junction indicator -->
+    <path d="M 68,162 C 76,168 88,168 96,162"
+          fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round"/>
+
+    <!-- Subtle chest/pec line -->
+    <path d="M 72,106 C 78,100 86,100 90,106"
+          fill="none" stroke="black" stroke-width="1.2" stroke-linecap="round" opacity="0.55"/>
+
+    <!-- ══════════════════════════════════════
+         FRONT HORSE LEGS (in front of horse body)
+         ══════════════════════════════════════ -->
+    <!-- Far front leg (behind near front leg) -->
+    <line x1="74" y1="222" x2="72" y2="298" stroke="black" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <line x1="74" y1="222" x2="72" y2="298" stroke="white" stroke-width="6"  stroke-linecap="round" fill="none"/>
+    <line x1="72" y1="298" x2="74" y2="376" stroke="black" stroke-width="8"  stroke-linecap="round" fill="none"/>
+    <line x1="72" y1="298" x2="74" y2="376" stroke="white" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    <line x1="68" y1="374" x2="80" y2="376" stroke="#333" stroke-width="9"  stroke-linecap="round" fill="none"/>
+
+    <!-- Near front leg -->
+    <line x1="63" y1="220" x2="61" y2="296" stroke="black" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <line x1="63" y1="220" x2="61" y2="296" stroke="white" stroke-width="6"  stroke-linecap="round" fill="none"/>
+    <line x1="61" y1="296" x2="63" y2="374" stroke="black" stroke-width="8"  stroke-linecap="round" fill="none"/>
+    <line x1="61" y1="296" x2="63" y2="374" stroke="white" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    <line x1="57" y1="372" x2="69" y2="374" stroke="#333" stroke-width="9"  stroke-linecap="round" fill="none"/>
+
+    <!-- ══════════════════════════════════════
+         HEAD
+         ══════════════════════════════════════ -->
+    <!-- Cranium -->
+    <ellipse cx="78" cy="46" rx="28" ry="30"/>
+
+    <!-- Cheekbone hint -->
+    <path d="M 98,56 C 104,60 106,68 102,74"
+          fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round"/>
+
+    <!-- Eyebrow -->
+    <path d="M 84,34 C 88,31 95,31 99,34"
+          fill="none" stroke="black" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Eye -->
+    <ellipse cx="91" cy="40" rx="7" ry="6" fill="black" stroke="none"/>
+    <ellipse cx="89" cy="39" rx="2.5" ry="2" fill="white" stroke="none"/>
+
+    <!-- Nose -->
+    <circle cx="100" cy="50" r="1.4" fill="black" stroke="none"/>
+
+    <!-- Mouth / slight smirk -->
+    <path d="M 97,58 C 101,64 109,64 113,60"
+          fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round"/>
+
+    <!-- ══════════════════════════════════════
+         FRONT ARM (creature's right, drawn last → appears in front)
+         ══════════════════════════════════════ -->
+    <line x1="46"  y1="112" x2="36"  y2="162" stroke="black" stroke-width="9"   stroke-linecap="round" fill="none"/>
+    <line x1="46"  y1="112" x2="36"  y2="162" stroke="white" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+    <line x1="36"  y1="162" x2="41"  y2="232" stroke="black" stroke-width="7"   stroke-linecap="round" fill="none"/>
+    <line x1="36"  y1="162" x2="41"  y2="232" stroke="white" stroke-width="4"   stroke-linecap="round" fill="none"/>
+    <ellipse cx="41" cy="243" rx="8" ry="10" fill="white" stroke="black" stroke-width="1.5"/>
+
+    <!-- ══════════════════════════════════════
+         JOINT KNOBS (drawn last, on top of everything)
+         ══════════════════════════════════════ -->
+    <!-- Human shoulders -->
+    <circle cx="110" cy="112" r="7"  fill="white" stroke="black" stroke-width="1.5"/>
+    <circle cx="46"  cy="112" r="7"  fill="white" stroke="black" stroke-width="1.5"/>
+    <!-- Human elbows -->
+    <circle cx="122" cy="162" r="6"  fill="white" stroke="black" stroke-width="1.5"/>
+    <circle cx="36"  cy="162" r="6"  fill="white" stroke="black" stroke-width="1.5"/>
+
+    <!-- Horse knees — back pair -->
+    <circle cx="36" cy="300" r="5.5" fill="white" stroke="black" stroke-width="1.5"/>
+    <circle cx="25" cy="298" r="5.5" fill="white" stroke="black" stroke-width="1.5"/>
+    <!-- Horse knees — front pair -->
+    <circle cx="72" cy="298" r="5.5" fill="white" stroke="black" stroke-width="1.5"/>
+    <circle cx="61" cy="296" r="5.5" fill="white" stroke="black" stroke-width="1.5"/>
+
+  </g>
+
+</svg>

@@ -196,12 +196,24 @@ const HUMANOID_CREATURES = new Set([
 ]);
 
 // Creatures with their own dedicated base SVG
-const HARPY_SVG   = '/assets/keywords/harpy.svg';
+const HARPY_SVG        = '/assets/keywords/harpy.svg';
+const GHOST_SVG        = '/assets/keywords/ghost.svg';
+const SKELETON_SVG     = '/assets/keywords/skeleton.svg';
+const LICH_SVG         = '/assets/keywords/lich.svg';
+const MERMAID_SVG      = '/assets/keywords/mermaid.svg';
+const CENTAUR_SVG      = '/assets/keywords/centaur.svg';
+const GIANT_SPIDER_SVG = '/assets/keywords/giant_spider.svg';
 
 // Creatures with their own dedicated base SVG
 const CREATURE_SVG: Record<string, string> = {
-  phoenix: PHOENIX_SVG,
-  harpy:   HARPY_SVG,
+  phoenix:      PHOENIX_SVG,
+  harpy:        HARPY_SVG,
+  ghost:        GHOST_SVG,
+  skeleton:     SKELETON_SVG,
+  lich:         LICH_SVG,
+  mermaid:      MERMAID_SVG,
+  centaur:      CENTAUR_SVG,
+  giant_spider: GIANT_SPIDER_SVG,
 };
 
 function resolveBodySvg(selected: string[]): string {
@@ -246,7 +258,7 @@ function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[
         )}
         <object type="image/svg+xml" data={bodySvg} aria-label="creature body"
           style={{ position: 'absolute', width: 160, height: 420, left: 270, top: 60,
-                   pointerEvents: 'none', zIndex: 10 }}
+                   overflow: 'visible', pointerEvents: 'none', zIndex: 10 }}
         />
       </div>
     </div>

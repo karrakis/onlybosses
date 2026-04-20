@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 0 260 420" width="160" height="420" overflow="visible">
+
+  <!--
+    Giant spider base model. Bird's-eye / top-down view.
+    viewBox expanded to -50..210 x to fit doubled leg length.
+    Draw order: leg outlines → leg whites → head → body → eyes → knee joints.
+  -->
+
+  <g id="giant_spider" fill="white" stroke="black" stroke-width="2" stroke-linejoin="round"
+     transform="translate(174,-64) scale(-1.2,1.2)">
+
+    <!-- ── Leg black outlines ──────────────────────────────────────── -->
+    <g fill="none" stroke="black" stroke-linecap="round">
+      <path d="M 100,158 L 156,112" stroke-width="12"/>
+      <path d="M 156,112 L 200, 62" stroke-width="8"/>
+      <path d="M 104,178 L 164,158" stroke-width="12"/>
+      <path d="M 164,158 L 184,126" stroke-width="8"/>
+      <path d="M 106,208 L 162,228" stroke-width="12"/>
+      <path d="M 162,228 L 181,256" stroke-width="8"/>
+      <path d="M  99,250 L 153,282" stroke-width="12"/>
+      <path d="M 153,282 L 172,306" stroke-width="8"/>
+
+      <path d="M  56,158 L   0,112" stroke-width="12"/>
+      <path d="M   0,112 L -44, 62" stroke-width="8"/>
+      <path d="M  52,178 L  -8,158" stroke-width="12"/>
+      <path d="M  -8,158 L -28,126" stroke-width="8"/>
+      <path d="M  50,208 L  -6,228" stroke-width="12"/>
+      <path d="M  -6,228 L -25,256" stroke-width="8"/>
+      <path d="M  57,250 L   3,282" stroke-width="12"/>
+      <path d="M   3,282 L -16,306" stroke-width="8"/>
+    </g>
+
+    <!-- ── Leg white fills ────────────────────────────────────────── -->
+    <g fill="none" stroke="white" stroke-linecap="round">
+      <path d="M 100,158 L 156,112" stroke-width="10"/>
+      <path d="M 156,112 L 200, 62" stroke-width="6"/>
+      <path d="M 104,178 L 164,158" stroke-width="10"/>
+      <path d="M 164,158 L 184,126" stroke-width="6"/>
+      <path d="M 106,208 L 162,228" stroke-width="10"/>
+      <path d="M 162,228 L 181,256" stroke-width="6"/>
+      <path d="M  99,250 L 153,282" stroke-width="10"/>
+      <path d="M 153,282 L 172,306" stroke-width="6"/>
+
+      <path d="M  56,158 L   0,112" stroke-width="10"/>
+      <path d="M   0,112 L -44, 62" stroke-width="6"/>
+      <path d="M  52,178 L  -8,158" stroke-width="10"/>
+      <path d="M  -8,158 L -28,126" stroke-width="6"/>
+      <path d="M  50,208 L  -6,228" stroke-width="10"/>
+      <path d="M  -6,228 L -25,256" stroke-width="6"/>
+      <path d="M  57,250 L   3,282" stroke-width="10"/>
+      <path d="M   3,282 L -16,306" stroke-width="6"/>
+    </g>
+
+    <!-- ── Head ──────────────────────────────────────────────────── -->
+    <ellipse cx="78" cy="118" rx="21" ry="20"/>
+
+    <!-- ── Body (covers all leg roots) ───────────────────────────── -->
+    <path d="M 78,130 C 120,132 107,292 78,295 C 49,292 36,132 78,130 Z"/>
+
+    <!-- ── 8 eyes ─────────────────────────────────────────────────── -->
+    <circle cx="65" cy="112" r="2.5" fill="black" stroke="none"/>
+    <circle cx="73" cy="108" r="2.5" fill="black" stroke="none"/>
+    <circle cx="83" cy="108" r="2.5" fill="black" stroke="none"/>
+    <circle cx="91" cy="112" r="2.5" fill="black" stroke="none"/>
+    <circle cx="66" cy="123" r="2.5" fill="black" stroke="none"/>
+    <circle cx="74" cy="120" r="2.5" fill="black" stroke="none"/>
+    <circle cx="82" cy="120" r="2.5" fill="black" stroke="none"/>
+    <circle cx="90" cy="123" r="2.5" fill="black" stroke="none"/>
+
+    <!-- ── Black knee joints ─────────────────────────────────────── -->
+    <circle cx="156" cy="112" r="6" fill="black" stroke="none"/>
+    <circle cx="164" cy="158" r="6" fill="black" stroke="none"/>
+    <circle cx="162" cy="228" r="6" fill="black" stroke="none"/>
+    <circle cx="153" cy="282" r="6" fill="black" stroke="none"/>
+    <circle cx="  0" cy="112" r="6" fill="black" stroke="none"/>
+    <circle cx=" -8" cy="158" r="6" fill="black" stroke="none"/>
+    <circle cx=" -6" cy="228" r="6" fill="black" stroke="none"/>
+    <circle cx="  3" cy="282" r="6" fill="black" stroke="none"/>
+
+  </g>
+
+</svg>
