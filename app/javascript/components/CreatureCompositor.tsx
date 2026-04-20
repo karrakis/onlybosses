@@ -135,26 +135,34 @@ function HumanoidHead({ ghost }: PartProps) {
 // ── Humanoid arm (back = creature's left = screen-right pre-flip) ─────────────
 function HumanoidArmBack({ ghost }: PartProps) {
   return (
-    <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill="white" stroke="black" stroke-width="2" stroke-linejoin="round">
-      <path d="M 110,104 C 122,110 130,130 132,158 L 120,162
+    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+      <g fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
+        <animateTransform attributeName="transform" type="rotate"
+          values="0 110 104; 3 110 104; 0 110 104; -3 110 104; 0 110 104"
+          dur="2.8s" repeatCount="indefinite"/>
+        <path d="M 110,104 C 122,110 130,130 132,158 L 120,162
                C 118,135 112,116 100,108 Z"/>
-      <path d="M 120,160 C 124,180 126,205 124,232 L 113,234
+        <path d="M 120,160 C 124,180 126,205 124,232 L 113,234
                C 114,208 112,182 108,162 Z"/>
-      <ellipse cx="118" cy="244" rx="10" ry="12" transform="rotate(-10,118,244)"/>
+        <ellipse cx="118" cy="244" rx="10" ry="12" transform="rotate(-10,118,244)"/>
+      </g>
     </g>
   );
 }
 
 function HumanoidArmFront({ ghost }: PartProps) {
   return (
-    <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill="white" stroke="black" stroke-width="2" stroke-linejoin="round">
-      <path d="M 50,104 C 38,110 30,128 28,155 L 40,160
+    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+      <g fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
+        <animateTransform attributeName="transform" type="rotate"
+          values="0 50 104; -2.5 50 104; 0 50 104; 2.5 50 104; 0 50 104"
+          dur="2.5s" begin="0.4s" repeatCount="indefinite"/>
+        <path d="M 50,104 C 38,110 30,128 28,155 L 40,160
                C 42,133 48,115 58,108 Z"/>
-      <path d="M 40,158 C 36,178 34,202 36,228 L 47,226
+        <path d="M 40,158 C 36,178 34,202 36,228 L 47,226
                C 46,202 48,178 51,158 Z"/>
-      <ellipse cx="41" cy="238" rx="10" ry="12" transform="rotate(10,41,238)"/>
+        <ellipse cx="41" cy="238" rx="10" ry="12" transform="rotate(10,41,238)"/>
+      </g>
     </g>
   );
 }
@@ -556,47 +564,38 @@ function PhoenixFlames() {
 const SPIDER_T = 'translate(-14,-64) scale(1.2,1.2)';
 
 function SpiderLegs({ ghost }: { ghost?: boolean }) {
+  // [rx, ry, kx, ky, tx, ty, amp(deg), dur(s), begin(s)]
+  // Each leg pivots around its root (rx,ry). Knee joints are included so they
+  // move with the leg rather than staying pinned to the spider body.
+  const legs = [
+    [100, 158, 156, 112, 200,  62,  2.5, 1.8, 0.00],
+    [104, 178, 164, 158, 184, 126,  2.0, 2.1, 0.35],
+    [106, 208, 162, 228, 181, 256,  2.5, 1.7, 0.70],
+    [ 99, 250, 153, 282, 172, 306,  2.0, 2.3, 1.05],
+    [ 56, 158,   0, 112, -44,  62, -2.5, 1.9, 0.18],
+    [ 52, 178,  -8, 158, -28, 126, -2.0, 2.0, 0.52],
+    [ 50, 208,  -6, 228, -25, 256, -2.5, 1.6, 0.87],
+    [ 57, 250,   3, 282, -16, 306, -2.0, 2.2, 0.22],
+  ];
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}>
       <g transform={SPIDER_T} fill="none" strokeLinecap="round">
-        {/* Black outlines */}
-        <g stroke="black">
-          <path d="M 100,158 L 156,112" strokeWidth="12"/>
-          <path d="M 156,112 L 200, 62" strokeWidth="8"/>
-          <path d="M 104,178 L 164,158" strokeWidth="12"/>
-          <path d="M 164,158 L 184,126" strokeWidth="8"/>
-          <path d="M 106,208 L 162,228" strokeWidth="12"/>
-          <path d="M 162,228 L 181,256" strokeWidth="8"/>
-          <path d="M  99,250 L 153,282" strokeWidth="12"/>
-          <path d="M 153,282 L 172,306" strokeWidth="8"/>
-          <path d="M  56,158 L   0,112" strokeWidth="12"/>
-          <path d="M   0,112 L -44, 62" strokeWidth="8"/>
-          <path d="M  52,178 L  -8,158" strokeWidth="12"/>
-          <path d="M  -8,158 L -28,126" strokeWidth="8"/>
-          <path d="M  50,208 L  -6,228" strokeWidth="12"/>
-          <path d="M  -6,228 L -25,256" strokeWidth="8"/>
-          <path d="M  57,250 L   3,282" strokeWidth="12"/>
-          <path d="M   3,282 L -16,306" strokeWidth="8"/>
-        </g>
-        {/* White fills */}
-        <g stroke="white">
-          <path d="M 100,158 L 156,112" strokeWidth="10"/>
-          <path d="M 156,112 L 200, 62" strokeWidth="6"/>
-          <path d="M 104,178 L 164,158" strokeWidth="10"/>
-          <path d="M 164,158 L 184,126" strokeWidth="6"/>
-          <path d="M 106,208 L 162,228" strokeWidth="10"/>
-          <path d="M 162,228 L 181,256" strokeWidth="6"/>
-          <path d="M  99,250 L 153,282" strokeWidth="10"/>
-          <path d="M 153,282 L 172,306" strokeWidth="6"/>
-          <path d="M  56,158 L   0,112" strokeWidth="10"/>
-          <path d="M   0,112 L -44, 62" strokeWidth="6"/>
-          <path d="M  52,178 L  -8,158" strokeWidth="10"/>
-          <path d="M  -8,158 L -28,126" strokeWidth="6"/>
-          <path d="M  50,208 L  -6,228" strokeWidth="10"/>
-          <path d="M  -6,228 L -25,256" strokeWidth="6"/>
-          <path d="M  57,250 L   3,282" strokeWidth="10"/>
-          <path d="M   3,282 L -16,306" strokeWidth="6"/>
-        </g>
+        {legs.map((leg, i) => {
+          const [rx, ry, kx, ky, tx, ty, amp, dur, begin] = leg;
+          const vals = `0 ${rx} ${ry}; ${amp} ${rx} ${ry}; 0 ${rx} ${ry}; ${-amp} ${rx} ${ry}; 0 ${rx} ${ry}`;
+          return (
+            <g key={i}>
+              <animateTransform attributeName="transform" type="rotate"
+                values={vals} dur={`${dur}s`} begin={`${begin}s`}
+                repeatCount="indefinite"/>
+              <path d={`M ${rx},${ry} L ${kx},${ky}`} stroke="black" strokeWidth="12"/>
+              <path d={`M ${kx},${ky} L ${tx},${ty}`} stroke="black" strokeWidth="8"/>
+              <path d={`M ${rx},${ry} L ${kx},${ky}`} stroke="white" strokeWidth="10"/>
+              <path d={`M ${kx},${ky} L ${tx},${ty}`} stroke="white" strokeWidth="6"/>
+              <circle cx={kx} cy={ky} r={6} fill="black" stroke="none"/>
+            </g>
+          );
+        })}
       </g>
     </g>
   );
@@ -675,19 +674,88 @@ function SpiderEyes({ ghost }: { ghost?: boolean }) {
   );
 }
 
-function SpiderJoints({ ghost }: { ghost?: boolean }) {
+// ─── Spider × Bone mode extra parts ──────────────────────────────────────────────
+// When giant_spider + skeleton/lich: bone mode wins; spider adds extra limbs.
+
+// Two extra arm pairs splaying out from the shoulders at 45° / 30° angles.
+// Each pair pivots around the shoulder point with an independent animation.
+function SpiderBonusArms() {
+  // Each entry: [shoulderX, shoulderY, elbowX, elbowY, handX, handY, amp, dur, begin]
+  const arms = [
+    // Back-side extras (behind body): upper-back shoulder, mid-back shoulder
+    [110, 104,  136, 68,  158,  32,  3.5, 2.2, 0.0],
+    [110, 104,  140,125,  162, 152,  3.0, 1.9, 0.5],
+    // Front-side extras (in front of body)
+    [ 46, 104,   20, 68,   -2,  32, -3.5, 2.0, 0.3],
+    [ 46, 104,   22,125,    0, 152, -3.0, 2.3, 0.8],
+  ];
   return (
-    <g data-layer="flesh" className={partClass('flesh', ghost)}>
-      <g transform={SPIDER_T}>
-        <circle cx="156" cy="112" r="6" fill="black" stroke="none"/>
-        <circle cx="164" cy="158" r="6" fill="black" stroke="none"/>
-        <circle cx="162" cy="228" r="6" fill="black" stroke="none"/>
-        <circle cx="153" cy="282" r="6" fill="black" stroke="none"/>
-        <circle cx="0"   cy="112" r="6" fill="black" stroke="none"/>
-        <circle cx="-8"  cy="158" r="6" fill="black" stroke="none"/>
-        <circle cx="-6"  cy="228" r="6" fill="black" stroke="none"/>
-        <circle cx="3"   cy="282" r="6" fill="black" stroke="none"/>
-      </g>
+    <g data-layer="bone">
+      {arms.map((a, i) => {
+        const [sx, sy, ex, ey, hx, hy, amp, dur, begin] = a;
+        const vals = `0 ${sx} ${sy}; ${amp} ${sx} ${sy}; 0 ${sx} ${sy}; ${-amp} ${sx} ${sy}; 0 ${sx} ${sy}`;
+        return (
+          <g key={i}>
+            <animateTransform attributeName="transform" type="rotate"
+              values={vals} dur={`${dur}s`} begin={`${begin}s`} repeatCount="indefinite"/>
+            <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="black" strokeWidth="9" strokeLinecap="round"/>
+            <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#666" strokeWidth="5.5" strokeLinecap="round"/>
+            <line x1={ex} y1={ey} x2={hx} y2={hy} stroke="black" strokeWidth="7" strokeLinecap="round"/>
+            <line x1={ex} y1={ey} x2={hx} y2={hy} stroke="#666" strokeWidth="4" strokeLinecap="round"/>
+            <circle cx={ex} cy={ey} r={5.5} fill="#555" stroke="black" strokeWidth="1.5"/>
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+// Two extra leg pairs branching from the hip area at diagonal angles.
+function SpiderBonusLegs() {
+  const legs = [
+    // Rear pair, back
+    [90, 262,  124, 314,  142, 378,  2.5, 2.1, 0.1],
+    [90, 262,  116, 332,  128, 400,  2.0, 1.8, 0.6],
+    // Front pair, front
+    [66, 262,   32, 314,   14, 378, -2.5, 2.3, 0.4],
+    [66, 262,   40, 332,   28, 400, -2.0, 1.9, 0.9],
+  ];
+  return (
+    <g data-layer="bone">
+      {legs.map((l, i) => {
+        const [rx, ry, kx, ky, fx, fy, amp, dur, begin] = l;
+        const vals = `0 ${rx} ${ry}; ${amp} ${rx} ${ry}; 0 ${rx} ${ry}; ${-amp} ${rx} ${ry}; 0 ${rx} ${ry}`;
+        return (
+          <g key={i}>
+            <animateTransform attributeName="transform" type="rotate"
+              values={vals} dur={`${dur}s`} begin={`${begin}s`} repeatCount="indefinite"/>
+            <line x1={rx} y1={ry} x2={kx} y2={ky} stroke="black" strokeWidth="11" strokeLinecap="round"/>
+            <line x1={rx} y1={ry} x2={kx} y2={ky} stroke="#666" strokeWidth="7" strokeLinecap="round"/>
+            <line x1={kx} y1={ky} x2={fx} y2={fy} stroke="black" strokeWidth="9" strokeLinecap="round"/>
+            <line x1={kx} y1={ky} x2={fx} y2={fy} stroke="#666" strokeWidth="5.5" strokeLinecap="round"/>
+            <circle cx={kx} cy={ky} r={6} fill="#555" stroke="black" strokeWidth="1.5"/>
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+// Six small spider eyes clustered around the two skull eye sockets.
+// Drawn on the bone layer so they're always visible (even through ghost).
+function SpiderBoneEyes() {
+  // Right socket centred ~(91,40), left socket ~(63,40) in compositor space.
+  const eyes = [
+    // Right cluster
+    { cx: 101, cy: 33 }, { cx: 103, cy: 46 }, { cx: 95, cy: 53 },
+    // Left cluster
+    { cx:  53, cy: 33 }, { cx:  51, cy: 46 }, { cx:  59, cy: 53 },
+  ];
+  return (
+    <g data-layer="bone">
+      {eyes.map((e, i) => (
+        <circle key={i} cx={e.cx} cy={e.cy} r="3" fill="#1a0000" stroke="black" strokeWidth="1"/>
+      ))}
     </g>
   );
 }
@@ -731,18 +799,19 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   const hasWings   = has('fly');
 
   // arms are a human/centaur feature — phoenixes and spiders don't have arms
-  const usesArms = (isHuman || isCentaur) && !isSpider;
+  // (unless spider+boneMode, where bone arms are drawn regardless)
+  const boneMode = isSkeleton || isLich;
+  const boneSpider = isSpider && boneMode;
+
+  const usesArms = (isHuman || isCentaur) && !(isSpider && !boneMode);
 
   // ghost affects only flesh-tagged parts
   const ghost = isGhost;
 
-  // ── decide body plan ───────────────────────────────────────────
-  // bone-mode: skeleton or lich replace flesh limbs/torso with bone equivalents
-  const boneMode = isSkeleton || isLich;
-
   // human legs are an explicit feature — suppressed by mermaid (fish tail),
-  // phoenix (bird legs instead), and spider (8 spider legs instead).
-  const usesHumanLegs = !isMermaid && !isPhoenix && !isSpider;
+  // phoenix (bird legs instead), and spider-only (8 spider legs instead).
+  // spider+boneMode: bone legs still render (spider adds EXTRA legs on top).
+  const usesHumanLegs = !isMermaid && !isPhoenix && !(isSpider && !boneMode);
 
   const parts: React.ReactNode[] = [];
 
@@ -754,7 +823,11 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     if (usesArms) {
       parts.push(<HumanoidArmBack key="arm-back" layer="flesh" ghost={ghost}/>);
     }
-  } else if (!isSpider) {
+  } else {
+    // boneSpider: bonus arms go behind the torso (back pair) alongside regular arm
+    if (boneSpider) {
+      parts.push(<SpiderBonusArms key="spider-bonus-arms"/>);
+    }
     parts.push(<SkeletonArmBack key="arm-back-bone"/>);
   }
 
@@ -778,7 +851,10 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       // in front of the spider abdomen, not behind it.
       parts.push(<PhoenixLegBack key="bird-leg-back" layer="flesh" ghost={ghost}/>);
     }
-  } else if (!isMermaid && !isSpider) {
+  } else if (!isMermaid) {
+    if (boneSpider) {
+      parts.push(<SpiderBonusLegs key="spider-bonus-legs"/>);
+    }
     parts.push(<SkeletonLegBack key="leg-back-bone"/>);
   }
 
@@ -789,8 +865,9 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   // ── 4. Main body ──────────────────────────────────────────────
   if (isMermaid) {
     parts.push(<FishTail key="fish-tail" layer="flesh" ghost={ghost}/>);
-  } else if (isSpider) {
-    // Draw order: horse barrel (if centaur) → legs (over barrel) → abdomen (covers leg roots).
+  } else if (isSpider && !boneMode) {
+    // Pure spider (no bone mode): spider body plan takes over.
+    // Draw order: horse barrel (if centaur) → legs (over barrel) → abdomen.
     if (isCentaur) {
       parts.push(<HorseBarrel key="horse-barrel" layer="flesh" ghost={ghost}/>);
     }
@@ -810,8 +887,8 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   // ── 4b. Skeleton internals — rendered AFTER horse barrel so they are
   //        always in the foreground (centaur lich/skeleton fix) ────────────
-  // Not applied to spider: spider body has no humanoid ribcage.
-  if (boneMode && !isSpider) {
+  // boneSpider: ribcage/pelvis still render over the humanoid torso.
+  if (boneMode) {
     parts.push(<SkeletonRibcage key="ribcage"/>);
     parts.push(<SkeletonPelvis key="pelvis"/>);
     if (isLich) {
@@ -824,12 +901,15 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   if (isPhoenix && !boneMode && !isSpider) {
     parts.push(<PhoenixBeak key="phoenix-beak" layer="flesh" ghost={ghost}/>);
   }
-  if (isSpider) {
-    // SpiderBody already contains the head ellipse; only add eyes and joints.
-    parts.push(<SpiderEyes   key="spider-eyes"   ghost={ghost}/>);
-    parts.push(<SpiderJoints key="spider-joints" ghost={ghost}/>);
+  if (isSpider && !boneMode) {
+    // Pure spider: SpiderBody has the head ellipse; add eyes.
+    parts.push(<SpiderEyes key="spider-eyes" ghost={ghost}/>);
   } else if (boneMode) {
     parts.push(<SkeletonSkull key="skull"/>);
+    if (boneSpider) {
+      // Extra 6 spider eyes around the skull sockets.
+      parts.push(<SpiderBoneEyes key="spider-bone-eyes"/>);
+    }
   } else {
     parts.push(<HumanoidHead key="head" layer="flesh" ghost={ghost}/>);
   }
@@ -845,7 +925,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     if (usesArms) {
       parts.push(<HumanoidArmFront key="arm-front" layer="flesh" ghost={ghost}/>);
     }
-  } else if (!isSpider) {
+  } else {
     parts.push(<SkeletonArmFront key="arm-front-bone"/>);
   }
 
@@ -859,12 +939,12 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       }
       parts.push(<PhoenixLegFront key="bird-leg-front" layer="flesh" ghost={ghost}/>);
     }
-  } else if (!isMermaid && !isSpider) {
+  } else if (!isMermaid) {
     parts.push(<SkeletonLegFront key="leg-front-bone"/>);
   }
 
   // ── 7. Joint knobs always last ────────────────────────────────
-  if (boneMode && !isSpider) {
+  if (boneMode) {
     parts.push(<SkeletonJointKnobs key="joint-knobs" includeHips={!isMermaid}/>);
   }
 
@@ -875,9 +955,9 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   return {
     parts,
-    viewBox: isMermaid ? '-30 0 220 460' : isSpider ? '-70 0 310 330' : isCentaur ? '0 0 160 405' : isPhoenix ? '-20 -30 200 450' : '0 0 160 420',
-    width:   isMermaid ? 190 : isSpider ? 260 : isPhoenix ? 180 : 160,
-    height:  isMermaid ? 460 : isSpider ? 280 : isCentaur ? 405 : isPhoenix ? 405 : 420,
+    viewBox: isMermaid ? '-30 0 220 460' : (isSpider && !boneMode) ? '-70 0 310 330' : boneSpider ? '-30 -10 220 450' : isCentaur ? '0 0 160 405' : isPhoenix ? '-20 -30 200 450' : '0 0 160 420',
+    width:   isMermaid ? 190 : (isSpider && !boneMode) ? 260 : isPhoenix ? 180 : 160,
+    height:  isMermaid ? 460 : (isSpider && !boneMode) ? 280 : isCentaur ? 405 : isPhoenix ? 405 : 420,
     hasWings,
   };
 }
