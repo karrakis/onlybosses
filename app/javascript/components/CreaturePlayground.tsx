@@ -1,4 +1,5 @@
 import * as React from "react";
+import CreatureCompositor, { compositeCreature } from "./CreatureCompositor";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -216,6 +217,19 @@ const CREATURE_SVG: Record<string, string> = {
   giant_spider: GIANT_SPIDER_SVG,
 };
 
+// Keywords handled by the compositor (inline SVG assembly)
+const COMPOSITOR_KEYWORDS = new Set([
+  'human', 'golem', 'vampire', 'giant', 'goblin', 'troll', 'zombie', 'werewolf', 'minotaur',
+  'centaur', 'skeleton', 'lich', 'ghost', 'mermaid',
+]);
+
+function usesCompositor(selected: string[]): boolean {
+  // Use compositor if any selected creature keyword is in the compositor set,
+  // or if no creature keyword is selected at all (default humanoid)
+  return selected.some(k => COMPOSITOR_KEYWORDS.has(k)) ||
+    !selected.some(k => CREATURE_SVG[k] || HUMANOID_CREATURES.has(k));
+}
+
 function resolveBodySvg(selected: string[]): string {
   // First selected keyword that has a dedicated SVG wins
   for (const name of selected) {
@@ -228,9 +242,7 @@ function resolveBodySvg(selected: string[]): string {
 // ─── Creature viewport ────────────────────────────────────────────────────────
 
 function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[]; activeAnim: string | null; flipped: boolean }) {
-  const hasWings = selected.includes('fly');
-  const bodySvg  = resolveBodySvg(selected);
-  const anim     = activeAnim ? (ANIMATIONS[activeAnim] ?? FALLBACK_ANIM) : null;
+  const anim = activeAnim ? (ANIMATIONS[activeAnim] ?? FALLBACK_ANIM) : null;
 
   const animStyle: React.CSSProperties = anim ? {
     animation: `${anim.animName} ${anim.duration} ${anim.easing} ${anim.fillMode}`,
@@ -238,12 +250,43 @@ function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[
 
   const flipStyle: React.CSSProperties = flipped ? { transform: 'scaleX(-1)' } : {};
 
+  // Compositor path: inline SVG assembled from parts
+  if (usesCompositor(selected)) {
+    const { hasWings } = compositeCreature(selected);
+    return (
+      <div
+        className="relative"
+        style={{ width: 700, height: 540, background: '#1e1e2e', borderRadius: 8, overflow: 'visible', ...flipStyle }}
+      >
+        <div style={{ position: 'absolute', inset: 0, ...animStyle }}>
+          {hasWings && (
+            <>
+              <object type="image/svg+xml" data={WING_SVG} aria-label="right wing"
+                style={{ position: 'absolute', width: 350, height: 330, left: 320, top: -35, pointerEvents: 'none' }}
+              />
+              <object type="image/svg+xml" data={WING_SVG} aria-label="left wing"
+                style={{ position: 'absolute', width: 350, height: 330, left: 30, top: -35,
+                         transform: 'scaleX(-1)', pointerEvents: 'none' }}
+              />
+            </>
+          )}
+          <div style={{ position: 'absolute', left: 270, top: 60, zIndex: 10 }}>
+            <CreatureCompositor keywords={selected}/>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Legacy path: <object> SVG for creatures not yet in compositor
+  const hasWings = selected.includes('fly');
+  const bodySvg  = resolveBodySvg(selected);
+
   return (
     <div
       className="relative"
       style={{ width: 700, height: 540, background: '#1e1e2e', borderRadius: 8, overflow: 'visible', ...flipStyle }}
     >
-      {/* Animated wrapper — wings + humanoid move together */}
       <div style={{ position: 'absolute', inset: 0, ...animStyle }}>
         {hasWings && (
           <>
