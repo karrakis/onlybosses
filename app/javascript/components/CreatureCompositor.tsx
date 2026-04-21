@@ -188,8 +188,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   // keyword becomes a chimera contributor. 'human' is the implicit fallback.
   const BODY_PLANS = [
     'mermaid',       // fish tail — most distinct body plan
-    'giant_spider',  // 8-legged — beats centaur (old behaviour preserved)
-    'centaur',       // horse hindquarters
+    'giant_spider',  // 8-legged
     'giant_snake',   // serpentine
     'giant_rat',     // quadruped
     'phoenix',       // bird legs + fire
@@ -201,6 +200,8 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   type BodyPlan = typeof BODY_PLANS[number] | 'human';
 
   const body = (BODY_PLANS.find(b => has(b)) ?? 'human') as BodyPlan;
+  // centaur is an anchor attachment, not a body plan — fires for any host torso
+  const hasHindquarters = has('centaur');
 
   // chimeraOf(k): this keyword is present alongside a higher-priority body plan.
   // Replaces the old ratChimera / goatChimera / slimeChimera computed flags.
@@ -216,17 +217,17 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   const boneSpider = body === 'giant_spider' && boneMode;
 
   // Body plans that carry paired arms (upright biped torso + hands)
-  const hasBipedArms = body === 'mermaid' || body === 'centaur'
-                    || body === 'zombie'   || body === 'human';
+  const hasBipedArms = body === 'mermaid'
+                    || body === 'zombie' || body === 'human';
 
-  // Goat legs graft onto upright hosts (not centaur/mermaid/snake/spider/rat/slime/goat)
+  // Goat legs graft onto upright hosts (not mermaid/snake/spider/rat/slime/goat)
   const goatLegChimera = chimeraOf('goat') && !boneMode &&
     (body === 'human' || body === 'zombie' || body === 'phoenix' || body === 'harpy');
 
-  // Centaur barrel flesh colour follows chimera snake/rat colouring
-  const horseFlesh = chimeraOf('giant_snake') ? { base: '#2d5a1e', hi: '#4a8c2e' }
-                   : chimeraOf('giant_rat')   ? { base: '#c8963c', hi: '#e8b870' }
-                   :                            { base: 'white',   hi: 'white'   };
+  // Horse barrel flesh colour tinted by coexisting snake/rat keywords
+  const horseFlesh = has('giant_snake') ? { base: '#2d5a1e', hi: '#4a8c2e' }
+                   : has('giant_rat')   ? { base: '#c8963c', hi: '#e8b870' }
+                   :                      { base: 'white',   hi: 'white'   };
 
   // ── Biped part helpers ────────────────────────────────────────────────────
   // All upright-torso slots (torso, head, arms, legs) run through bipedStyle so
@@ -250,6 +251,41 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     ? <ZombieLegFront   key={k} layer="flesh" ghost={ghost}/>
     : <HumanoidLegFront key={k} layer="flesh" ghost={ghost}/>;
 
+  // ── Arm contributor system ────────────────────────────────────────────────
+  // How many weapon-holding arm pairs each keyword contributes.
+  // Mirrors creatures.jsonl max_hands. Skeleton/lich are render modifiers, not
+  // arm contributors — they change style but not count.
+  const MAX_HANDS: Partial<Record<string, number>> = {
+    'human':      2,
+    'zombie':     2,
+    'mermaid':    2,
+    'giant_rat':  2,  // forepaws count as hands
+  };
+  // Chimera keywords present that contribute arm pairs beyond the body plan's own.
+  // Body plan handles its own primary pair; chimeras get additional pairs, rotated.
+  const extraArmKeywords = Object.keys(MAX_HANDS).filter(k => chimeraOf(k));
+
+  // Render one arm for a chimera contributor.
+  // In bone mode all extra arms use skeleton style regardless of contributor.
+  // Back arm rotates around the far shoulder (110, 112).
+  // Front arm rotates around the near shoulder (46, 112).
+  const renderChimeraArmBack = (kw: string): React.ReactNode => {
+    if (boneMode) return <SkeletonArmBack key={`arm-back-x-${kw}`}/>;
+    switch (kw) {
+      case 'zombie':    return <ZombieArmBack    key={`arm-back-x-${kw}`} layer="flesh" ghost={ghost}/>;
+      case 'giant_rat': return <RatLegFront      key={`arm-back-x-${kw}`} cx={110} topY={112} ghost={ghost}/>;
+      default:          return <HumanoidArmBack  key={`arm-back-x-${kw}`} layer="flesh" ghost={ghost}/>;
+    }
+  };
+  const renderChimeraArmFront = (kw: string): React.ReactNode => {
+    if (boneMode) return <SkeletonArmFront key={`arm-front-x-${kw}`}/>;
+    switch (kw) {
+      case 'zombie':    return <ZombieArmFront   key={`arm-front-x-${kw}`} layer="flesh" ghost={ghost}/>;
+      case 'giant_rat': return <RatLegFront      key={`arm-front-x-${kw}`} cx={46}  topY={112} ghost={ghost}/>;
+      default:          return <HumanoidArmFront key={`arm-front-x-${kw}`} layer="flesh" ghost={ghost}/>;
+    }
+  };
+
   const parts: React.ReactNode[] = [];
 
   // ── 1. Wings go behind everything (handled by viewport as <object> layers)
@@ -257,11 +293,11 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   // ── 2. Back-most elements first ───────────────────────────────
 
-  // Centaur: far-side horse legs go behind the barrel
-  if (body === 'centaur') {
+  // Horse hindquarters: far-side legs go behind barrel
+  if (hasHindquarters) {
     if (boneMode) {
       // Bone mode: all 4 leg bones in one pass (no barrel layering needed)
-      if (!chimeraOf('giant_rat')) parts.push(<HorseTail key="horse-tail" layer="flesh" ghost={ghost}/>);
+      if (!has('giant_rat')) parts.push(<HorseTail key="horse-tail" layer="flesh" ghost={ghost}/>);
       parts.push(
         <HorseLegBone key="horse-leg-br"    cx={38} topY={224}/>,
         <HorseLegBone key="horse-leg-ffar"  cx={80} topY={220}/>,
@@ -269,8 +305,8 @@ export function compositeCreature(keywords: string[]): CompositorResult {
         <HorseLegBone key="horse-leg-fnear" cx={72} topY={218}/>,
       );
     } else {
-      if (!chimeraOf('giant_rat')) parts.push(<HorseTail key="horse-tail" layer="flesh" ghost={ghost}/>);
-      // Far-side legs behind barrel; near-side legs deferred to §4 (after barrel)
+      if (!has('giant_rat')) parts.push(<HorseTail key="horse-tail" layer="flesh" ghost={ghost}/>);
+      // Far-side legs behind barrel; near-side deferred to §3.5
       parts.push(
         <HorseLeg key="horse-leg-br"   cx={38} topY={224} ghost={ghost} fill={horseFlesh.base}/>,
         <HorseLeg key="horse-leg-ffar" cx={80} topY={220} ghost={ghost} fill={horseFlesh.base}/>,
@@ -280,7 +316,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   // Rat tail: anchored to host body regardless of dominance
   if (body === 'giant_rat' || chimeraOf('giant_rat')) {
-    const anchor = body === 'centaur'      ? { anchorX: 11, anchorY: 176 }
+    const anchor = hasHindquarters         ? { anchorX: 11, anchorY: 176 }
                  : body === 'giant_snake'  ? { anchorX: 78, anchorY: 306 }
                  : body === 'giant_spider' ? { anchorX: 80, anchorY: 290 }
                  :                           { anchorX: 40, anchorY: 250 };
@@ -292,7 +328,21 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     parts.push(<SnakeCoil key="snake-coil" layer="flesh" ghost={ghost}/>);
   }
 
-  // Back arm
+  // §3.5. Horse hindquarters — barrel + near-side legs (behind back arm and upright torso)
+  // Fires for any body plan; centaur is no longer a competing body plan.
+  if (hasHindquarters) {
+    if (!boneMode || ghost) {
+      parts.push(<HorseBarrel key="horse-barrel" layer="flesh" ghost={ghost} fill={horseFlesh.base}/>);
+    }
+    if (!boneMode) {
+      parts.push(
+        <HorseLeg key="horse-leg-bn"    cx={27} topY={222} ghost={ghost} fill={horseFlesh.base}/>,
+        <HorseLeg key="horse-leg-fnear" cx={72} topY={218} ghost={ghost} fill={horseFlesh.base}/>,
+      );
+    }
+  }
+
+  // Back arm — primary pair from body plan, then extra chimera pairs (rotated)
   if (!boneMode) {
     if (hasBipedArms) parts.push(bpArmBack('arm-back'));
   } else {
@@ -302,6 +352,15 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       parts.push(<SkeletonArmBack key="arm-back-bone"/>);
     }
   }
+  // Extra chimera arm pairs: each numbered pair fans back/up by 22° from the shoulder pivot
+  extraArmKeywords.forEach((kw, i) => {
+    const rot = -(i + 1) * 22;
+    parts.push(
+      <g key={`arm-back-wrap-${kw}`} transform={`rotate(${rot}, 110, 112)`}>
+        {renderChimeraArmBack(kw)}
+      </g>
+    );
+  });
 
   // Back leg
   if (body === 'giant_rat') {
@@ -315,7 +374,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   } else if (!boneMode) {
     if (goatLegChimera) {
       parts.push(<GoatLegBack key="goat-leg-back" layer="flesh" ghost={ghost}/>);
-    } else if (body === 'zombie' || body === 'human') {
+    } else if ((body === 'zombie' || body === 'human') && !hasHindquarters) {
       parts.push(bpLegBack('leg-back'));
     } else if (body === 'harpy') {
       parts.push(<HarpyLegBack key="leg-back" layer="flesh" ghost={ghost}/>);
@@ -350,34 +409,11 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
     case 'giant_spider':
       if (!boneMode) {
-        // Centaur chimera: horse hindquarters sit under the spider body
-        if (chimeraOf('centaur')) {
-          parts.push(
-            <HorseBarrel key="horse-barrel" layer="flesh" ghost={ghost} fill={horseFlesh.base}/>,
-            <HorseLeg key="horse-leg-bn"    cx={27} topY={222} ghost={ghost} fill={horseFlesh.base}/>,
-            <HorseLeg key="horse-leg-fnear" cx={72} topY={218} ghost={ghost} fill={horseFlesh.base}/>,
-          );
-        }
         parts.push(
           <SpiderLegs  key="spider-legs"  ghost={ghost}/>,
           <SpiderBody  key="spider-body"  ghost={ghost}/>,
           <SpiderHairs key="spider-hairs" ghost={ghost}/>,
         );
-      }
-      break;
-
-    case 'centaur':
-      if (!boneMode || ghost) {
-        parts.push(<HorseBarrel key="horse-barrel" layer="flesh" ghost={ghost} fill={horseFlesh.base}/>);
-      }
-      if (!boneMode) {
-        // Near-side legs in front of barrel, behind upright torso
-        parts.push(
-          <HorseLeg key="horse-leg-bn"    cx={27} topY={222} ghost={ghost} fill={horseFlesh.base}/>,
-          <HorseLeg key="horse-leg-fnear" cx={72} topY={218} ghost={ghost} fill={horseFlesh.base}/>,
-        );
-        // Snake chimera supplies its own upper-body visual — upright torso suppressed
-        if (!chimeraOf('giant_snake')) parts.push(bpTorso('torso'));
       }
       break;
 
@@ -398,7 +434,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   // ── 4b. Skeleton internals ────────────────────────────────────────────────
   if (boneMode) {
     // Centaur always gets horse ribcage in addition to upright internals
-    if (body === 'centaur') {
+    if (hasHindquarters) {
       parts.push(<HorseRibcage key="horse-ribcage"/>, <HorsePelvis key="horse-pelvis"/>);
     }
     // Upper-body internals (mutually exclusive; centaur block above doesn't exclude these)
@@ -462,14 +498,10 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       // GoatBody / GoatSkeletonBody is self-contained (skull, horns, eyes all included)
       break;
 
-    default: // mermaid, centaur, phoenix, harpy, zombie, human
+    default: // mermaid, phoenix, harpy, zombie, human
       if (boneMode) {
         parts.push(<SkeletonSkull key="skull"/>);
         if (boneSpider) parts.push(<SpiderBoneEyes key="spider-bone-eyes"/>);
-      } else if (body === 'centaur' && chimeraOf('giant_snake')) {
-        // Snake chimera on centaur: snake provides the upper-body head visual
-        parts.push(<SnakeHood key="snake-hood" layer="flesh" ghost={ghost}/>);
-        parts.push(<SnakeHead key="snake-head" layer="flesh" ghost={ghost}/>);
       } else {
         parts.push(bpHead('head'));
       }
@@ -504,12 +536,21 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   // ── 6. Front limbs (in front of body) ────────────────────────────────────
 
-  // Arms
+  // Arms — primary pair from body plan, then extra chimera pairs (rotated)
   if (!boneMode && hasBipedArms) {
     parts.push(bpArmFront('arm-front'));
   } else if (boneMode && body !== 'giant_rat' && body !== 'giant_snake' && body !== 'goat') {
     parts.push(<SkeletonArmFront key="arm-front-bone"/>);
   }
+  // Extra chimera arm pairs: fan forward/up by 22° per additional pair
+  extraArmKeywords.forEach((kw, i) => {
+    const rot = (i + 1) * 22;
+    parts.push(
+      <g key={`arm-front-wrap-${kw}`} transform={`rotate(${rot}, 46, 112)`}>
+        {renderChimeraArmFront(kw)}
+      </g>
+    );
+  });
 
   // Legs
   if (body === 'giant_rat') {
@@ -538,7 +579,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   } else if (!boneMode) {
     if (goatLegChimera) {
       parts.push(<GoatLegFront key="goat-leg-front" layer="flesh" ghost={ghost}/>);
-    } else if (body === 'zombie' || body === 'human') {
+    } else if ((body === 'zombie' || body === 'human') && !hasHindquarters) {
       parts.push(bpLegFront('leg-front'));
     } else if (body === 'harpy') {
       parts.push(<HarpyLegFront key="leg-front" layer="flesh" ghost={ghost}/>);
@@ -596,14 +637,6 @@ export function compositeCreature(keywords: string[]): CompositorResult {
           [26,  220], [26,  108], [36,  46],
         ];
         break;
-      case 'centaur':
-        goopPts = [
-          [78,   4],  [126,  40],  [130,  100], [82,   220], [80,   374],
-          [72,   374],[27,   374], [10,   340], [10,   228], [4,    175],
-          [16,   375],[38,   376], [80,   376], [90,   228], [96,   155],
-          [130,  100],[110,  112], [26,   108],
-        ];
-        break;
       case 'goat':
         goopPts = [
           [78,  2],   [124, 8],  [124, 26], [130, 100], [148, 200],
@@ -630,15 +663,14 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   return {
     parts,
-    viewBox: body === 'mermaid'       ? '-30 0 220 460'
-           : boneSpider               ? '-30 -10 220 450'
-           : body === 'centaur'       ? '0 0 160 405'
-           : body === 'phoenix'       ? '-20 -30 200 450'
-           : body === 'harpy'         ? '0 -50 160 480'
-           :                            '0 0 160 420',
+    viewBox: body === 'mermaid'  ? '-30 0 220 460'
+           : boneSpider          ? '-30 -10 220 450'
+           : body === 'phoenix'  ? '-20 -30 200 450'
+           : body === 'harpy'    ? '0 -50 160 480'
+           :                       '0 0 160 420',
     width:   body === 'mermaid'  ? 190 : body === 'phoenix' ? 180 : 160,
-    height:  body === 'mermaid'  ? 460 : body === 'centaur' ? 405
-           : body === 'phoenix'  ? 405 : body === 'harpy'   ? 480 : 420,
+    height:  body === 'mermaid'  ? 460 : body === 'phoenix'  ? 405
+           : body === 'harpy'    ? 480 :                       420,
     hasWings,
     goatBody: body === 'goat',
     wingsBackground: body === 'giant_spider' && !boneMode,
