@@ -1,4 +1,4 @@
-]633;E;header;30c7a7c9-8c3d-493f-9276-242eba80cd54]633;Cimport * as React from 'react';
+import * as React from 'react';
 import { PartProps, partClass } from './types';
 
 // ─── ═══════════════════════ ETHEREAL PARTS ══════════════════════ ────────────

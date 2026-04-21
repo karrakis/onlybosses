@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { BossService, Boss } from '../services/BossService';
 import { PlayerService, Player } from '../services/PlayerService';
-import playerImage from '../images/player.png';
 import takeAction from '../actions/takeAction';
+import CreatureCompositor from './CreatureCompositor';
 import ShakeAnimation from './ShakeAnimation';
 import Tooltip from './Tooltip';
 import { getPassiveDescription } from '../data/passiveDescriptions';
@@ -1495,18 +1495,19 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                 intensity={10}
                                 onComplete={() => setPlayerShaking(false)}
                             >
-                                <img 
-                                    src={playerImage} 
-                                    alt="Player"
-                                    className="w-1/2 h-auto object-contain mb-16"
-                                    style={playerCombatAnim === 'whirlwind'
-                                        ? { animation: 'whirlwindSpin 0.7s ease-in-out' }
-                                        : playerCombatAnim === 'smash'
-                                        ? { animation: 'smashSlam 0.8s ease-in-out' }
-                                        : isFlying
-                                        ? { animation: 'flyFloat 2s ease-in-out infinite' }
-                                        : undefined}
-                                />
+                                {/* scaleX(-1) mirrors the left-facing compositor so the player faces right */}
+                                <div style={{ transform: 'scaleX(-1)', display: 'inline-block', marginBottom: '4rem' }}>
+                                    <CreatureCompositor
+                                        keywords={player?.keywords ?? []}
+                                        animStyle={playerCombatAnim === 'whirlwind'
+                                            ? { animation: 'whirlwindSpin 0.7s ease-in-out' }
+                                            : playerCombatAnim === 'smash'
+                                            ? { animation: 'smashSlam 0.8s ease-in-out' }
+                                            : isFlying
+                                            ? { animation: 'flyFloat 2s ease-in-out infinite' }
+                                            : {}}
+                                    />
+                                </div>
                             </ShakeAnimation>
                         </div>
                     </div>
@@ -1545,42 +1546,31 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                         <div className="absolute inset-0 flex items-center justify-center text-sm">{boss.mana !== undefined ? boss.mana : Math.ceil(boss.stats?.base_stats?.mana || 100)}</div>
                                     </div>
                                 </div>
-                                {boss.image_status === 'completed' && boss.image_url ? (
-                                    <ShakeAnimation 
-                                        isShaking={bossShaking || bossDying} 
-                                        duration={bossDying ? 5000 : 500}
-                                        intensity={10}
-                                        onComplete={() => {
-                                            setBossShaking(false);
-                                            if (!bossDying) {
-                                                // Only reset shake if not dying
-                                            }
-                                        }}
-                                    >
-                                        <img 
-                                            src={boss.image_url} 
-                                            alt={boss.name}
-                                            className="w-1/2 h-auto object-contain mb-16 transition-opacity duration-[5000ms]"
-                                            style={{
-                                                opacity: bossDying ? 0 : 1,
-                                                ...(bossCombatAnim === 'whirlwind'
-                                                    ? { animation: 'whirlwindSpin 0.7s ease-in-out' }
-                                                    : bossCombatAnim === 'smash'
-                                                    ? { animation: 'smashSlam 0.8s ease-in-out' }
-                                                    : isBossWebbed
-                                                    ? { animation: 'webPulse 1.5s ease-in-out infinite' }
-                                                    : {})
-                                            }}
+                                <ShakeAnimation 
+                                    isShaking={bossShaking || bossDying} 
+                                    duration={bossDying ? 5000 : 500}
+                                    intensity={10}
+                                    onComplete={() => {
+                                        setBossShaking(false);
+                                    }}
+                                >
+                                    <div style={{
+                                        opacity: bossDying ? 0 : 1,
+                                        transition: 'opacity 5000ms',
+                                        marginBottom: '4rem',
+                                    }}>
+                                        <CreatureCompositor
+                                            keywords={bossKeywords}
+                                            animStyle={bossCombatAnim === 'whirlwind'
+                                                ? { animation: 'whirlwindSpin 0.7s ease-in-out' }
+                                                : bossCombatAnim === 'smash'
+                                                ? { animation: 'smashSlam 0.8s ease-in-out' }
+                                                : isBossWebbed
+                                                ? { animation: 'webPulse 1.5s ease-in-out infinite' }
+                                                : {}}
                                         />
-                                    </ShakeAnimation>
-                                ) : boss.image_status === 'generating' || boss.image_status === 'pending' ? (
-                                    <div className="flex flex-col items-center gap-4">
-                                        <div className="text-gray-400 animate-pulse">Generating boss image...</div>
-                                        <div className="text-sm text-gray-500">{boss.name}</div>
                                     </div>
-                                ) : boss.image_status === 'failed' ? (
-                                    <div className="text-red-400">Failed to generate image</div>
-                                ) : null}
+                                </ShakeAnimation>
                             </div>
                         )}
                     </div> 
