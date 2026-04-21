@@ -251,6 +251,45 @@ function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[
   // Compositor path: inline SVG assembled from parts
   if (usesCompositor(selected)) {
     const { hasWings } = compositeCreature(selected);
+    const isGoat = selected.includes('goat');
+
+    // Goat wings grow from the withers (~container 322,232) and are rotated to
+    // lie perpendicular to the goat's spine (which tilts ~20° from horizontal).
+    // transform-origin pins the quill-base to the withers; rotate(20deg) CW
+    // aligns the spread direction with the back normal (~70° above horizontal).
+    //
+    // Coordinates derived from:
+    //   withers pre-flip SVG (108,172) → after root flip → screen (52,172)
+    //   → container (270+52, 60+172) = (322, 232)
+    // Pivot within object at (28px, 140px) for right; (322px, 140px) for left.
+    const wingStyleRight: React.CSSProperties = isGoat ? {
+      position: 'absolute', width: 350, height: 330,
+      left: 246, top: 27,
+      transformOrigin: '28px 140px',
+      transform: 'rotate(-40deg)',
+      pointerEvents: 'none',
+    } : {
+      position: 'absolute', width: 350, height: 330,
+      left: 320, top: -35,
+      pointerEvents: 'none',
+    };
+    const wingStyleLeft: React.CSSProperties = isGoat ? {
+      // Mirror of far wing. Same quill-base pivot (28px 140px) and same left/top
+      // so the attachment stays at container (274, 167).
+      // Transform order (left-to-right): rotate(-40deg) first spreads upper-right,
+      // then scaleX(-1) flips it to upper-left — quill stays pinned, feathers mirror.
+      position: 'absolute', width: 350, height: 330,
+      left: 246, top: 27,
+      transformOrigin: '28px 140px',
+      transform: 'rotate(-40deg) scaleX(-1)',
+      pointerEvents: 'none',
+    } : {
+      position: 'absolute', width: 350, height: 330,
+      left: 30, top: -35,
+      transform: 'scaleX(-1)',
+      pointerEvents: 'none',
+    };
+
     return (
       <div
         className="relative"
@@ -260,11 +299,10 @@ function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[
           {hasWings && (
             <>
               <object type="image/svg+xml" data={WING_SVG} aria-label="right wing"
-                style={{ position: 'absolute', width: 350, height: 330, left: 320, top: -35, pointerEvents: 'none' }}
+                style={wingStyleRight}
               />
               <object type="image/svg+xml" data={WING_SVG} aria-label="left wing"
-                style={{ position: 'absolute', width: 350, height: 330, left: 30, top: -35,
-                         transform: 'scaleX(-1)', pointerEvents: 'none' }}
+                style={wingStyleLeft}
               />
             </>
           )}
