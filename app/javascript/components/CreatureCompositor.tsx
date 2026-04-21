@@ -1641,237 +1641,206 @@ function SlimeGoop({ pts, pad = 18 }: { pts: Pt[]; pad?: number }) {
 // Goat eyes: amber iris (#c4850a) + thin horizontal slit pupil — the defining feature.
 //
 // ── GoatHorns (full size, for pure goat) ─────────────────────────────────────
-// ── GoatBody — quadruped mountain goat with forelegs on a boulder ────────────
-// Entirely stroke-based (no fills on the animal). Fur lines in gray and light
-// green patches give the patchy coat. Oriented like the centaur body: side-view
-// at a slight angle, front (high-x) elevated, back (low-x) lower.
+// ── GoatSkeletonBody — quadruped mountain goat skeleton, 3/4 camera angle ─────
+// Bone-mode foundation for the realistic goat. Angled ~45° toward camera:
+//   • Both eye sockets visible on the skull (near socket larger/further forward)
+//   • Near legs (high-x) drawn after far legs — painter's-algorithm depth
+//   • Cloven hooves: each fetlock splits into two digit bones + hoof caps
+//   • Z-shaped hind legs (stifle forward, hock back), straight forelegs
+//   • Ribcage as closed rib-pair arcs, dashed spine, filled pelvis + scapulae
 //
-// Draw order inside: far back leg → far barrel → near back leg → tail →
-// boulder → belly → far front leg → near barrel/shoulder → near front leg →
-// neck → ear → head → beard → horns → eye.
-//
-// Boulder sits at x≈18-164, y≈268-422 (right/front area, forelegs rest on top).
-// Back legs reach ground at y≈405. Front legs rest on boulder at y≈276.
-function GoatBody({ ghost }: PartProps) {
+// Drawing order: far hind → far front → spine / ribcage / pelvis / scapulae →
+//                near hind → near front → cervical vertebrae → skull → horns →
+//                joint knobs.
+function GoatSkeletonBody() {
   return (
-    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+    <g data-layer="bone" strokeLinecap="round">
 
-      {/* ── FAR BACK LEG ── */}
-      {/* Thigh gray */}
-      <path d="M 44,212 L 43,228 M 46,214 L 45,230 M 42,218 L 41,234
-               M 45,222 L 44,238 M 43,228 L 42,244 M 41,232 L 40,248"
-            fill="none" stroke="#aaa" strokeWidth="1.1" strokeLinecap="round"/>
-      {/* Thigh green patch */}
-      <path d="M 47,236 L 46,252 M 45,242 L 44,258 M 43,248 L 42,264
-               M 41,244 L 40,260 M 46,250 L 45,266"
-            fill="none" stroke="#8dc870" strokeWidth="1.1" strokeLinecap="round"/>
-      {/* Far shin */}
-      <path d="M 43,272 L 41,288 M 41,276 L 39,292 M 45,274 L 43,290
-               M 39,282 L 38,298 M 42,288 L 41,304"
-            fill="none" stroke="#999" strokeWidth="1.1" strokeLinecap="round"/>
-      <path d="M 41,304 L 40,320 M 39,308 L 38,324 M 37,312 L 36,328
-               M 40,316 L 39,332 M 38,320 L 37,336"
-            fill="none" stroke="#aaa" strokeWidth="1.0" strokeLinecap="round"/>
-      {/* Far fetlock tuft */}
-      <path d="M 39,334 L 36,348 M 41,336 L 39,352 M 37,338 L 34,354
-               M 43,337 L 42,353"
-            fill="none" stroke="#ccc" strokeWidth="1.2" strokeLinecap="round"/>
-      {/* Far hoof */}
-      <path d="M 36,352 C 35,368 35,386 36,406 M 40,353 C 40,369 41,387 42,406"
-            fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M 35,405 L 44,405" fill="none" stroke="#444" strokeWidth="2.5" strokeLinecap="round"/>
+      {/* ── FAR HIND LEG ── */}
+      {/* Hip → Stifle (stifle is forward / higher-x of hip) */}
+      <line x1="29" y1="194" x2="40" y2="250" stroke="black" strokeWidth="9"/>
+      <line x1="29" y1="194" x2="40" y2="250" stroke="#666"  strokeWidth="5"/>
+      {/* Stifle → Hock (hock sweeps back / lower-x) */}
+      <line x1="40" y1="250" x2="26" y2="312" stroke="black" strokeWidth="8"/>
+      <line x1="40" y1="250" x2="26" y2="312" stroke="#666"  strokeWidth="4.5"/>
+      {/* Hock → Fetlock */}
+      <line x1="26" y1="312" x2="30" y2="360" stroke="black" strokeWidth="7"/>
+      <line x1="26" y1="312" x2="30" y2="360" stroke="#555"  strokeWidth="4"/>
+      {/* Fetlock → two digits (cloven hoof) */}
+      <line x1="30" y1="360" x2="27" y2="403" stroke="black" strokeWidth="5.5"/>
+      <line x1="30" y1="360" x2="27" y2="403" stroke="#555"  strokeWidth="2.5"/>
+      <line x1="30" y1="360" x2="34" y2="403" stroke="black" strokeWidth="5.5"/>
+      <line x1="30" y1="360" x2="34" y2="403" stroke="#555"  strokeWidth="2.5"/>
+      <line x1="23" y1="403" x2="31" y2="405" stroke="#222"  strokeWidth="5"/>
+      <line x1="31" y1="403" x2="39" y2="405" stroke="#222"  strokeWidth="5"/>
 
-      {/* ── FAR BARREL (rear half of body) ── */}
-      <path d="M 48,152 L 62,150 M 46,156 L 60,154 M 48,160 L 63,158
-               M 46,165 L 62,163 M 48,169 L 65,167"
-            fill="none" stroke="#aaa" strokeWidth="1.2" strokeLinecap="round"/>
-      {/* Far haunch curves */}
-      <path d="M 42,158 C 41,170 42,186 44,200
-               M 45,154 C 44,166 45,182 47,196
-               M 48,151 C 47,163 48,179 50,193"
-            fill="none" stroke="#8dc870" strokeWidth="1.2" strokeLinecap="round"/>
+      {/* ── FAR FRONT LEG ── */}
+      {/* Shoulder → Elbow */}
+      <line x1="102" y1="178" x2="104" y2="220" stroke="black" strokeWidth="9"/>
+      <line x1="102" y1="178" x2="104" y2="220" stroke="#666"  strokeWidth="5"/>
+      {/* Elbow → Carpus (knee) */}
+      <line x1="104" y1="220" x2="104" y2="270" stroke="black" strokeWidth="8"/>
+      <line x1="104" y1="220" x2="104" y2="270" stroke="#666"  strokeWidth="4.5"/>
+      {/* Carpus → Fetlock */}
+      <line x1="104" y1="270" x2="105" y2="328" stroke="black" strokeWidth="7"/>
+      <line x1="104" y1="270" x2="105" y2="328" stroke="#555"  strokeWidth="4"/>
+      {/* Fetlock → two digits */}
+      <line x1="105" y1="328" x2="102" y2="403" stroke="black" strokeWidth="5.5"/>
+      <line x1="105" y1="328" x2="102" y2="403" stroke="#555"  strokeWidth="2.5"/>
+      <line x1="105" y1="328" x2="109" y2="403" stroke="black" strokeWidth="5.5"/>
+      <line x1="105" y1="328" x2="109" y2="403" stroke="#555"  strokeWidth="2.5"/>
+      <line x1="98"  y1="403" x2="106" y2="405" stroke="#222"  strokeWidth="5"/>
+      <line x1="106" y1="403" x2="114" y2="405" stroke="#222"  strokeWidth="5"/>
 
-      {/* ── NEAR BACK LEG ── */}
-      {/* Thigh gray */}
-      <path d="M 55,208 L 54,224 M 57,210 L 56,226 M 53,212 L 52,228
-               M 56,217 L 55,233 M 54,222 L 53,238 M 58,215 L 57,231"
-            fill="none" stroke="#888" strokeWidth="1.3" strokeLinecap="round"/>
-      {/* Thigh green */}
-      <path d="M 58,232 L 57,248 M 56,237 L 55,253 M 60,234 L 59,250
-               M 54,242 L 53,258 M 57,247 L 56,263"
-            fill="none" stroke="#7ab060" strokeWidth="1.2" strokeLinecap="round"/>
-      {/* Near shin */}
-      <path d="M 56,262 L 54,278 M 54,267 L 52,283 M 58,264 L 56,280
-               M 52,273 L 50,289 M 55,278 L 53,294"
-            fill="none" stroke="#999" strokeWidth="1.2" strokeLinecap="round"/>
-      <path d="M 54,293 L 53,309 M 52,297 L 51,313 M 50,301 L 49,317
-               M 53,305 L 52,321 M 51,309 L 50,325"
-            fill="none" stroke="#888" strokeWidth="1.3" strokeLinecap="round"/>
-      {/* Near fetlock */}
-      <path d="M 53,330 L 50,344 M 55,332 L 53,348 M 51,334 L 48,350
-               M 57,333 L 56,349"
-            fill="none" stroke="#aaa" strokeWidth="1.3" strokeLinecap="round"/>
-      {/* Near hoof */}
-      <path d="M 49,348 C 48,364 48,382 48,402 M 53,349 C 53,366 54,384 55,403"
-            fill="none" stroke="#444" strokeWidth="2.2" strokeLinecap="round"/>
-      <path d="M 47,402 L 57,403" fill="none" stroke="#333" strokeWidth="2.5" strokeLinecap="round"/>
+      {/* ── SPINE (dashed, withers → croup) ── */}
+      <path d="M 108,172 C 88,168 62,176 42,186 C 34,190 26,196 22,203"
+            fill="none" stroke="#ccc" strokeWidth="3" strokeDasharray="4,5"/>
 
-      {/* ── TAIL — short white puff ── */}
-      <path d="M 42,150 L 39,138 M 44,149 L 41,136 M 40,152 L 37,139
-               M 46,151 L 44,138 M 38,154 L 35,141 M 48,153 L 46,140"
-            fill="none" stroke="#ddd" strokeWidth="1.3" strokeLinecap="round"/>
+      {/* ── RIBCAGE — six closed rib-pair arcs fanning from thoracic spine ── */}
+      <path d="M 104,172 C 108,183 110,198 107,215 C 101,221 91,219 87,210
+               C 83,201 83,187 88,178"
+            fill="none" stroke="#bbb" strokeWidth="1.6"/>
+      <path d="M 96,173 C 100,185 102,201 99,218 C 92,225 81,223 77,213
+               C 73,204 73,190 78,181"
+            fill="none" stroke="#bbb" strokeWidth="1.6"/>
+      <path d="M 86,175 C 90,187 92,205 88,223 C 81,231 69,229 65,219
+               C 61,209 61,195 66,184"
+            fill="none" stroke="#bbb" strokeWidth="1.5"/>
+      <path d="M 76,177 C 80,189 81,208 76,228 C 69,237 56,234 52,223
+               C 48,212 49,198 55,187"
+            fill="none" stroke="#aaa" strokeWidth="1.4"/>
+      <path d="M 66,179 C 70,192 70,212 65,231 C 58,240 45,237 41,225
+               C 37,214 38,200 44,189"
+            fill="none" stroke="#aaa" strokeWidth="1.3"/>
+      <path d="M 56,182 C 59,196 58,216 53,234 C 47,242 35,239 32,227"
+            fill="none" stroke="#999" strokeWidth="1.2"/>
+      {/* Sternum bar */}
+      <path d="M 87,210 C 78,219 66,228 51,231"
+            fill="none" stroke="#ccc" strokeWidth="2.2"/>
 
-      {/* ── BOULDER ── */}
-      <path d="M 60,276 C 50,268 28,268 16,282
-               C 6,298 12,348 22,382
-               C 32,412 86,422 136,414
-               C 156,406 166,380 160,348
-               C 154,316 148,280 130,270
-               C 112,260 74,270 60,276 Z"
-            fill="#515151" stroke="#282828" strokeWidth="1.5"/>
-      {/* Top highlight */}
-      <path d="M 48,273 C 78,263 112,262 136,272"
-            fill="none" stroke="#909090" strokeWidth="1.5" strokeLinecap="round"/>
-      {/* Horizontal sweep curves — 3-D roundness */}
-      <path d="M 18,295 C 54,285 102,283 150,291"
-            fill="none" stroke="#363636" strokeWidth="1" strokeLinecap="round"/>
-      <path d="M 16,318 C 52,310 102,308 152,316"
-            fill="none" stroke="#363636" strokeWidth="1" strokeLinecap="round"/>
-      <path d="M 20,342 C 56,334 104,332 152,340"
-            fill="none" stroke="#363636" strokeWidth="1" strokeLinecap="round"/>
-      <path d="M 26,366 C 60,358 108,356 150,364"
-            fill="none" stroke="#363636" strokeWidth="1" strokeLinecap="round"/>
-      {/* Left shadow edge */}
-      <path d="M 14,288 C 18,312 24,342 32,372"
-            fill="none" stroke="#1c1c1c" strokeWidth="2" strokeLinecap="round"/>
-      {/* Vertical cracks for texture */}
-      <path d="M 82,268 C 84,293 80,324 78,360"
-            fill="none" stroke="#2c2c2c" strokeWidth="1.2" strokeLinecap="round"/>
-      <path d="M 122,268 C 124,295 126,326 124,364"
-            fill="none" stroke="#2c2c2c" strokeWidth="1.0" strokeLinecap="round"/>
+      {/* ── PELVIS ── */}
+      <path d="M 22,200 C 17,193 24,182 36,181 L 47,184
+               C 51,189 49,198 45,201 C 47,208 44,214 39,214
+               C 34,216 27,213 24,208 C 19,204 19,201 22,200 Z"
+            fill="#555" stroke="black" strokeWidth="1.5" strokeLinejoin="round"/>
 
-      {/* ── BELLY ── */}
-      <path d="M 54,210 L 60,212 M 64,209 L 70,211 M 74,208 L 80,210
-               M 84,208 L 90,210 M 94,208 L 100,210 M 104,208 L 110,210"
-            fill="none" stroke="#ccc" strokeWidth="1.0" strokeLinecap="round"/>
-      <path d="M 66,211 L 70,215 M 78,210 L 82,214 M 90,209 L 94,213
-               M 102,209 L 106,213"
-            fill="none" stroke="#a0d060" strokeWidth="0.9" strokeLinecap="round"/>
+      {/* ── SCAPULAE ── */}
+      {/* Far scapula (drawn behind near) */}
+      <path d="M 101,178 C 104,166 106,153 102,147 C 98,145 91,150 90,160
+               C 88,169 90,177 99,181 Z"
+            fill="#444" stroke="black" strokeWidth="1" strokeLinejoin="round"/>
+      {/* Near scapula */}
+      <path d="M 113,175 C 117,162 118,149 114,143 C 110,141 104,147 102,157
+               C 100,167 102,176 111,179 Z"
+            fill="#555" stroke="black" strokeWidth="1.5" strokeLinejoin="round"/>
 
-      {/* ── FAR FRONT LEG (on boulder) ── */}
-      <path d="M 100,208 L 99,224 M 102,210 L 101,226 M 98,212 L 97,228
-               M 101,216 L 100,232 M 99,220 L 98,236"
-            fill="none" stroke="#aaa" strokeWidth="1.2" strokeLinecap="round"/>
-      <path d="M 99,232 L 98,248 M 101,235 L 100,251 M 97,238 L 96,254
-               M 100,242 L 99,258 M 98,247 L 97,263"
-            fill="none" stroke="#8dc870" strokeWidth="1.1" strokeLinecap="round"/>
-      <path d="M 98,258 L 97,274 M 100,260 L 99,276 M 96,262 L 95,278"
-            fill="none" stroke="#999" strokeWidth="1.1" strokeLinecap="round"/>
+      {/* ── NEAR HIND LEG ── */}
+      <line x1="42" y1="192" x2="54" y2="249" stroke="black" strokeWidth="11"/>
+      <line x1="42" y1="192" x2="54" y2="249" stroke="#888"  strokeWidth="7"/>
+      <line x1="54" y1="249" x2="39" y2="312" stroke="black" strokeWidth="9"/>
+      <line x1="54" y1="249" x2="39" y2="312" stroke="#888"  strokeWidth="5.5"/>
+      <line x1="39" y1="312" x2="44" y2="360" stroke="black" strokeWidth="8"/>
+      <line x1="39" y1="312" x2="44" y2="360" stroke="#777"  strokeWidth="4.5"/>
+      {/* Fetlock → two digits */}
+      <line x1="44" y1="360" x2="40" y2="405" stroke="black" strokeWidth="7"/>
+      <line x1="44" y1="360" x2="40" y2="405" stroke="#666"  strokeWidth="4"/>
+      <line x1="44" y1="360" x2="49" y2="405" stroke="black" strokeWidth="7"/>
+      <line x1="44" y1="360" x2="49" y2="405" stroke="#666"  strokeWidth="4"/>
+      <line x1="35" y1="405" x2="44" y2="407" stroke="#222"  strokeWidth="8"/>
+      <line x1="45" y1="405" x2="54" y2="407" stroke="#222"  strokeWidth="8"/>
 
-      {/* ── BARREL NEAR SIDE (front half) ── */}
-      {/* Green mid-back patch */}
-      <path d="M 64,150 L 80,148 M 66,154 L 82,152 M 64,158 L 82,156
-               M 66,163 L 84,161 M 68,168 L 86,166"
-            fill="none" stroke="#8dc870" strokeWidth="1.2" strokeLinecap="round"/>
-      {/* Gray front of barrel */}
-      <path d="M 86,148 L 102,146 M 88,152 L 104,150 M 86,156 L 104,154
-               M 88,161 L 106,159 M 86,166 L 106,164 M 88,170 L 108,168"
-            fill="none" stroke="#999" strokeWidth="1.2" strokeLinecap="round"/>
-      {/* Side flank — slightly diagonal downward */}
-      <path d="M 68,170 L 72,186 M 74,168 L 78,184 M 80,167 L 84,183
-               M 86,166 L 90,182 M 92,165 L 96,181 M 98,165 L 102,181"
-            fill="none" stroke="#aaa" strokeWidth="1.2" strokeLinecap="round"/>
-      {/* Shoulder curves */}
-      <path d="M 100,164 C 104,176 108,192 112,208
-               M 104,162 C 108,174 112,190 116,206
-               M 96,166 C 98,178 100,194 102,210"
-            fill="none" stroke="#8dc870" strokeWidth="1.2" strokeLinecap="round"/>
-      <path d="M 108,162 C 112,174 116,190 120,206"
-            fill="none" stroke="#999" strokeWidth="1.2" strokeLinecap="round"/>
+      {/* ── NEAR FRONT LEG ── */}
+      <line x1="114" y1="176" x2="116" y2="219" stroke="black" strokeWidth="11"/>
+      <line x1="114" y1="176" x2="116" y2="219" stroke="#888"  strokeWidth="7"/>
+      <line x1="116" y1="219" x2="116" y2="270" stroke="black" strokeWidth="9"/>
+      <line x1="116" y1="219" x2="116" y2="270" stroke="#888"  strokeWidth="5.5"/>
+      <line x1="116" y1="270" x2="117" y2="328" stroke="black" strokeWidth="8"/>
+      <line x1="116" y1="270" x2="117" y2="328" stroke="#777"  strokeWidth="4.5"/>
+      {/* Fetlock → two digits */}
+      <line x1="117" y1="328" x2="113" y2="405" stroke="black" strokeWidth="7"/>
+      <line x1="117" y1="328" x2="113" y2="405" stroke="#666"  strokeWidth="4"/>
+      <line x1="117" y1="328" x2="122" y2="405" stroke="black" strokeWidth="7"/>
+      <line x1="117" y1="328" x2="122" y2="405" stroke="#666"  strokeWidth="4"/>
+      <line x1="108" y1="405" x2="117" y2="407" stroke="#222"  strokeWidth="8"/>
+      <line x1="118" y1="405" x2="127" y2="407" stroke="#222"  strokeWidth="8"/>
 
-      {/* ── NEAR FRONT LEG (on boulder) ── */}
-      <path d="M 112,205 L 111,221 M 114,207 L 113,223 M 110,209 L 109,225
-               M 113,214 L 112,230 M 111,219 L 110,235"
-            fill="none" stroke="#888" strokeWidth="1.3" strokeLinecap="round"/>
-      <path d="M 111,231 L 110,247 M 113,233 L 112,249 M 109,236 L 108,252
-               M 112,240 L 111,256 M 110,244 L 109,260"
-            fill="none" stroke="#7ab060" strokeWidth="1.2" strokeLinecap="round"/>
-      <path d="M 110,256 L 109,272 M 112,258 L 111,274 M 108,260 L 107,276"
-            fill="none" stroke="#888" strokeWidth="1.3" strokeLinecap="round"/>
+      {/* ── CERVICAL VERTEBRAE (6 discs along dashed neck curve) ── */}
+      <path d="M 120,90 C 120,105 117,122 115,140 C 113,153 111,162 110,172"
+            fill="none" stroke="#ccc" strokeWidth="2.5" strokeDasharray="3,5"/>
+      <circle cx="120" cy="90"  r="5"   fill="#555" stroke="black" strokeWidth="1.5"/>
+      <circle cx="120" cy="105" r="4.5" fill="#555" stroke="black" strokeWidth="1.5"/>
+      <circle cx="118" cy="120" r="4"   fill="#555" stroke="black" strokeWidth="1.5"/>
+      <circle cx="116" cy="135" r="4"   fill="#555" stroke="black" strokeWidth="1.5"/>
+      <circle cx="114" cy="150" r="3.5" fill="#555" stroke="black" strokeWidth="1.5"/>
+      <circle cx="112" cy="163" r="3.5" fill="#555" stroke="black" strokeWidth="1.5"/>
 
-      {/* ── NECK ── */}
-      <path d="M 112,152 C 116,140 122,128 126,112
-               M 116,150 C 120,138 126,126 130,110
-               M 110,155 C 114,143 120,130 124,114"
-            fill="none" stroke="#999" strokeWidth="1.3" strokeLinecap="round"/>
-      <path d="M 120,148 C 124,136 130,124 134,108
-               M 118,152 C 122,140 128,128 132,112"
-            fill="none" stroke="#8dc870" strokeWidth="1.2" strokeLinecap="round"/>
-      <path d="M 124,152 C 128,140 134,128 138,112
-               M 126,154 C 130,142 136,130 140,114"
-            fill="none" stroke="#aaa" strokeWidth="1.1" strokeLinecap="round"/>
+      {/* ── SKULL ── */}
+      {/* Cranium — slightly wide ellipse for 3/4 view */}
+      <ellipse cx="128" cy="54" rx="24" ry="27"
+               fill="#555" stroke="black" strokeWidth="2"/>
+      {/* Nasal bone / premaxilla (elongated snout toward high-x) */}
+      <path d="M 137,65 L 154,68 L 155,80 C 153,92 148,97 140,94 L 134,82 Z"
+            fill="#555" stroke="black" strokeWidth="1.5" strokeLinejoin="round"/>
+      {/* Mandible */}
+      <path d="M 138,71 C 143,80 149,91 151,100
+               C 149,108 142,112 135,106 C 131,100 129,91 132,82 Z"
+            fill="#444" stroke="black" strokeWidth="1.5" strokeLinejoin="round"/>
+      {/* Tooth row */}
+      <line x1="135" y1="106" x2="151" y2="100" stroke="#aaa" strokeWidth="5" strokeLinecap="round"/>
+      <line x1="135" y1="106" x2="151" y2="100" stroke="#ddd" strokeWidth="2.5" strokeLinecap="round"/>
+      {/* Near orbit (viewer-side, high-x — slightly larger) */}
+      <ellipse cx="144" cy="47" rx="10" ry="9"
+               fill="#111" stroke="#555" strokeWidth="1"/>
+      {/* Far orbit */}
+      <ellipse cx="118" cy="46" rx="8" ry="8"
+               fill="#111" stroke="#444" strokeWidth="0.8"/>
+      {/* Zygomatic arch */}
+      <path d="M 149,62 C 156,68 158,77 152,85"
+            fill="none" stroke="black" strokeWidth="1.5"/>
+      {/* Nares */}
+      <ellipse cx="154" cy="76" rx="2.5" ry="3"  fill="#1a0000"/>
+      <ellipse cx="154" cy="84" rx="2"   ry="2.5" fill="#1a0000"/>
 
-      {/* ── EAR (near/low-x — slightly floppy) ── */}
-      <path d="M 122,78 C 116,70 109,72 106,83
-               C 103,94 108,105 117,104 C 124,101 125,88 122,78"
-            fill="none" stroke="#888" strokeWidth="1.5" strokeLinecap="round"/>
-      <path d="M 119,80 C 114,76 111,81 111,90 C 111,98 116,104 120,102"
-            fill="none" stroke="#bbb" strokeWidth="1.0" strokeLinecap="round"/>
+      {/* ── HORNS ── */}
+      {/* Near horn — swept back and up from poll, with curl tip */}
+      <path d="M 132,28 C 128,18 121,10 115,6 C 111,4 108,8 111,16
+               C 113,23 119,25 123,21 C 127,18 126,12 121,10"
+            fill="none" stroke="black" strokeWidth="6" strokeLinejoin="round"/>
+      <path d="M 132,28 C 128,18 121,10 115,6 C 111,4 108,8 111,16
+               C 113,23 119,25 123,21 C 127,18 126,12 121,10"
+            fill="none" stroke="#999" strokeWidth="3" strokeLinejoin="round"/>
+      {/* Far horn — slightly shorter, behind near */}
+      <path d="M 123,32 C 120,22 113,14 108,10 C 104,8 101,12 104,20
+               C 106,26 112,28 116,24"
+            fill="none" stroke="black" strokeWidth="5" strokeLinejoin="round"/>
+      <path d="M 123,32 C 120,22 113,14 108,10 C 104,8 101,12 104,20
+               C 106,26 112,28 116,24"
+            fill="none" stroke="#777" strokeWidth="2.5" strokeLinejoin="round"/>
+      {/* Annulation rings on near horn */}
+      <path d="M 130,24 C 127,22 124,22 122,24" fill="none" stroke="black" strokeWidth="1.5"/>
+      <path d="M 126,17 C 123,15 120,15 118,17" fill="none" stroke="black" strokeWidth="1.2"/>
+      <path d="M 120,11 C 117,9  114,9  113,11" fill="none" stroke="black" strokeWidth="1"/>
 
-      {/* ── HEAD ── */}
-      {/* Crown — gray */}
-      <path d="M 124,72 L 128,82 M 126,70 L 130,80 M 122,74 L 126,84
-               M 128,70 L 132,80 M 130,72 L 134,82"
-            fill="none" stroke="#aaa" strokeWidth="1.2" strokeLinecap="round"/>
-      {/* Crown — green patch */}
-      <path d="M 134,70 L 138,80 M 132,68 L 136,78 M 136,70 L 140,80
-               M 138,68 L 142,78"
-            fill="none" stroke="#8dc870" strokeWidth="1.2" strokeLinecap="round"/>
-      {/* Cheek */}
-      <path d="M 138,82 L 146,84 M 136,86 L 144,88 M 138,90 L 146,92
-               M 136,94 L 144,96 M 138,98 L 146,100 M 134,100 L 142,102"
-            fill="none" stroke="#999" strokeWidth="1.2" strokeLinecap="round"/>
-      {/* Muzzle */}
-      <path d="M 146,84 L 154,86 M 144,88 L 152,90 M 146,92 L 154,94
-               M 144,96 L 152,98"
-            fill="none" stroke="#bbb" strokeWidth="1.0" strokeLinecap="round"/>
-      {/* Nostrils */}
-      <circle cx="153" cy="96" r="2" fill="#333" stroke="none"/>
-      <circle cx="151" cy="100" r="1.5" fill="#444" stroke="none"/>
+      {/* ── JOINT KNOBS ── */}
+      <g fill="#555" stroke="black" strokeWidth="1.5">
+        <circle cx="114" cy="176" r="7"/>  {/* near shoulder */}
+        <circle cx="102" cy="178" r="6"/>  {/* far shoulder */}
+        <circle cx="42"  cy="192" r="7"/>  {/* near hip */}
+        <circle cx="29"  cy="194" r="6"/>  {/* far hip */}
+        <circle cx="116" cy="219" r="6"/>  {/* near elbow */}
+        <circle cx="104" cy="220" r="5"/>  {/* far elbow */}
+        <circle cx="54"  cy="249" r="6"/>  {/* near stifle */}
+        <circle cx="40"  cy="250" r="5"/>  {/* far stifle */}
+        <circle cx="116" cy="270" r="6"/>  {/* near carpus */}
+        <circle cx="104" cy="270" r="5"/>  {/* far carpus */}
+        <circle cx="39"  cy="312" r="6"/>  {/* near hock */}
+        <circle cx="26"  cy="312" r="5"/>  {/* far hock */}
+        <circle cx="117" cy="328" r="5"/>  {/* near fetlock front */}
+        <circle cx="105" cy="328" r="4"/>  {/* far fetlock front */}
+        <circle cx="44"  cy="360" r="5"/>  {/* near fetlock hind */}
+        <circle cx="30"  cy="360" r="4"/>  {/* far fetlock hind */}
+      </g>
 
-      {/* ── BEARD ── */}
-      <path d="M 150,104 L 149,119 M 148,107 L 147,123 M 146,109 L 145,126
-               M 152,103 L 151,118 M 144,110 L 143,127"
-            fill="none" stroke="#ccc" strokeWidth="1.0" strokeLinecap="round"/>
-
-      {/* ── HORNS — no fill, sweep back from crown ── */}
-      {/* Far horn (high-x) */}
-      <path d="M 124,70 C 122,58 116,44 110,37 C 106,31 102,33 100,42"
-            fill="none" stroke="#a08040" strokeWidth="3.5" strokeLinecap="round"/>
-      <path d="M 100,42 C 99,48 102,56 106,54"
-            fill="none" stroke="#a08040" strokeWidth="2" strokeLinecap="round"/>
-      {/* Far horn annulation rings */}
-      <path d="M 122,66 C 120,64 117,64 114,66
-               M 118,59 C 116,57 113,57 111,59
-               M 114,52 C 112,50 110,50 108,52"
-            fill="none" stroke="#7a5c20" strokeWidth="1" strokeLinecap="round"/>
-      {/* Near horn */}
-      <path d="M 128,68 C 127,56 121,42 116,37 C 112,31 109,33 108,41"
-            fill="none" stroke="#b09050" strokeWidth="2.5" strokeLinecap="round"/>
-      <path d="M 108,41 C 107,48 110,55 114,53"
-            fill="none" stroke="#b09050" strokeWidth="1.8" strokeLinecap="round"/>
-      {/* Near horn rings */}
-      <path d="M 126,64 C 124,62 122,62 120,64
-               M 122,57 C 120,55 118,55 116,57"
-            fill="none" stroke="#9a7a30" strokeWidth="1" strokeLinecap="round"/>
-
-      {/* ── GOAT EYE — amber iris, flat horizontal slit pupil ── */}
-      <ellipse cx="140" cy="83" rx="7" ry="5.5"
-               fill="#c4850a" stroke="#333" strokeWidth="1"/>
-      <ellipse cx="140" cy="83" rx="5.5" ry="1.8"
-               fill="#1a0800" stroke="none"/>
-      <circle  cx="142" cy="81" r="1.5"
-               fill="white" stroke="none" opacity="0.7"/>
     </g>
   );
 }
@@ -2021,9 +1990,10 @@ export function compositeCreature(keywords: string[]): CompositorResult {
                                    isSkeleton || isLich);
   // Goat chimera: goat + any other body-defining creature — horns, goat eyes, and
   // (where anatomy allows) goat legs are grafted onto the host body plan.
+  // isSkeleton / isLich are rendering modes, not separate body plans.
+  // goat + skeleton → pure goat in bone mode (GoatSkeletonBody), not a chimera.
   const goatChimera = isGoat && (isHuman || isCentaur || isMermaid || isPhoenix ||
-                                  isSpider || isHarpy || isRat || isSnake ||
-                                  isSkeleton || isLich);
+                                  isSpider || isHarpy || isRat || isSnake);
 
   // Centaur hindquarters inherit the dominant flesh color of the combined creature.
   const horseFlesh = isSnake ? { base: '#2d5a1e', hi: '#4a8c2e' }
@@ -2050,7 +2020,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   // human legs are an explicit feature — suppressed by mermaid (fish tail),
   // phoenix (bird legs instead), spider-only, rat (own 4-leg plan), and goat.
-  const usesHumanLegs = !isMermaid && !isPhoenix && !(isSpider && !boneMode) && !isRat && !isSnake && !usesGoatLegs && !(isSlime && !slimeChimera);
+  const usesHumanLegs = !isMermaid && !isPhoenix && !(isSpider && !boneMode) && !isRat && !isSnake && !usesGoatLegs && !(isSlime && !slimeChimera) && !(isGoat && !goatChimera);
 
   const parts: React.ReactNode[] = [];
 
@@ -2105,7 +2075,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     if (boneSpider) {
       parts.push(<SpiderBonusArms key="spider-bonus-arms"/>);
     }
-    if (!isSnake) {
+    if (!isSnake && !(isGoat && !goatChimera)) {
       parts.push(<SkeletonArmBack key="arm-back-bone"/>);
     }
   }
@@ -2128,7 +2098,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       if (boneSpider) {
         parts.push(<SpiderBonusLegs key="spider-bonus-legs"/>);
       }
-      if (!isSnake) {
+      if (!isSnake && !(isGoat && !goatChimera)) {
         parts.push(<SkeletonLegBack key="leg-back-bone"/>);
       }
     }
@@ -2177,10 +2147,10 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       }
     }
   } else if (isGoat && !goatChimera) {
-    if (!boneMode) {
-      // Full quadruped: includes boulder, all 4 legs, head, horns, eye — self-contained.
-      parts.push(<GoatBody key="goat-body" layer="flesh" ghost={ghost}/>);
+    if (boneMode) {
+      parts.push(<GoatSkeletonBody key="goat-skeleton"/>);
     }
+    // Flesh layer: to be built on top of the skeleton.
   } else if (isSlime && !slimeChimera) {
     if (!boneMode) {
       parts.push(<SlimeBody key="slime-body" layer="flesh" ghost={ghost}/>);
@@ -2202,7 +2172,8 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       parts.push(<RatPelvis  key="rat-pelvis"/>);
     } else if (isSnake) {
       parts.push(<SnakeRibcage key="snake-ribcage"/>);
-    } else {
+    } else if (!(isGoat && !goatChimera)) {
+      // GoatSkeletonBody (section 4) has its own ribcage — skip humanoid skeleton internals.
       parts.push(<SkeletonRibcage key="ribcage"/>);
       parts.push(<SkeletonPelvis key="pelvis"/>);
     }
@@ -2246,13 +2217,13 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     parts.push(<SpiderEyes key="spider-eyes" ghost={ghost}/>);
   } else if (isSlime && !slimeChimera) {
     // Pure slime has no head — the eyes are part of SlimeBody itself.
+  } else if (isGoat && !goatChimera) {
+    // GoatSkeletonBody / GoatBody (section 4) is self-contained — skull, horns, eyes all included.
   } else if (boneMode) {
     parts.push(<SkeletonSkull key="skull"/>);
     if (boneSpider) {
       parts.push(<SpiderBoneEyes key="spider-bone-eyes"/>);
     }
-  } else if (isGoat && !goatChimera) {
-    // GoatBody (section 4) is self-contained — head, horns, eye all included.
   } else {
     parts.push(<HumanoidHead key="head" layer="flesh" ghost={ghost}/>
     );
@@ -2290,7 +2261,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
         parts.push(<HumanoidArmFront key="arm-front" layer="flesh" ghost={ghost}/>);
       }
     } else {
-      if (!isSnake) {
+      if (!isSnake && !(isGoat && !goatChimera)) {
         parts.push(<SkeletonArmFront key="arm-front-bone"/>);
       }
     }
@@ -2322,12 +2293,12 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       }
       parts.push(<PhoenixLegFront key="bird-leg-front" layer="flesh" ghost={ghost}/>);
     }
-  } else if (!isMermaid && !isSnake) {
+  } else if (!isMermaid && !isSnake && !(isGoat && !goatChimera)) {
     parts.push(<SkeletonLegFront key="leg-front-bone"/>);
   }
 
   // ── 7. Joint knobs always last ────────────────────────────────
-  if (boneMode && !isRat && !isSnake) {
+  if (boneMode && !isRat && !isSnake && !(isGoat && !goatChimera)) {
     parts.push(<SkeletonJointKnobs key="joint-knobs" includeHips={!isMermaid}/>);
   }
 
