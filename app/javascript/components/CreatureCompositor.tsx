@@ -1631,8 +1631,346 @@ function SlimeGoop({ pts, pad = 18 }: { pts: Pt[]; pad?: number }) {
   );
 }
 
-// ─── ═══════════════════════ WING PARTS ═════════════════════════ ─────────────
-// Wings are rendered as <object> layers in the viewport, not inline SVG.
+// ─── ════════════════════ GOAT / PAN PARTS ══════════════════════ ─────────────
+// Goat and satyr anatomy. Canvas 160×420, pre-flip (right-facing).
+// Key landmark heights: skull centre y=46, hip y=258, floor y=420.
+//
+// Goat horns: two swept lateral arcs from the forehead, filled #c8b88a (horn tan).
+// Goat legs: digitigrade (reversed-knee) columns — wide furry thigh → shin angled
+//   backward → fetlock knob → short pastern → cloven hoof (two separate toe pads).
+// Goat eyes: amber iris (#c4850a) + thin horizontal slit pupil — the defining feature.
+//
+// ── GoatHorns (full size, for pure goat) ─────────────────────────────────────
+// ── GoatBody — quadruped mountain goat with forelegs on a boulder ────────────
+// Entirely stroke-based (no fills on the animal). Fur lines in gray and light
+// green patches give the patchy coat. Oriented like the centaur body: side-view
+// at a slight angle, front (high-x) elevated, back (low-x) lower.
+//
+// Draw order inside: far back leg → far barrel → near back leg → tail →
+// boulder → belly → far front leg → near barrel/shoulder → near front leg →
+// neck → ear → head → beard → horns → eye.
+//
+// Boulder sits at x≈18-164, y≈268-422 (right/front area, forelegs rest on top).
+// Back legs reach ground at y≈405. Front legs rest on boulder at y≈276.
+function GoatBody({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+
+      {/* ── FAR BACK LEG ── */}
+      {/* Thigh gray */}
+      <path d="M 44,212 L 43,228 M 46,214 L 45,230 M 42,218 L 41,234
+               M 45,222 L 44,238 M 43,228 L 42,244 M 41,232 L 40,248"
+            fill="none" stroke="#aaa" strokeWidth="1.1" strokeLinecap="round"/>
+      {/* Thigh green patch */}
+      <path d="M 47,236 L 46,252 M 45,242 L 44,258 M 43,248 L 42,264
+               M 41,244 L 40,260 M 46,250 L 45,266"
+            fill="none" stroke="#8dc870" strokeWidth="1.1" strokeLinecap="round"/>
+      {/* Far shin */}
+      <path d="M 43,272 L 41,288 M 41,276 L 39,292 M 45,274 L 43,290
+               M 39,282 L 38,298 M 42,288 L 41,304"
+            fill="none" stroke="#999" strokeWidth="1.1" strokeLinecap="round"/>
+      <path d="M 41,304 L 40,320 M 39,308 L 38,324 M 37,312 L 36,328
+               M 40,316 L 39,332 M 38,320 L 37,336"
+            fill="none" stroke="#aaa" strokeWidth="1.0" strokeLinecap="round"/>
+      {/* Far fetlock tuft */}
+      <path d="M 39,334 L 36,348 M 41,336 L 39,352 M 37,338 L 34,354
+               M 43,337 L 42,353"
+            fill="none" stroke="#ccc" strokeWidth="1.2" strokeLinecap="round"/>
+      {/* Far hoof */}
+      <path d="M 36,352 C 35,368 35,386 36,406 M 40,353 C 40,369 41,387 42,406"
+            fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M 35,405 L 44,405" fill="none" stroke="#444" strokeWidth="2.5" strokeLinecap="round"/>
+
+      {/* ── FAR BARREL (rear half of body) ── */}
+      <path d="M 48,152 L 62,150 M 46,156 L 60,154 M 48,160 L 63,158
+               M 46,165 L 62,163 M 48,169 L 65,167"
+            fill="none" stroke="#aaa" strokeWidth="1.2" strokeLinecap="round"/>
+      {/* Far haunch curves */}
+      <path d="M 42,158 C 41,170 42,186 44,200
+               M 45,154 C 44,166 45,182 47,196
+               M 48,151 C 47,163 48,179 50,193"
+            fill="none" stroke="#8dc870" strokeWidth="1.2" strokeLinecap="round"/>
+
+      {/* ── NEAR BACK LEG ── */}
+      {/* Thigh gray */}
+      <path d="M 55,208 L 54,224 M 57,210 L 56,226 M 53,212 L 52,228
+               M 56,217 L 55,233 M 54,222 L 53,238 M 58,215 L 57,231"
+            fill="none" stroke="#888" strokeWidth="1.3" strokeLinecap="round"/>
+      {/* Thigh green */}
+      <path d="M 58,232 L 57,248 M 56,237 L 55,253 M 60,234 L 59,250
+               M 54,242 L 53,258 M 57,247 L 56,263"
+            fill="none" stroke="#7ab060" strokeWidth="1.2" strokeLinecap="round"/>
+      {/* Near shin */}
+      <path d="M 56,262 L 54,278 M 54,267 L 52,283 M 58,264 L 56,280
+               M 52,273 L 50,289 M 55,278 L 53,294"
+            fill="none" stroke="#999" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M 54,293 L 53,309 M 52,297 L 51,313 M 50,301 L 49,317
+               M 53,305 L 52,321 M 51,309 L 50,325"
+            fill="none" stroke="#888" strokeWidth="1.3" strokeLinecap="round"/>
+      {/* Near fetlock */}
+      <path d="M 53,330 L 50,344 M 55,332 L 53,348 M 51,334 L 48,350
+               M 57,333 L 56,349"
+            fill="none" stroke="#aaa" strokeWidth="1.3" strokeLinecap="round"/>
+      {/* Near hoof */}
+      <path d="M 49,348 C 48,364 48,382 48,402 M 53,349 C 53,366 54,384 55,403"
+            fill="none" stroke="#444" strokeWidth="2.2" strokeLinecap="round"/>
+      <path d="M 47,402 L 57,403" fill="none" stroke="#333" strokeWidth="2.5" strokeLinecap="round"/>
+
+      {/* ── TAIL — short white puff ── */}
+      <path d="M 42,150 L 39,138 M 44,149 L 41,136 M 40,152 L 37,139
+               M 46,151 L 44,138 M 38,154 L 35,141 M 48,153 L 46,140"
+            fill="none" stroke="#ddd" strokeWidth="1.3" strokeLinecap="round"/>
+
+      {/* ── BOULDER ── */}
+      <path d="M 60,276 C 50,268 28,268 16,282
+               C 6,298 12,348 22,382
+               C 32,412 86,422 136,414
+               C 156,406 166,380 160,348
+               C 154,316 148,280 130,270
+               C 112,260 74,270 60,276 Z"
+            fill="#515151" stroke="#282828" strokeWidth="1.5"/>
+      {/* Top highlight */}
+      <path d="M 48,273 C 78,263 112,262 136,272"
+            fill="none" stroke="#909090" strokeWidth="1.5" strokeLinecap="round"/>
+      {/* Horizontal sweep curves — 3-D roundness */}
+      <path d="M 18,295 C 54,285 102,283 150,291"
+            fill="none" stroke="#363636" strokeWidth="1" strokeLinecap="round"/>
+      <path d="M 16,318 C 52,310 102,308 152,316"
+            fill="none" stroke="#363636" strokeWidth="1" strokeLinecap="round"/>
+      <path d="M 20,342 C 56,334 104,332 152,340"
+            fill="none" stroke="#363636" strokeWidth="1" strokeLinecap="round"/>
+      <path d="M 26,366 C 60,358 108,356 150,364"
+            fill="none" stroke="#363636" strokeWidth="1" strokeLinecap="round"/>
+      {/* Left shadow edge */}
+      <path d="M 14,288 C 18,312 24,342 32,372"
+            fill="none" stroke="#1c1c1c" strokeWidth="2" strokeLinecap="round"/>
+      {/* Vertical cracks for texture */}
+      <path d="M 82,268 C 84,293 80,324 78,360"
+            fill="none" stroke="#2c2c2c" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M 122,268 C 124,295 126,326 124,364"
+            fill="none" stroke="#2c2c2c" strokeWidth="1.0" strokeLinecap="round"/>
+
+      {/* ── BELLY ── */}
+      <path d="M 54,210 L 60,212 M 64,209 L 70,211 M 74,208 L 80,210
+               M 84,208 L 90,210 M 94,208 L 100,210 M 104,208 L 110,210"
+            fill="none" stroke="#ccc" strokeWidth="1.0" strokeLinecap="round"/>
+      <path d="M 66,211 L 70,215 M 78,210 L 82,214 M 90,209 L 94,213
+               M 102,209 L 106,213"
+            fill="none" stroke="#a0d060" strokeWidth="0.9" strokeLinecap="round"/>
+
+      {/* ── FAR FRONT LEG (on boulder) ── */}
+      <path d="M 100,208 L 99,224 M 102,210 L 101,226 M 98,212 L 97,228
+               M 101,216 L 100,232 M 99,220 L 98,236"
+            fill="none" stroke="#aaa" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M 99,232 L 98,248 M 101,235 L 100,251 M 97,238 L 96,254
+               M 100,242 L 99,258 M 98,247 L 97,263"
+            fill="none" stroke="#8dc870" strokeWidth="1.1" strokeLinecap="round"/>
+      <path d="M 98,258 L 97,274 M 100,260 L 99,276 M 96,262 L 95,278"
+            fill="none" stroke="#999" strokeWidth="1.1" strokeLinecap="round"/>
+
+      {/* ── BARREL NEAR SIDE (front half) ── */}
+      {/* Green mid-back patch */}
+      <path d="M 64,150 L 80,148 M 66,154 L 82,152 M 64,158 L 82,156
+               M 66,163 L 84,161 M 68,168 L 86,166"
+            fill="none" stroke="#8dc870" strokeWidth="1.2" strokeLinecap="round"/>
+      {/* Gray front of barrel */}
+      <path d="M 86,148 L 102,146 M 88,152 L 104,150 M 86,156 L 104,154
+               M 88,161 L 106,159 M 86,166 L 106,164 M 88,170 L 108,168"
+            fill="none" stroke="#999" strokeWidth="1.2" strokeLinecap="round"/>
+      {/* Side flank — slightly diagonal downward */}
+      <path d="M 68,170 L 72,186 M 74,168 L 78,184 M 80,167 L 84,183
+               M 86,166 L 90,182 M 92,165 L 96,181 M 98,165 L 102,181"
+            fill="none" stroke="#aaa" strokeWidth="1.2" strokeLinecap="round"/>
+      {/* Shoulder curves */}
+      <path d="M 100,164 C 104,176 108,192 112,208
+               M 104,162 C 108,174 112,190 116,206
+               M 96,166 C 98,178 100,194 102,210"
+            fill="none" stroke="#8dc870" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M 108,162 C 112,174 116,190 120,206"
+            fill="none" stroke="#999" strokeWidth="1.2" strokeLinecap="round"/>
+
+      {/* ── NEAR FRONT LEG (on boulder) ── */}
+      <path d="M 112,205 L 111,221 M 114,207 L 113,223 M 110,209 L 109,225
+               M 113,214 L 112,230 M 111,219 L 110,235"
+            fill="none" stroke="#888" strokeWidth="1.3" strokeLinecap="round"/>
+      <path d="M 111,231 L 110,247 M 113,233 L 112,249 M 109,236 L 108,252
+               M 112,240 L 111,256 M 110,244 L 109,260"
+            fill="none" stroke="#7ab060" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M 110,256 L 109,272 M 112,258 L 111,274 M 108,260 L 107,276"
+            fill="none" stroke="#888" strokeWidth="1.3" strokeLinecap="round"/>
+
+      {/* ── NECK ── */}
+      <path d="M 112,152 C 116,140 122,128 126,112
+               M 116,150 C 120,138 126,126 130,110
+               M 110,155 C 114,143 120,130 124,114"
+            fill="none" stroke="#999" strokeWidth="1.3" strokeLinecap="round"/>
+      <path d="M 120,148 C 124,136 130,124 134,108
+               M 118,152 C 122,140 128,128 132,112"
+            fill="none" stroke="#8dc870" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M 124,152 C 128,140 134,128 138,112
+               M 126,154 C 130,142 136,130 140,114"
+            fill="none" stroke="#aaa" strokeWidth="1.1" strokeLinecap="round"/>
+
+      {/* ── EAR (near/low-x — slightly floppy) ── */}
+      <path d="M 122,78 C 116,70 109,72 106,83
+               C 103,94 108,105 117,104 C 124,101 125,88 122,78"
+            fill="none" stroke="#888" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M 119,80 C 114,76 111,81 111,90 C 111,98 116,104 120,102"
+            fill="none" stroke="#bbb" strokeWidth="1.0" strokeLinecap="round"/>
+
+      {/* ── HEAD ── */}
+      {/* Crown — gray */}
+      <path d="M 124,72 L 128,82 M 126,70 L 130,80 M 122,74 L 126,84
+               M 128,70 L 132,80 M 130,72 L 134,82"
+            fill="none" stroke="#aaa" strokeWidth="1.2" strokeLinecap="round"/>
+      {/* Crown — green patch */}
+      <path d="M 134,70 L 138,80 M 132,68 L 136,78 M 136,70 L 140,80
+               M 138,68 L 142,78"
+            fill="none" stroke="#8dc870" strokeWidth="1.2" strokeLinecap="round"/>
+      {/* Cheek */}
+      <path d="M 138,82 L 146,84 M 136,86 L 144,88 M 138,90 L 146,92
+               M 136,94 L 144,96 M 138,98 L 146,100 M 134,100 L 142,102"
+            fill="none" stroke="#999" strokeWidth="1.2" strokeLinecap="round"/>
+      {/* Muzzle */}
+      <path d="M 146,84 L 154,86 M 144,88 L 152,90 M 146,92 L 154,94
+               M 144,96 L 152,98"
+            fill="none" stroke="#bbb" strokeWidth="1.0" strokeLinecap="round"/>
+      {/* Nostrils */}
+      <circle cx="153" cy="96" r="2" fill="#333" stroke="none"/>
+      <circle cx="151" cy="100" r="1.5" fill="#444" stroke="none"/>
+
+      {/* ── BEARD ── */}
+      <path d="M 150,104 L 149,119 M 148,107 L 147,123 M 146,109 L 145,126
+               M 152,103 L 151,118 M 144,110 L 143,127"
+            fill="none" stroke="#ccc" strokeWidth="1.0" strokeLinecap="round"/>
+
+      {/* ── HORNS — no fill, sweep back from crown ── */}
+      {/* Far horn (high-x) */}
+      <path d="M 124,70 C 122,58 116,44 110,37 C 106,31 102,33 100,42"
+            fill="none" stroke="#a08040" strokeWidth="3.5" strokeLinecap="round"/>
+      <path d="M 100,42 C 99,48 102,56 106,54"
+            fill="none" stroke="#a08040" strokeWidth="2" strokeLinecap="round"/>
+      {/* Far horn annulation rings */}
+      <path d="M 122,66 C 120,64 117,64 114,66
+               M 118,59 C 116,57 113,57 111,59
+               M 114,52 C 112,50 110,50 108,52"
+            fill="none" stroke="#7a5c20" strokeWidth="1" strokeLinecap="round"/>
+      {/* Near horn */}
+      <path d="M 128,68 C 127,56 121,42 116,37 C 112,31 109,33 108,41"
+            fill="none" stroke="#b09050" strokeWidth="2.5" strokeLinecap="round"/>
+      <path d="M 108,41 C 107,48 110,55 114,53"
+            fill="none" stroke="#b09050" strokeWidth="1.8" strokeLinecap="round"/>
+      {/* Near horn rings */}
+      <path d="M 126,64 C 124,62 122,62 120,64
+               M 122,57 C 120,55 118,55 116,57"
+            fill="none" stroke="#9a7a30" strokeWidth="1" strokeLinecap="round"/>
+
+      {/* ── GOAT EYE — amber iris, flat horizontal slit pupil ── */}
+      <ellipse cx="140" cy="83" rx="7" ry="5.5"
+               fill="#c4850a" stroke="#333" strokeWidth="1"/>
+      <ellipse cx="140" cy="83" rx="5.5" ry="1.8"
+               fill="#1a0800" stroke="none"/>
+      <circle  cx="142" cy="81" r="1.5"
+               fill="white" stroke="none" opacity="0.7"/>
+    </g>
+  );
+}
+
+
+
+// ── GoatHornsChimera (ear-scale, for chimera overlay) ────────────────────────
+// Positioned like RatEars — drawn BEFORE the host head so the skull overlaps
+// the horn base naturally. dy adjusts for each host species' crown height.
+function GoatHornsChimera({ ghost, dy = 0 }: PartProps & { dy?: number }) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="#c8b88a" stroke="black" strokeWidth="1.5" strokeLinejoin="round"
+       transform={dy ? `translate(0,${dy})` : undefined}>
+      {/* Far horn */}
+      <path d="M 95,26 C 98,14 110,8 116,13 C 120,18 116,27 106,30
+               C 103,28 98,26 95,26 Z"/>
+      <path d="M 106,30 C 102,33 101,37 104,39"
+            fill="none" stroke="black" strokeWidth="1.5" strokeLinecap="round"/>
+      {/* Near horn */}
+      <path d="M 59,28 C 56,16 44,10 38,15 C 34,20 38,29 48,32
+               C 51,30 56,28 59,28 Z"/>
+      <path d="M 48,32 C 52,35 53,39 50,41"
+            fill="none" stroke="black" strokeWidth="1.5" strokeLinecap="round"/>
+    </g>
+  );
+}
+
+// ── GoatEyeOverlay — slit-pupil eye pasted over another creature's head ──────
+// cy is the host eye's vertical centre (defaults to humanoid 46).
+function GoatEyeOverlay({ ghost, cy = 46 }: PartProps & { cy?: number }) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}>
+      <ellipse cx="92" cy={cy} rx="7"   ry="6"
+               fill="#c4850a" stroke="black" strokeWidth="1.5"/>
+      <ellipse cx="92" cy={cy} rx="5.5" ry="1.8"
+               fill="#1a0800" stroke="none"/>
+      <circle  cx="94" cy={cy - 2} r="1.5"
+               fill="white" stroke="none" opacity="0.7"/>
+    </g>
+  );
+}
+
+// ── GoatLegBack — chimera back digitigrade leg (fur-stroke style) ─────────────
+// Connects at humanoid cx≈90, y=258. Thigh → reversed knee → fetlock → cloven hoof.
+function GoatLegBack({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)} fill="none" strokeLinecap="round">
+      {/* Thigh gray */}
+      <path d="M 90,258 L 89,274 M 92,260 L 91,276 M 88,262 L 87,278
+               M 91,266 L 90,282 M 89,272 L 88,288 M 93,264 L 92,280"
+            stroke="#aaa" strokeWidth="1.2"/>
+      {/* Thigh green patch */}
+      <path d="M 92,280 L 91,296 M 90,285 L 89,301 M 94,282 L 93,298
+               M 88,288 L 87,304 M 91,292 L 90,308"
+            stroke="#8dc870" strokeWidth="1.1"/>
+      {/* Shin reversed */}
+      <path d="M 90,308 L 88,324 M 88,312 L 86,328 M 92,310 L 90,326
+               M 86,318 L 84,334 M 89,322 L 87,338"
+            stroke="#999" strokeWidth="1.1"/>
+      {/* Fetlock tuft */}
+      <path d="M 87,340 L 84,354 M 89,342 L 87,358 M 85,344 L 82,360
+               M 91,343 L 90,358"
+            stroke="#ccc" strokeWidth="1.2"/>
+      {/* Hoof */}
+      <path d="M 83,358 C 82,374 82,390 83,406 M 87,358 C 87,374 88,390 90,406"
+            stroke="#444" strokeWidth="2.2"/>
+      <path d="M 82,405 L 91,405" stroke="#333" strokeWidth="2.5"/>
+    </g>
+  );
+}
+
+// ── GoatLegFront — chimera front digitigrade leg (fur-stroke style) ───────────
+function GoatLegFront({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)} fill="none" strokeLinecap="round">
+      {/* Thigh gray */}
+      <path d="M 66,258 L 65,274 M 68,260 L 67,276 M 64,262 L 63,278
+               M 67,266 L 66,282 M 65,272 L 64,288 M 69,264 L 68,280"
+            stroke="#888" strokeWidth="1.3"/>
+      {/* Thigh green patch */}
+      <path d="M 68,280 L 67,296 M 66,285 L 65,301 M 70,282 L 69,298
+               M 64,288 L 63,304 M 67,292 L 66,308"
+            stroke="#7ab060" strokeWidth="1.2"/>
+      {/* Shin */}
+      <path d="M 66,308 L 64,324 M 64,312 L 62,328 M 68,310 L 66,326
+               M 62,318 L 60,334 M 65,322 L 63,338"
+            stroke="#999" strokeWidth="1.2"/>
+      {/* Fetlock tuft */}
+      <path d="M 63,340 L 60,354 M 65,342 L 63,358 M 61,344 L 58,360
+               M 67,343 L 66,358"
+            stroke="#bbb" strokeWidth="1.2"/>
+      {/* Hoof */}
+      <path d="M 59,358 C 58,374 58,390 59,406 M 63,358 C 63,374 64,390 66,406"
+            stroke="#444" strokeWidth="2.2"/>
+      <path d="M 58,405 L 67,405" stroke="#333" strokeWidth="2.5"/>
+    </g>
+  );
+}
 
 // ─── ═══════════════════════ WING PARTS ═════════════════════════ ─────────────
 // Wings are rendered as <object> layers in the viewport, not inline SVG.
@@ -1675,11 +2013,17 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   const isGhost    = has('ghost');
   const hasWings   = has('fly');
   const isSlime    = has('slime');
+  const isGoat     = has('goat');
   // Slime chimera: slime + any other body-defining creature — the blob body is
   // suppressed and green goop overlays the host creature instead.
   const slimeChimera = isSlime && (isHuman || isCentaur || isMermaid || isPhoenix ||
-                                   isSpider || isHarpy || isRat || isSnake ||
+                                   isSpider || isHarpy || isRat || isSnake || isGoat ||
                                    isSkeleton || isLich);
+  // Goat chimera: goat + any other body-defining creature — horns, goat eyes, and
+  // (where anatomy allows) goat legs are grafted onto the host body plan.
+  const goatChimera = isGoat && (isHuman || isCentaur || isMermaid || isPhoenix ||
+                                  isSpider || isHarpy || isRat || isSnake ||
+                                  isSkeleton || isLich);
 
   // Centaur hindquarters inherit the dominant flesh color of the combined creature.
   const horseFlesh = isSnake ? { base: '#2d5a1e', hi: '#4a8c2e' }
@@ -1687,7 +2031,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
                    :           { base: 'white',   hi: 'white'   };
 
   // If rat is combined with another body-defining creature, only ears + whiskers + tail carry over.
-  const ratChimera = isRat && (isHuman || isCentaur || isMermaid || isPhoenix || isSpider || isHarpy || isSnake);
+  const ratChimera = isRat && (isHuman || isCentaur || isMermaid || isPhoenix || isSpider || isHarpy || isSnake || isGoat);
 
   // arms are a human/centaur feature — phoenixes and spiders don't have arms
   // (unless spider+boneMode, where bone arms are drawn regardless)
@@ -1699,9 +2043,14 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   // ghost affects only flesh-tagged parts
   const ghost = isGhost;
 
+  // Goat chimera: digitigrade legs replace normal legs on the host body.
+  // Pure goat uses GoatBody (section 4) instead of individual leg pushes.
+  const usesGoatLegs = isGoat && goatChimera && !isCentaur && !isMermaid
+                     && !(isSnake && !isCentaur) && !(isSpider && !boneMode);
+
   // human legs are an explicit feature — suppressed by mermaid (fish tail),
-  // phoenix (bird legs instead), spider-only, and rat (own 4-leg plan).
-  const usesHumanLegs = !isMermaid && !isPhoenix && !(isSpider && !boneMode) && !isRat && !isSnake && !(isSlime && !slimeChimera);
+  // phoenix (bird legs instead), spider-only, rat (own 4-leg plan), and goat.
+  const usesHumanLegs = !isMermaid && !isPhoenix && !(isSpider && !boneMode) && !isRat && !isSnake && !usesGoatLegs && !(isSlime && !slimeChimera);
 
   const parts: React.ReactNode[] = [];
 
@@ -1763,7 +2112,9 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   if (!isRat) {
     if (!boneMode) {
-      if (usesHumanLegs) {
+      if (usesGoatLegs) {
+        parts.push(<GoatLegBack key="goat-leg-back" layer="flesh" ghost={ghost}/>);
+      } else if (usesHumanLegs) {
         parts.push(isHarpy
           ? <HarpyLegBack  key="leg-back" layer="flesh" ghost={ghost}/>
           : <HumanoidLegBack key="leg-back" layer="flesh" ghost={ghost}/>
@@ -1825,6 +2176,11 @@ export function compositeCreature(keywords: string[]): CompositorResult {
         parts.push(<UprightTorso key="torso" layer="flesh" ghost={ghost}/>);
       }
     }
+  } else if (isGoat && !goatChimera) {
+    if (!boneMode) {
+      // Full quadruped: includes boulder, all 4 legs, head, horns, eye — self-contained.
+      parts.push(<GoatBody key="goat-body" layer="flesh" ghost={ghost}/>);
+    }
   } else if (isSlime && !slimeChimera) {
     if (!boneMode) {
       parts.push(<SlimeBody key="slime-body" layer="flesh" ghost={ghost}/>);
@@ -1861,6 +2217,12 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     parts.push(<HarpyCrest key="harpy-crest" layer="flesh" ghost={ghost}/>);
   }
   // Phoenix beak removed — fire + talons + wings are sufficient.
+  // Goat chimera: horns go BEFORE the head so the skull overlaps the horn base.
+  // dy adjusts for each host species' crown height (same approach as RatEars).
+  if (goatChimera && !boneMode) {
+    const hornDy = isSnake ? -12 : isRat ? -4 : 0;
+    parts.push(<GoatHornsChimera key="goat-horns" layer="flesh" ghost={ghost} dy={hornDy}/>);
+  }
   // Rat chimera: ears go BEFORE the head so the head renders on top of them.
   // dy shifts ears to match each head's crown height (rat crown ≈ y=22).
   if (ratChimera && !boneMode && !isSpider) {
@@ -1889,8 +2251,17 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     if (boneSpider) {
       parts.push(<SpiderBoneEyes key="spider-bone-eyes"/>);
     }
+  } else if (isGoat && !goatChimera) {
+    // GoatBody (section 4) is self-contained — head, horns, eye all included.
   } else {
-    parts.push(<HumanoidHead key="head" layer="flesh" ghost={ghost}/>);
+    parts.push(<HumanoidHead key="head" layer="flesh" ghost={ghost}/>
+    );
+  }
+  // Goat chimera: overlay the amber slit eye on top of the host head.
+  if (goatChimera && !boneMode) {
+    // Each head type has its eye at a slightly different y.
+    const eyeCy = isRat ? 46 : isSnake ? 44 : 46;
+    parts.push(<GoatEyeOverlay key="goat-eye-overlay" layer="flesh" ghost={ghost} cy={eyeCy}/>);
   }
   // Rat chimera: whiskers after head so they show on top.
   if (ratChimera && !boneMode && !isSpider) {
@@ -1942,6 +2313,8 @@ export function compositeCreature(keywords: string[]): CompositorResult {
         ? <HarpyLegFront  key="leg-front" layer="flesh" ghost={ghost}/>
         : <HumanoidLegFront key="leg-front" layer="flesh" ghost={ghost}/>
       );
+    } else if (usesGoatLegs) {
+      parts.push(<GoatLegFront key="goat-leg-front" layer="flesh" ghost={ghost}/>);
     } else if (isPhoenix) {
       if (isSpider) {
         // Both bird legs deferred here so they render in front of spider abdomen.
@@ -2047,8 +2420,27 @@ export function compositeCreature(keywords: string[]): CompositorResult {
         [110,  112], // shoulder back
         [26,   108], // shoulder front
       ];
+    } else if (isGoat && !goatChimera) {
+      // Pure goat (Pan/satyr): horn tips → arm reach → wide thighs → cloven hooves
+      goopPts = [
+        [78,  2],    // horn tip crown (between the two horns)
+        [124, 8],    // far horn tip
+        [124, 26],   // far horn base
+        [130, 100],  // shoulder right
+        [148, 200],  // arm/elbow right
+        [112, 262],  // hip right (thigh top, wide)
+        [108, 310],  // knee right (out-knee of digitigrade)
+        [96,  414],  // hoof right
+        [60,  414],  // hoof left
+        [48,  310],  // knee left
+        [44,  262],  // hip left
+        [28,  200],  // arm/elbow left
+        [26,  100],  // shoulder left
+        [30,  26],   // near horn base
+        [30,  8],    // near horn tip
+      ];
     } else {
-      // Generic humanoid (human, harpy, phoenix, rat-chimera host etc.)
+      // Generic humanoid (human, harpy, phoenix, goat-chimera host, rat-chimera host etc.)
       // Head crown → arm tips → hip → feet
       goopPts = [
         [78,  18],   // head crown
