@@ -258,12 +258,19 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   const MAX_HANDS: Partial<Record<string, number>> = {
     'human':      2,
     'zombie':     2,
+    'centaur':    2,  // human upper body — chimera arms when not the sole body
     'mermaid':    2,
     'giant_rat':  2,  // forepaws count as hands
   };
   // Chimera keywords present that contribute arm pairs beyond the body plan's own.
   // Body plan handles its own primary pair; chimeras get additional pairs, rotated.
-  const extraArmKeywords = Object.keys(MAX_HANDS).filter(k => chimeraOf(k));
+  // Special: centaur+human is a pure centaur (human is the fallback host, not a distinct creature);
+  // centaur's arms ARE the human arms — skip to avoid double-counting.
+  const extraArmKeywords = Object.keys(MAX_HANDS).filter(k => {
+    if (!chimeraOf(k)) return false;
+    if (k === 'centaur' && body === 'human') return false;
+    return true;
+  });
 
   // Render one arm for a chimera contributor.
   // In bone mode all extra arms use skeleton style regardless of contributor.
