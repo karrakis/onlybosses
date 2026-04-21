@@ -190,6 +190,7 @@ const HUMANOID_SVG      = '/assets/keywords/humanoid.svg';
 const PHOENIX_SVG       = '/assets/keywords/phoenix.svg';
 const WING_SVG          = '/assets/keywords/wing.svg';
 const WING_SVG_STATIC   = '/assets/keywords/wing.svg?static=1';
+const WING_SVG_FLAPX    = '/assets/keywords/wing.svg?flapx=1';
 
 // Creatures that use humanoid.svg as their base model
 const HUMANOID_CREATURES = new Set([
@@ -297,9 +298,9 @@ function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[
         className="relative"
         style={{ width: 700, height: 540, background: '#1e1e2e', borderRadius: 8, overflow: 'visible', ...flipStyle }}
       >
-        {/* Goat far wing — behind body, static (no rAF loop) */}
+        {/* Goat far wing — behind body, X-axis flap */}
         {hasWings && isGoat && (
-          <object type="image/svg+xml" data={WING_SVG_STATIC} aria-label="right wing"
+          <object type="image/svg+xml" data={WING_SVG_FLAPX} aria-label="right wing"
             style={{ ...wingStyleRight, position: 'absolute' }}
           />
         )}
@@ -318,9 +319,9 @@ function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[
             />
           )}
         </div>
-        {/* Goat near wing — in front of body, static (no rAF loop) */}
+        {/* Goat near wing — in front of body, X-axis flap */}
         {hasWings && isGoat && (
-          <object type="image/svg+xml" data={WING_SVG_STATIC} aria-label="left wing"
+          <object type="image/svg+xml" data={WING_SVG_FLAPX} aria-label="left wing"
             style={{ ...wingStyleLeft, position: 'absolute', zIndex: 20 }}
           />
         )}

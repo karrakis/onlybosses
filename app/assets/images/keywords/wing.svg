@@ -170,15 +170,24 @@
 
     // ── Animation loop ───────────────────────────────────────────────────────
     // ?static=1 → render one rest frame only, no loop.
-    const isStatic = new URLSearchParams(new URL(document.location.href).search).get('static') === '1';
+    // ?flapx=1  → oscillate control points on X axis instead of Y (perpendicular flap).
+    const params   = new URLSearchParams(new URL(document.location.href).search);
+    const isStatic = params.get('static') === '1';
+    const flapX    = params.get('flapx')  === '1';
 
     function frame(ms) {
       const phase = (ms / 1000 / PERIOD) * Math.PI * 2;
 
       // Animated control points this frame
-      const p1 = [P1b[0], P1b[1] + AMP_P1y * Math.sin(phase)];
-      const p2 = [P2b[0], P2b[1] + AMP_P2y * Math.sin(phase - LAG_P2)];
-      const p3 = [P3b[0], P3b[1] + AMP_P3y * Math.sin(phase - LAG_P3)];
+      const p1 = flapX
+        ? [P1b[0] + AMP_P1y * Math.sin(phase),            P1b[1]]
+        : [P1b[0], P1b[1] + AMP_P1y * Math.sin(phase)];
+      const p2 = flapX
+        ? [P2b[0] + AMP_P2y * Math.sin(phase - LAG_P2),   P2b[1]]
+        : [P2b[0], P2b[1] + AMP_P2y * Math.sin(phase - LAG_P2)];
+      const p3 = flapX
+        ? [P3b[0] + AMP_P3y * Math.sin(phase - LAG_P3),   P3b[1]]
+        : [P3b[0], P3b[1] + AMP_P3y * Math.sin(phase - LAG_P3)];
 
       for (const { el, t, s } of uses1) {
         const [x, y] = B(t, p1, p2, p3);
