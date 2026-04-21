@@ -280,9 +280,9 @@ function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[
       // Transform order (left-to-right): rotate(-40deg) first spreads upper-right,
       // then scaleX(-1) flips it to upper-left — quill stays pinned, feathers mirror.
       position: 'absolute', width: 350, height: 330,
-      left: 366, top: 27,
+      left: 275, top: 27,
       transformOrigin: '28px 140px',
-      transform: 'rotate(-40deg) scaleX(-1) rotateY(-70deg)',
+      transform: 'scaleX(-1) scaleY(-1) rotate(153deg)  rotateY(-70deg)',
       pointerEvents: 'none',
     } : {
       position: 'absolute', width: 350, height: 330,
