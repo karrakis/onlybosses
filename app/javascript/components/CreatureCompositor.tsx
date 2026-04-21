@@ -779,8 +779,9 @@ function PhoenixFlames() {
 //             RatHead → RatLegBack (hind, front one) → RatLegFront×2 (paws)
 // Standard viewBox 0 0 160 420.
 
-function RatTail({ ghost, anchorX = 20, anchorY = 250 }: PartProps & { anchorX?: number; anchorY?: number }) {
-  // Tail path authored with root at (20, 250). Translate to anchor.
+function RatTail({ ghost, anchorX = 40, anchorY = 250 }: PartProps & { anchorX?: number; anchorY?: number }) {
+  // Tail path authored with root at (20, 250). anchorX/anchorY translate to attachment point.
+  // Default anchorX=40 places root at body left-edge (path x=20 + dx=20 → canvas x=40).
   const dx = anchorX - 20;
   const dy = anchorY - 250;
   const t = (x: number, y: number) => `${x + dx},${y + dy}`;
@@ -2076,22 +2077,23 @@ function GoatSkeletonBody() {
 
 
 // ── GoatHornsChimera (ear-scale, for chimera overlay) ────────────────────────
-// Positioned like RatEars — drawn BEFORE the host head so the skull overlaps
-// the horn base naturally. dy adjusts for each host species' crown height.
+// Horn bases anchored at the exact same points as RatEars:
+//   far ear cx=88,cy=25 rotate(14);  near ear cx=62,cy=21 rotate(-10)
+// dy shifts both to match each host species' crown height.
 function GoatHornsChimera({ ghost, dy = 0 }: PartProps & { dy?: number }) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
        fill="#c8b88a" stroke="black" strokeWidth="1.5" strokeLinejoin="round"
        transform={dy ? `translate(0,${dy})` : undefined}>
-      {/* Far horn */}
-      <path d="M 95,26 C 98,14 110,8 116,13 C 120,18 116,27 106,30
-               C 103,28 98,26 95,26 Z"/>
-      <path d="M 106,30 C 102,33 101,37 104,39"
+      {/* Far horn — base anchored at far ear centre (88,25) */}
+      <path d="M 88,25 C 90,14 98,6 104,10 C 108,14 106,22 98,26
+               C 95,24 90,24 88,25 Z"/>
+      <path d="M 98,26 C 95,29 94,33 96,35"
             fill="none" stroke="black" strokeWidth="1.5" strokeLinecap="round"/>
-      {/* Near horn */}
-      <path d="M 59,28 C 56,16 44,10 38,15 C 34,20 38,29 48,32
-               C 51,30 56,28 59,28 Z"/>
-      <path d="M 48,32 C 52,35 53,39 50,41"
+      {/* Near horn — base anchored at near ear centre (62,21) */}
+      <path d="M 62,21 C 60,10 52,2 46,6 C 42,10 44,18 52,22
+               C 55,20 60,20 62,21 Z"/>
+      <path d="M 52,22 C 55,25 56,29 54,31"
             fill="none" stroke="black" strokeWidth="1.5" strokeLinecap="round"/>
     </g>
   );
@@ -2112,59 +2114,78 @@ function GoatEyeOverlay({ ghost, cy = 46 }: PartProps & { cy?: number }) {
   );
 }
 
-// ── GoatLegBack — chimera back digitigrade leg (fur-stroke style) ─────────────
-// Connects at humanoid cx≈90, y=258. Thigh → reversed knee → fetlock → cloven hoof.
-function GoatLegBack({ ghost }: PartProps) {
+// ── GoatLegBack — chimera rear leg pair drawn in GoatBody style ───────────────
+// GoatBody hind geometry scaled to chimera y-space: hip y=194→258, ground y=408.
+// Draw order: near first (behind), far second (in front).
+// tx: optional x translate to align hips with the host body's leg anchors.
+//   Default 0 = correct for pure-goat chimera hosts (humanoid, spider, etc.)
+//   Pass tx=24 for rat host to align near-leg hip with rat's cx=66 anchor.
+function GoatLegBack({ ghost, tx = 0 }: PartProps & { tx?: number }) {
   return (
-    <g data-layer="flesh" className={partClass('flesh', ghost)} fill="none" strokeLinecap="round">
-      {/* Thigh gray */}
-      <path d="M 90,258 L 89,274 M 92,260 L 91,276 M 88,262 L 87,278
-               M 91,266 L 90,282 M 89,272 L 88,288 M 93,264 L 92,280"
-            stroke="#aaa" strokeWidth="1.2"/>
-      {/* Thigh green patch */}
-      <path d="M 92,280 L 91,296 M 90,285 L 89,301 M 94,282 L 93,298
-               M 88,288 L 87,304 M 91,292 L 90,308"
-            stroke="#8dc870" strokeWidth="1.1"/>
-      {/* Shin reversed */}
-      <path d="M 90,308 L 88,324 M 88,312 L 86,328 M 92,310 L 90,326
-               M 86,318 L 84,334 M 89,322 L 87,338"
-            stroke="#999" strokeWidth="1.1"/>
-      {/* Fetlock tuft */}
-      <path d="M 87,340 L 84,354 M 89,342 L 87,358 M 85,344 L 82,360
-               M 91,343 L 90,358"
-            stroke="#ccc" strokeWidth="1.2"/>
-      {/* Hoof */}
-      <path d="M 83,358 C 82,374 82,390 83,406 M 87,358 C 87,374 88,390 90,406"
-            stroke="#444" strokeWidth="2.2"/>
-      <path d="M 82,405 L 91,405" stroke="#333" strokeWidth="2.5"/>
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       strokeLinecap="round" strokeLinejoin="round"
+       transform={tx ? `translate(${tx},0)` : undefined}>
+      {/* ── NEAR HIND LEG (behind) ── */}
+      <path d="M 33,258 C 32,274 42,289 46,300 C 52,301 64,299 62,296
+               C 60,285 54,269 52,258 Z"
+            fill="#c8bfaa" stroke="#8a7a62" strokeWidth="1"/>
+      <path d="M 44,300 C 34,317 28,331 28,343 C 33,345 50,344 51,342
+               C 52,331 56,315 62,299 Z"
+            fill="#ddd5c0" stroke="#8a7a62" strokeWidth="1"/>
+      <path d="M 30,343 L 36,378 L 52,378 L 48,343 Z"
+            fill="#ddd5c0" stroke="#8a7a62" strokeWidth="0.9"/>
+      <path d="M 32,378 L 28,408 L 42,408 L 42,378 Z"
+            fill="#1a1410" stroke="black" strokeWidth="1"/>
+      <path d="M 42,378 L 42,408 L 55,408 L 51,378 Z"
+            fill="#1a1410" stroke="black" strokeWidth="1"/>
+      {/* ── FAR HIND LEG (in front) ── */}
+      <path d="M 22,259 C 22,275 30,289 34,299 C 38,299 47,297 46,296
+               C 46,283 40,268 36,258 Z"
+            fill="#c8bfaa" stroke="#8a7a62" strokeWidth="0.8"/>
+      <path d="M 33,300 C 24,316 18,332 18,343 C 22,344 33,344 34,342
+               C 36,331 41,314 47,297 Z"
+            fill="#ddd5c0" stroke="#8a7a62" strokeWidth="0.8"/>
+      <path d="M 20,342 L 24,377 L 36,377 L 32,342 Z"
+            fill="#ddd5c0" stroke="#8a7a62" strokeWidth="0.7"/>
+      <path d="M 21,377 L 19,408 L 28,408 L 29,377 Z"
+            fill="#1a1410" stroke="black" strokeWidth="0.8"/>
+      <path d="M 29,377 L 29,408 L 37,408 L 37,377 Z"
+            fill="#1a1410" stroke="black" strokeWidth="0.8"/>
     </g>
   );
 }
 
-// ── GoatLegFront — chimera front digitigrade leg (fur-stroke style) ───────────
+// ── GoatLegFront — chimera front leg pair drawn in GoatBody style ──────────────
+// GoatBody front geometry scaled to chimera y-space: shoulder y=178→258, ground y=408.
+// Scale factor ≈ 0.658. Both far (lighter) and near (heavier) legs shown.
 function GoatLegFront({ ghost }: PartProps) {
   return (
-    <g data-layer="flesh" className={partClass('flesh', ghost)} fill="none" strokeLinecap="round">
-      {/* Thigh gray */}
-      <path d="M 66,258 L 65,274 M 68,260 L 67,276 M 64,262 L 63,278
-               M 67,266 L 66,282 M 65,272 L 64,288 M 69,264 L 68,280"
-            stroke="#888" strokeWidth="1.3"/>
-      {/* Thigh green patch */}
-      <path d="M 68,280 L 67,296 M 66,285 L 65,301 M 70,282 L 69,298
-               M 64,288 L 63,304 M 67,292 L 66,308"
-            stroke="#7ab060" strokeWidth="1.2"/>
-      {/* Shin */}
-      <path d="M 66,308 L 64,324 M 64,312 L 62,328 M 68,310 L 66,326
-               M 62,318 L 60,334 M 65,322 L 63,338"
-            stroke="#999" strokeWidth="1.2"/>
-      {/* Fetlock tuft */}
-      <path d="M 63,340 L 60,354 M 65,342 L 63,358 M 61,344 L 58,360
-               M 67,343 L 66,358"
-            stroke="#bbb" strokeWidth="1.2"/>
-      {/* Hoof */}
-      <path d="M 59,358 C 58,374 58,390 59,406 M 63,358 C 63,374 64,390 66,406"
-            stroke="#444" strokeWidth="2.2"/>
-      <path d="M 58,405 L 67,405" stroke="#333" strokeWidth="2.5"/>
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       strokeLinecap="round" strokeLinejoin="round">
+      {/* ── FAR FRONT LEG (lighter) ── */}
+      <path d="M 96,258 C 95,270 98,281 100,287 L 110,286
+               C 109,278 110,269 109,258 Z"
+            fill="#c8bfaa" stroke="#8a7a62" strokeWidth="0.8"/>
+      <path d="M 99,287 L 99,320 L 110,320 L 111,287 Z"
+            fill="#ddd5c0" stroke="#8a7a62" strokeWidth="0.8"/>
+      <path d="M 99,320 L 100,358 L 110,358 L 110,320 Z"
+            fill="#ddd5c0" stroke="#8a7a62" strokeWidth="0.7"/>
+      <path d="M 97,358 L 96,408 L 106,408 L 105,358 Z"
+            fill="#1a1410" stroke="black" strokeWidth="0.8"/>
+      <path d="M 105,358 L 106,408 L 115,408 L 113,358 Z"
+            fill="#1a1410" stroke="black" strokeWidth="0.8"/>
+      {/* ── NEAR FRONT LEG (heavier) ── */}
+      <path d="M 106,258 C 105,270 110,281 112,288 C 118,290 126,288 124,286
+               C 123,279 122,269 120,258 Z"
+            fill="#c8bfaa" stroke="#8a7a62" strokeWidth="1"/>
+      <path d="M 111,288 L 110,322 L 124,322 L 125,287 Z"
+            fill="#ddd5c0" stroke="#8a7a62" strokeWidth="1"/>
+      <path d="M 110,322 L 110,359 L 124,359 L 125,322 Z"
+            fill="#ddd5c0" stroke="#8a7a62" strokeWidth="0.9"/>
+      <path d="M 107,359 L 106,408 L 120,408 L 117,359 Z"
+            fill="#1a1410" stroke="black" strokeWidth="1"/>
+      <path d="M 118,359 L 120,408 L 131,408 L 128,359 Z"
+            fill="#1a1410" stroke="black" strokeWidth="1"/>
     </g>
   );
 }
@@ -2185,6 +2206,19 @@ export interface CompositorResult {
   height: number;
   /** Whether wing <object> layers should be shown */
   hasWings: boolean;
+  /** True only when a pure (non-chimera) goat body is rendered — triggers goat wing positioning */
+  goatBody: boolean;
+  /** When true, both wings render behind the body (e.g. spider — wings on the underside) */
+  wingsBackground: boolean;
+  /**
+   * Wing attachment point in compositor SVG element pixel space.
+   * Wings (350×330 <object>, P0 at object-pixel (30,220)) are abs-positioned in the
+   * outer container as:
+   *   right wing: left = 270 + wingAnchorX - 30,  top = 60 + wingAnchorY - 220
+   *   left wing:  left = 270 + wingAnchorX - 320, top = 60 + wingAnchorY - 220
+   */
+  wingAnchorX: number;
+  wingAnchorY: number;
 }
 
 /**
@@ -2281,10 +2315,10 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   if (isRat) {
     // Always keep rat tail (replaces horse tail when centaur chimera).
     // Anchor: centaur hip → horse tail root (11,176); snake → neck base (78,306); pure rat → default (20,250).
-    const ratTailAnchor = isCentaur ? { anchorX: 11, anchorY: 176 }
-                        : isSnake   ? { anchorX: 78, anchorY: 306 }
-                        : isSpider  ? { anchorX: 80, anchorY: 290 }
-                        :             {};
+    const ratTailAnchor = isCentaur ? { anchorX: 11,  anchorY: 176 }
+                        : isSnake   ? { anchorX: 78,  anchorY: 306 }
+                        : isSpider  ? { anchorX: 80,  anchorY: 290 }
+                        :             { anchorX: 40,  anchorY: 250 };
     parts.push(<RatTail key="rat-tail" layer="flesh" ghost={ghost} {...ratTailAnchor}/>);
     // Legs only for pure rat — chimera uses the other creature's body plan
     if (!ratChimera) {
@@ -2293,6 +2327,9 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       } else {
         parts.push(<RatLegBackBone key="rat-hl-back-b" cx={90} topY={258}/>);
       }
+    } else if (isGoat && !boneMode) {
+      // rat+goat: goat hind legs anchored at rat's hip positions (near cx=66, far cx≈90)
+      parts.push(<GoatLegBack key="goat-leg-back" layer="flesh" ghost={ghost} tx={24}/>);
     }
   } else if (!boneMode) {
     if (usesArms) {
@@ -2337,7 +2374,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   // in centaur combos the skeleton floats in front of the horse barrel.
 
   // ── 4. Main body ──────────────────────────────────────────────
-  if (isRat && !ratChimera) {
+  if (isRat && (!ratChimera || isGoat)) {
     if (!boneMode) {
       parts.push(<RatBody key="rat-body" layer="flesh" ghost={ghost}/>);
     }
@@ -2425,11 +2462,12 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   }
   // Rat chimera: ears go BEFORE the head so the head renders on top of them.
   // dy shifts ears to match each head's crown height (rat crown ≈ y=22).
-  if (ratChimera && !boneMode && !isSpider) {
+  // Suppressed for rat+goat — goat horns replace the ears.
+  if (ratChimera && !boneMode && !isSpider && !isGoat) {
     const earDy = isSnake ? -12 : -4;  // snake crown ≈ y=10; humanoid crown ≈ y=18
     parts.push(<RatEars key="rat-ears" layer="flesh" ghost={ghost} dy={earDy}/>);
   }
-  if (isRat && !ratChimera) {
+  if (isRat && (!ratChimera || isGoat)) {
     if (!boneMode) {
       parts.push(<RatHead key="rat-head" layer="flesh" ghost={ghost}/>);
     } else {
@@ -2464,7 +2502,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     parts.push(<GoatEyeOverlay key="goat-eye-overlay" layer="flesh" ghost={ghost} cy={eyeCy}/>);
   }
   // Rat chimera: whiskers after head so they show on top.
-  if (ratChimera && !boneMode && !isSpider) {
+  if (ratChimera && !boneMode && !isSpider && !isGoat) {
     parts.push(<RatWhiskers key="rat-whiskers" layer="flesh" ghost={ghost}/>);
   }
 
@@ -2507,6 +2545,10 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       parts.push(<RatLegFrontBone key="rat-paw-back-b"  cx={110} topY={112}/>);
       parts.push(<RatLegFrontBone key="rat-paw-front-b" cx={46}  topY={112}/>);
     }
+  } else if (isRat && isGoat && !boneMode) {
+    // rat+goat: keep rat's stubby forepaws, goat hind legs already pushed in section 2
+    parts.push(<RatLegFront key="rat-paw-back"  cx={110} topY={112} ghost={ghost}/>);
+    parts.push(<RatLegFront key="rat-paw-front" cx={46}  topY={112} ghost={ghost}/>);
   } else if (!boneMode) {
     if (usesHumanLegs) {
       parts.push(isHarpy
@@ -2664,12 +2706,26 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     parts.push(<PhoenixFlames key="phoenix-flames"/>);
   }
 
+  // ── Spider wing anchor ────────────────────────────────────────────────────
+  // Spider viewBox "-70 0 310 330", element 260×280.
+  // Cephalothorax top (cx=78,cy=98 pre-SPIDER_T) → post-SPIDER_T (79.6,53.6)
+  // → after root flip & viewBox scale:
+  //   x = (160 - 79.6 + 70) × (260/310) = 126,  y = 53.6 × (280/330) = 46
+  // Default (humanoid/centaur/etc): anchor at SVG element pixel (80, 125)
+  // which reproduces the original left:320, top:-35 wing positions.
+  const wingAnchorX = (isSpider && !boneMode) ? 126 : 80;
+  const wingAnchorY = (isSpider && !boneMode) ?  90 : 125;
+
   return {
     parts,
     viewBox: isMermaid ? '-30 0 220 460' : (isSpider && !boneMode) ? '-70 0 310 330' : boneSpider ? '-30 -10 220 450' : isCentaur ? '0 0 160 405' : isPhoenix ? '-20 -30 200 450' : isHarpy ? '0 -50 160 480' : isRat ? '0 0 160 420' : '0 0 160 420',
     width:   isMermaid ? 190 : (isSpider && !boneMode) ? 260 : isPhoenix ? 180 : 160,
     height:  isMermaid ? 460 : (isSpider && !boneMode) ? 280 : isCentaur ? 405 : isPhoenix ? 405 : isHarpy ? 480 : 420,
     hasWings,
+    goatBody: isGoat && !goatChimera,
+    wingsBackground: isSpider && !boneMode,
+    wingAnchorX,
+    wingAnchorY,
   };
 }
 

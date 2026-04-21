@@ -252,19 +252,17 @@ function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[
 
   // Compositor path: inline SVG assembled from parts
   if (usesCompositor(selected)) {
-    const { hasWings } = compositeCreature(selected);
-    const isGoat = selected.includes('goat');
+    const { hasWings, goatBody, wingsBackground, wingAnchorX, wingAnchorY } = compositeCreature(selected);
 
-    // Goat wings grow from the withers (~container 322,232) and are rotated to
-    // lie perpendicular to the goat's spine (which tilts ~20° from horizontal).
-    // transform-origin pins the quill-base to the withers; rotate(20deg) CW
-    // aligns the spread direction with the back normal (~70° above horizontal).
-    //
-    // Coordinates derived from:
-    //   withers pre-flip SVG (108,172) → after root flip → screen (52,172)
-    //   → container (270+52, 60+172) = (322, 232)
-    // Pivot within object at (28px, 140px) for right; (322px, 140px) for left.
-    const wingStyleRight: React.CSSProperties = isGoat ? {
+    // Non-goat wings: position derived from compositor anchor point.
+    // P0 of wing bezier sits at object-pixel (30, 220); we pin it to the anchor.
+    //   right: left = 270 + wingAnchorX - 30,  top = 60 + wingAnchorY - 220
+    //   left:  left = 270 + wingAnchorX - 320, top = 60 + wingAnchorY - 220
+    const wingAbsX = 270 + wingAnchorX;
+    const wingAbsY = 60  + wingAnchorY;
+
+    // Goat wings grow from the withers, rotated & depth-tilted to lie across the back.
+    const wingStyleRight: React.CSSProperties = goatBody ? {
       position: 'absolute', width: 350, height: 330,
       left: 246, top: 27,
       transformOrigin: '28px 140px',
@@ -272,24 +270,19 @@ function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[
       pointerEvents: 'none',
     } : {
       position: 'absolute', width: 350, height: 330,
-      left: 320, top: -35,
+      left: wingAbsX - 30, top: wingAbsY - 220,
       pointerEvents: 'none',
     };
-    const wingStyleLeft: React.CSSProperties = isGoat ? {
-      // Mirror of far wing. Same quill-base pivot (28px 140px) and same left/top
-      // so the attachment stays at container (274, 167).
-      // Transform order (left-to-right): rotate(-40deg) first spreads upper-right,
-      // then scaleX(-1) flips it to upper-left — quill stays pinned, feathers mirror.
+    const wingStyleLeft: React.CSSProperties = goatBody ? {
       position: 'absolute', width: 350, height: 330,
       left: 275, top: 27,
       transformOrigin: '28px 140px',
-      transform: 'scaleX(-1) scaleY(-1) rotate(153deg)  rotateY(-70deg)',
+      transform: 'scaleX(-1) scaleY(-1) rotate(153deg) rotateY(-70deg)',
       pointerEvents: 'none',
     } : {
       position: 'absolute', width: 350, height: 330,
-      left: 30, top: -35,
+      left: wingAbsX - 320, top: wingAbsY - 220,
       transform: 'scaleX(-1)',
-
       pointerEvents: 'none',
     };
 
@@ -299,28 +292,35 @@ function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[
         style={{ width: 700, height: 540, background: '#1e1e2e', borderRadius: 8, overflow: 'visible', ...flipStyle }}
       >
         {/* Goat far wing — behind body, X-axis flap */}
-        {hasWings && isGoat && (
+        {hasWings && goatBody && (
           <object type="image/svg+xml" data={WING_SVG_FLAPX} aria-label="right wing"
             style={{ ...wingStyleRight, position: 'absolute' }}
           />
         )}
         <div style={{ position: 'absolute', inset: 0, perspective: '800px', ...animStyle }}>
-          {hasWings && !isGoat && (
-            <object type="image/svg+xml" data={WING_SVG} aria-label="right wing"
-              style={wingStyleRight}
-            />
+          {hasWings && !goatBody && (
+            <>
+              <object type="image/svg+xml" data={WING_SVG} aria-label="right wing"
+                style={wingStyleRight}
+              />
+              {wingsBackground && (
+                <object type="image/svg+xml" data={WING_SVG} aria-label="left wing"
+                  style={wingStyleLeft}
+                />
+              )}
+            </>
           )}
           <div style={{ position: 'absolute', left: 270, top: 60, zIndex: 10 }}>
             <CreatureCompositor keywords={selected}/>
           </div>
-          {hasWings && !isGoat && (
+          {hasWings && !goatBody && !wingsBackground && (
             <object type="image/svg+xml" data={WING_SVG} aria-label="left wing"
               style={{ ...wingStyleLeft, zIndex: 20 }}
             />
           )}
         </div>
         {/* Goat near wing — in front of body, X-axis flap */}
-        {hasWings && isGoat && (
+        {hasWings && goatBody && (
           <object type="image/svg+xml" data={WING_SVG_FLAPX} aria-label="left wing"
             style={{ ...wingStyleLeft, position: 'absolute', zIndex: 20 }}
           />

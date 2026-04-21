@@ -175,7 +175,8 @@
     const isStatic = params.get('static') === '1';
     const flapX    = params.get('flapx')  === '1';
 
-    function frame(ms) {
+    function frame() {
+      const ms = Date.now();
       const phase = (ms / 1000 / PERIOD) * Math.PI * 2;
 
       // Animated control points this frame
