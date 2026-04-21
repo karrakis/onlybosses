@@ -2377,6 +2377,10 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   if (isRat && (!ratChimera || isGoat)) {
     if (!boneMode) {
       parts.push(<RatBody key="rat-body" layer="flesh" ghost={ghost}/>);
+      // Spider chimera: graft spider legs onto rat torso (body/head suppressed — rat anatomy wins).
+      if (isSpider) {
+        parts.push(<SpiderLegs key="spider-legs" ghost={ghost}/>);
+      }
     }
   } else if (isSnake && !isSpider && !isCentaur) {
     if (!boneMode) {
@@ -2500,6 +2504,10 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     // Each head type has its eye at a slightly different y.
     const eyeCy = isRat ? 46 : isSnake ? 44 : 46;
     parts.push(<GoatEyeOverlay key="goat-eye-overlay" layer="flesh" ghost={ghost} cy={eyeCy}/>);
+  }
+  // Spider chimera on rat host: 8-eye cluster over the rat head.
+  if (isSpider && !boneMode && isRat) {
+    parts.push(<SpiderEyes key="spider-eyes" ghost={ghost}/>);
   }
   // Rat chimera: whiskers after head so they show on top.
   if (ratChimera && !boneMode && !isSpider && !isGoat) {
