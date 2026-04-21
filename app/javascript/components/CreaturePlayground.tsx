@@ -186,9 +186,10 @@ const RARITY_COLOUR: Record<string, string> = {
 };
 
 // SVGs served by Sprockets from app/assets/images/keywords/
-const HUMANOID_SVG = '/assets/keywords/humanoid.svg';
-const PHOENIX_SVG  = '/assets/keywords/phoenix.svg';
-const WING_SVG     = '/assets/keywords/wing.svg';
+const HUMANOID_SVG      = '/assets/keywords/humanoid.svg';
+const PHOENIX_SVG       = '/assets/keywords/phoenix.svg';
+const WING_SVG          = '/assets/keywords/wing.svg';
+const WING_SVG_STATIC   = '/assets/keywords/wing.svg?static=1';
 
 // Creatures that use humanoid.svg as their base model
 const HUMANOID_CREATURES = new Set([
@@ -266,7 +267,7 @@ function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[
       position: 'absolute', width: 350, height: 330,
       left: 246, top: 27,
       transformOrigin: '28px 140px',
-      transform: 'rotate(-40deg)',
+      transform: 'rotate(-40deg) rotateY(70deg)',
       pointerEvents: 'none',
     } : {
       position: 'absolute', width: 350, height: 330,
@@ -279,14 +280,15 @@ function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[
       // Transform order (left-to-right): rotate(-40deg) first spreads upper-right,
       // then scaleX(-1) flips it to upper-left — quill stays pinned, feathers mirror.
       position: 'absolute', width: 350, height: 330,
-      left: 246, top: 27,
+      left: 366, top: 27,
       transformOrigin: '28px 140px',
-      transform: 'rotate(-40deg) scaleX(-1)',
+      transform: 'rotate(-40deg) scaleX(-1) rotateY(-70deg)',
       pointerEvents: 'none',
     } : {
       position: 'absolute', width: 350, height: 330,
       left: 30, top: -35,
       transform: 'scaleX(-1)',
+
       pointerEvents: 'none',
     };
 
@@ -295,21 +297,33 @@ function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[
         className="relative"
         style={{ width: 700, height: 540, background: '#1e1e2e', borderRadius: 8, overflow: 'visible', ...flipStyle }}
       >
-        <div style={{ position: 'absolute', inset: 0, ...animStyle }}>
-          {hasWings && (
-            <>
-              <object type="image/svg+xml" data={WING_SVG} aria-label="right wing"
-                style={wingStyleRight}
-              />
-              <object type="image/svg+xml" data={WING_SVG} aria-label="left wing"
-                style={wingStyleLeft}
-              />
-            </>
+        {/* Goat far wing — behind body, static (no rAF loop) */}
+        {hasWings && isGoat && (
+          <object type="image/svg+xml" data={WING_SVG_STATIC} aria-label="right wing"
+            style={{ ...wingStyleRight, position: 'absolute' }}
+          />
+        )}
+        <div style={{ position: 'absolute', inset: 0, perspective: '800px', ...animStyle }}>
+          {hasWings && !isGoat && (
+            <object type="image/svg+xml" data={WING_SVG} aria-label="right wing"
+              style={wingStyleRight}
+            />
           )}
           <div style={{ position: 'absolute', left: 270, top: 60, zIndex: 10 }}>
             <CreatureCompositor keywords={selected}/>
           </div>
+          {hasWings && !isGoat && (
+            <object type="image/svg+xml" data={WING_SVG} aria-label="left wing"
+              style={{ ...wingStyleLeft, zIndex: 20 }}
+            />
+          )}
         </div>
+        {/* Goat near wing — in front of body, static (no rAF loop) */}
+        {hasWings && isGoat && (
+          <object type="image/svg+xml" data={WING_SVG_STATIC} aria-label="left wing"
+            style={{ ...wingStyleLeft, position: 'absolute', zIndex: 20 }}
+          />
+        )}
       </div>
     );
   }
