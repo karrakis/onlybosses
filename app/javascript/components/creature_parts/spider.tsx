@@ -1,30 +1,32 @@
-]633;E;header;30c7a7c9-8c3d-493f-9276-242eba80cd54]633;Cimport * as React from 'react';
+import * as React from 'react';
 import { PartProps, partClass } from './types';
 
 // ─── Giant Spider ────────────────────────────────────────────────────────────
-// All spider parts use a nested inner transform that, combined with the
-// compositor's outer translate(160,0) scale(-1,1), reproduces the original
-// standalone SVG's translate(174,-64) scale(-1.2,1.2) exactly.
-// This lets us copy original-SVG coordinates directly into path data.
-export const SPIDER_T = 'translate(-14,-64) scale(1.2,1.2)';
+// All parts authored directly in the standard 160×420 compositor space.
+// Coordinates are the result of baking the old SPIDER_T = translate(-14,-64) scale(1.2,1.2)
+// into the path data so the visual output is identical but the special viewBox and
+// inner-transform wrapper are no longer needed.
 
 export function SpiderLegs({ ghost }: { ghost?: boolean }) {
   // [rx, ry, kx, ky, tx, ty, amp(deg), dur(s), begin(s)]
-  // Each leg pivots around its root (rx,ry). Knee joints are included so they
-  // move with the leg rather than staying pinned to the spider body.
+  // Each leg pivots around its root (rx,ry). Knee joints move with the leg.
+  // Right legs (high x in compositor = screen-left, facing side):
+  //   pairs 0-3 are the 4 right legs, top to bottom
+  // Left legs (low x in compositor = screen-right):
+  //   pairs 4-7 are the 4 left legs, top to bottom
   const legs = [
-    [100, 158, 156, 112, 200,  62,  2.5, 1.8, 0.00],
-    [104, 178, 164, 158, 184, 126,  2.0, 2.1, 0.35],
-    [106, 208, 162, 228, 181, 256,  2.5, 1.7, 0.70],
-    [ 99, 250, 153, 282, 172, 306,  2.0, 2.3, 1.05],
-    [ 56, 158,   0, 112, -44,  62, -2.5, 1.9, 0.18],
-    [ 52, 178,  -8, 158, -28, 126, -2.0, 2.0, 0.52],
-    [ 50, 208,  -6, 228, -25, 256, -2.5, 1.6, 0.87],
-    [ 57, 250,   3, 282, -16, 306, -2.0, 2.2, 0.22],
+    [106, 126, 173,  70, 226,  10,  2.5, 1.8, 0.00],
+    [111, 150, 183, 126, 207,  87,  2.0, 2.1, 0.35],
+    [113, 186, 180, 210, 203, 243,  2.5, 1.7, 0.70],
+    [105, 236, 170, 274, 192, 303,  2.0, 2.3, 1.05],
+    [ 53, 126, -14,  70, -67,  10, -2.5, 1.9, 0.18],
+    [ 48, 150, -24, 126, -48,  87, -2.0, 2.0, 0.52],
+    [ 46, 186, -21, 210, -44, 243, -2.5, 1.6, 0.87],
+    [ 54, 236, -10, 274, -33, 303, -2.0, 2.2, 0.22],
   ];
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}>
-      <g transform={SPIDER_T} fill="none" strokeLinecap="round">
+      <g fill="none" strokeLinecap="round">
         {legs.map((leg, i) => {
           const [rx, ry, kx, ky, tx, ty, amp, dur, begin] = leg;
           const vals = `0 ${rx} ${ry}; ${amp} ${rx} ${ry}; 0 ${rx} ${ry}; ${-amp} ${rx} ${ry}; 0 ${rx} ${ry}`;
@@ -47,12 +49,12 @@ export function SpiderLegs({ ghost }: { ghost?: boolean }) {
 }
 
 export function SpiderBody({ ghost }: { ghost?: boolean }) {
+  // Cephalothorax ellipse centered at (80,78), abdomen tear-drop from y=92 to y=290.
   return (
-    <g data-layer="flesh" className={partClass('flesh', ghost)}>
-      <g transform={SPIDER_T} fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
-        <ellipse cx="78" cy="118" rx="21" ry="20"/>
-        <path d="M 78,130 C 120,132 107,292 78,295 C 49,292 36,132 78,130 Z"/>
-      </g>
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
+      <ellipse cx="80" cy="78" rx="25" ry="24"/>
+      <path d="M 80,92 C 130,94 114,286 80,290 C 45,286 29,94 80,92 Z"/>
     </g>
   );
 }
@@ -60,66 +62,63 @@ export function SpiderBody({ ghost }: { ghost?: boolean }) {
 // Fine single-pixel hairs distributed around the body and head perimeter.
 export function SpiderHairs({ ghost }: { ghost?: boolean }) {
   return (
-    <g data-layer="flesh" className={partClass('flesh', ghost)}>
-      <g transform={SPIDER_T} fill="none" stroke="black" strokeWidth="1" strokeLinecap="round">
-        {/* Head */}
-        <line x1="78"  y1="98"  x2="78"  y2="91" />
-        <line x1="93"  y1="103" x2="97"  y2="97" />
-        <line x1="63"  y1="103" x2="59"  y2="97" />
-        <line x1="99"  y1="118" x2="106" y2="116"/>
-        <line x1="57"  y1="118" x2="50"  y2="116"/>
-        {/* Body top */}
-        <line x1="78"  y1="130" x2="78"  y2="123"/>
-        <line x1="90"  y1="131" x2="93"  y2="124"/>
-        <line x1="66"  y1="131" x2="63"  y2="124"/>
-        {/* Body right side */}
-        <line x1="120" y1="145" x2="126" y2="143"/>
-        <line x1="121" y1="162" x2="128" y2="160"/>
-        <line x1="122" y1="180" x2="129" y2="178"/>
-        <line x1="123" y1="198" x2="130" y2="196"/>
-        <line x1="122" y1="215" x2="129" y2="213"/>
-        <line x1="120" y1="232" x2="127" y2="230"/>
-        <line x1="116" y1="250" x2="122" y2="248"/>
-        <line x1="109" y1="265" x2="115" y2="263"/>
-        <line x1="100" y1="278" x2="105" y2="276"/>
-        {/* Body left side */}
-        <line x1="36"  y1="145" x2="30"  y2="143"/>
-        <line x1="35"  y1="162" x2="28"  y2="160"/>
-        <line x1="34"  y1="180" x2="27"  y2="178"/>
-        <line x1="33"  y1="198" x2="26"  y2="196"/>
-        <line x1="34"  y1="215" x2="27"  y2="213"/>
-        <line x1="36"  y1="232" x2="29"  y2="230"/>
-        <line x1="40"  y1="250" x2="33"  y2="248"/>
-        <line x1="47"  y1="265" x2="40"  y2="263"/>
-        <line x1="56"  y1="278" x2="50"  y2="276"/>
-        {/* Body bottom */}
-        <line x1="78"  y1="295" x2="78"  y2="302"/>
-        <line x1="89"  y1="293" x2="92"  y2="299"/>
-        <line x1="67"  y1="293" x2="64"  y2="299"/>
-      </g>
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="none" stroke="black" strokeWidth="1" strokeLinecap="round">
+      {/* Head */}
+      <line x1="80"  y1="54"  x2="80"  y2="45"  />
+      <line x1="98"  y1="60"  x2="102" y2="52"  />
+      <line x1="62"  y1="60"  x2="57"  y2="52"  />
+      <line x1="105" y1="78"  x2="113" y2="75"  />
+      <line x1="54"  y1="78"  x2="46"  y2="75"  />
+      {/* Body top */}
+      <line x1="80"  y1="92"  x2="80"  y2="84"  />
+      <line x1="94"  y1="93"  x2="98"  y2="85"  />
+      <line x1="65"  y1="93"  x2="62"  y2="85"  />
+      {/* Body right side */}
+      <line x1="130" y1="110" x2="137" y2="108" />
+      <line x1="131" y1="130" x2="140" y2="128" />
+      <line x1="132" y1="152" x2="141" y2="150" />
+      <line x1="134" y1="174" x2="142" y2="171" />
+      <line x1="132" y1="194" x2="141" y2="192" />
+      <line x1="130" y1="214" x2="138" y2="212" />
+      <line x1="125" y1="236" x2="132" y2="234" />
+      <line x1="117" y1="254" x2="124" y2="252" />
+      <line x1="106" y1="270" x2="112" y2="267" />
+      {/* Body left side */}
+      <line x1="29"  y1="110" x2="22"  y2="108" />
+      <line x1="28"  y1="130" x2="20"  y2="128" />
+      <line x1="27"  y1="152" x2="18"  y2="150" />
+      <line x1="26"  y1="174" x2="17"  y2="171" />
+      <line x1="27"  y1="194" x2="18"  y2="192" />
+      <line x1="29"  y1="214" x2="21"  y2="212" />
+      <line x1="34"  y1="236" x2="26"  y2="234" />
+      <line x1="42"  y1="254" x2="34"  y2="252" />
+      <line x1="53"  y1="270" x2="46"  y2="267" />
+      {/* Body bottom */}
+      <line x1="80"  y1="290" x2="80"  y2="298" />
+      <line x1="93"  y1="288" x2="96"  y2="295" />
+      <line x1="66"  y1="288" x2="63"  y2="295" />
     </g>
   );
 }
 
-// 8 eyes arranged in two arcs on the head — top arc + bottom arc.
+// 8 eyes arranged in two arcs on the cephalothorax — top arc + bottom arc.
 export function SpiderEyes({ ghost }: { ghost?: boolean }) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}>
-      <g transform={SPIDER_T}>
-        <circle cx="65" cy="112" r="2.5" fill="black" stroke="none"/>
-        <circle cx="73" cy="108" r="2.5" fill="black" stroke="none"/>
-        <circle cx="83" cy="108" r="2.5" fill="black" stroke="none"/>
-        <circle cx="91" cy="112" r="2.5" fill="black" stroke="none"/>
-        <circle cx="66" cy="123" r="2.5" fill="black" stroke="none"/>
-        <circle cx="74" cy="120" r="2.5" fill="black" stroke="none"/>
-        <circle cx="82" cy="120" r="2.5" fill="black" stroke="none"/>
-        <circle cx="90" cy="123" r="2.5" fill="black" stroke="none"/>
-      </g>
+      <circle cx="64" cy="70" r="3" fill="black" stroke="none"/>
+      <circle cx="74" cy="66" r="3" fill="black" stroke="none"/>
+      <circle cx="86" cy="66" r="3" fill="black" stroke="none"/>
+      <circle cx="95" cy="70" r="3" fill="black" stroke="none"/>
+      <circle cx="65" cy="84" r="3" fill="black" stroke="none"/>
+      <circle cx="75" cy="80" r="3" fill="black" stroke="none"/>
+      <circle cx="84" cy="80" r="3" fill="black" stroke="none"/>
+      <circle cx="94" cy="84" r="3" fill="black" stroke="none"/>
     </g>
   );
 }
 
-// ─── Spider × Bone mode extra parts ──────────────────────────────────────────────
+// ─── Spider × Bone mode extra parts ──────────────────────────────────────────
 // When giant_spider + skeleton/lich: bone mode wins; spider adds extra limbs.
 
 // Two extra arm pairs splaying out from the shoulders at 45° / 30° angles.
@@ -204,4 +203,3 @@ export function SpiderBoneEyes() {
     </g>
   );
 }
-

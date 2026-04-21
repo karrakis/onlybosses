@@ -1,4 +1,4 @@
-]633;E;sed -n '1,35p' "$SRC";30c7a7c9-8c3d-493f-9276-242eba80cd54]633;C/**
+/**
  * CreatureCompositor
  *
  * Assembles a creature SVG inline from discrete part components, driven entirely
@@ -30,8 +30,6 @@
  *   Horse hip front:    cx=70  y=220  (front horse hips)
  *   Tail root:          cx=14  y=175  (rear of horse barrel)
  */
-
-import * as React from 'react';
 
 import * as React from 'react';
 
@@ -551,8 +549,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
         [40, 44],  // back of head
       ];
     } else if (isSpider && !isCentaur) {
-      // Spider uses SPIDER_T = translate(-14,-64) scale(1.2,1.2)
-      // Key world points: head top ~(80,34), abdomen bottom ~(80,294), legs reach x≈1-155, y≤30–306
+      // Cephalothorax top ~(80,54), abdomen bottom ~(80,290); legs extend x≈-67 to 226 (overflow: visible)
       goopPts = [
         [80,  34],  // cephalothorax top
         [130, 60],  // right leg upper reach
@@ -659,21 +656,17 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     parts.push(<PhoenixFlames key="phoenix-flames"/>);
   }
 
-  // ── Spider wing anchor ────────────────────────────────────────────────────
-  // Spider viewBox "-70 0 310 330", element 260×280.
-  // Cephalothorax top (cx=78,cy=98 pre-SPIDER_T) → post-SPIDER_T (79.6,53.6)
-  // → after root flip & viewBox scale:
-  //   x = (160 - 79.6 + 70) × (260/310) = 126,  y = 53.6 × (280/330) = 46
-  // Default (humanoid/centaur/etc): anchor at SVG element pixel (80, 125)
-  // which reproduces the original left:320, top:-35 wing positions.
-  const wingAnchorX = (isSpider && !boneMode) ? 126 : 80;
-  const wingAnchorY = (isSpider && !boneMode) ?  90 : 125;
+  // ── Wing anchor ────────────────────────────────────────────────────────────
+  // Attachment point in SVG element pixel space (1:1 with standard 160×420 viewBox).
+  // Spider: cephalothorax/abdomen junction ~(80,90); humanoid/others: mid-back (80,125).
+  const wingAnchorX = 80;
+  const wingAnchorY = (isSpider && !boneMode) ? 90 : 125;
 
   return {
     parts,
-    viewBox: isMermaid ? '-30 0 220 460' : (isSpider && !boneMode) ? '-70 0 310 330' : boneSpider ? '-30 -10 220 450' : isCentaur ? '0 0 160 405' : isPhoenix ? '-20 -30 200 450' : isHarpy ? '0 -50 160 480' : isRat ? '0 0 160 420' : '0 0 160 420',
-    width:   isMermaid ? 190 : (isSpider && !boneMode) ? 260 : isPhoenix ? 180 : 160,
-    height:  isMermaid ? 460 : (isSpider && !boneMode) ? 280 : isCentaur ? 405 : isPhoenix ? 405 : isHarpy ? 480 : 420,
+    viewBox: isMermaid ? '-30 0 220 460' : boneSpider ? '-30 -10 220 450' : isCentaur ? '0 0 160 405' : isPhoenix ? '-20 -30 200 450' : isHarpy ? '0 -50 160 480' : '0 0 160 420',
+    width:   isMermaid ? 190 : isPhoenix ? 180 : 160,
+    height:  isMermaid ? 460 : isCentaur ? 405 : isPhoenix ? 405 : isHarpy ? 480 : 420,
     hasWings,
     goatBody: isGoat && !goatChimera,
     wingsBackground: isSpider && !boneMode,
