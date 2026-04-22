@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PartProps, partClass, LegAnchor, Pt, HeadPt, CrackSeg } from './types';
+import { PartProps, partClass, LegAnchor, Pt, HeadPt, EarAnchor, CrackSeg } from './types';
 
 // ─── Giant Rat ───────────────────────────────────────────────────────────────
 // Upright bipedal posture — standing on hind legs so the body occupies the
@@ -111,20 +111,6 @@ export function RatHead({ ghost }: PartProps) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
        fill="white" stroke="black" strokeLinejoin="round">
-      {/* Far ear — drawn before cranium so cranium overlaps the base */}
-      <ellipse cx="88" cy="25" rx="9"  ry="14"
-               fill="#f0c8c8" stroke="black" strokeWidth="1.5"
-               transform="rotate(14,88,25)"/>
-      <ellipse cx="88" cy="25" rx="6"  ry="10"
-               fill="#e89898" stroke="none"
-               transform="rotate(14,88,25)"/>
-      {/* Near ear — also before cranium */}
-      <ellipse cx="62" cy="21" rx="12" ry="18"
-               fill="#f0c8c8" stroke="black" strokeWidth="1.5"
-               transform="rotate(-10,62,21)"/>
-      <ellipse cx="62" cy="21" rx="8"  ry="13"
-               fill="#e89898" stroke="none"
-               transform="rotate(-10,62,21)"/>
       {/* Cranium */}
       <ellipse cx="76" cy="52" rx="28" ry="30" strokeWidth="2"/>
       {/* Muzzle */}
@@ -156,10 +142,10 @@ export function RatHead({ ghost }: PartProps) {
 }
 
 // ── Rat chimera overlays — ears and whiskers only, drawn over the other creature's head ──
-export function RatEars({ ghost, dy = 0 }: PartProps & { dy?: number }) {
-  const e = (cx: number, cy: number) => ({ cx, cy: cy + dy });
-  const fe = e(88, 25);
-  const ne = e(62, 21);
+export function RatEars({ ghost, anchors = [{ cx: 88, cy: 25, layer: 'back' }, { cx: 62, cy: 21, layer: 'back' }] }: PartProps & { anchors?: EarAnchor[] }) {
+  const [a0, a1] = anchors;
+  const fe = a0 ?? { cx: 88, cy: 25, layer: 'back' as const };
+  const ne = a1 ?? { cx: 62, cy: 21, layer: 'back' as const };
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}>
       <ellipse cx={fe.cx} cy={fe.cy} rx="9"  ry="14"

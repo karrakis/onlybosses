@@ -34,19 +34,24 @@
 import * as React from 'react';
 
 // ─── Part components (organised by creature) ──────────────────────────────────
-import { Pt, SpiderLimbAnchor, LegAnchor, HeadPt, CrackSeg } from './creature_parts/types';
+import { Pt, SpiderLimbAnchor, LegAnchor, HeadPt, EarAnchor, CrackSeg } from './creature_parts/types';
 import {
   UprightTorso, HumanoidHead,
   HumanoidArmBack, HumanoidArmFront,
   HumanoidLegBack, HumanoidLegFront,
+  GoblinTorso, GoblinHead, GoblinArmBack, GoblinArmFront, GoblinLegBack, GoblinLegFront, GoblinEars,
   HorseBarrel, HorseLeg, HorseTail,
   HorseRibcage, HorsePelvis, HorseLegBone,
-  PhoenixLegBack, PhoenixLegFront, PhoenixTail, PhoenixBeak,
+  PhoenixLegBack, PhoenixLegFront, PhoenixTail, PhoenixBeak, PhoenixHead, PhoenixTorso,
   HarpyCrest, HarpyTeeth, HarpyLegBack, HarpyLegFront,
   HUMANOID_SPIDER_LIMB_ANCHORS,
-  HUMANOID_LEG_ANCHORS, HARPY_LEG_ANCHORS, PHOENIX_LEG_ANCHORS,
+  HUMANOID_LEG_ANCHORS, HARPY_LEG_ANCHORS, PHOENIX_LEG_ANCHORS, GOBLIN_LEG_ANCHORS,
   HUMANOID_SLIME_GOOP_PTS,
-  HUMANOID_EYE_ANCHORS, HUMANOID_CROWN_ANCHOR, HUMANOID_CRACK_SEGS,
+  HUMANOID_EYE_ANCHORS, HUMANOID_CROWN_ANCHOR, HUMANOID_CRACK_SEGS, HUMANOID_EAR_ANCHORS,
+  PHOENIX_WING_ANCHOR, GOBLIN_WING_ANCHOR,
+  PHOENIX_EYE_ANCHORS, PHOENIX_CROWN_ANCHOR, PHOENIX_CRACK_SEGS, PHOENIX_SLIME_GOOP_PTS,
+  HARPY_EYE_ANCHORS,   HARPY_CROWN_ANCHOR,   HARPY_CRACK_SEGS,   HARPY_SLIME_GOOP_PTS,
+  GOBLIN_EYE_ANCHORS,  GOBLIN_CROWN_ANCHOR,  GOBLIN_CRACK_SEGS,  GOBLIN_SLIME_GOOP_PTS, GOBLIN_EAR_ANCHORS,
 } from './creature_parts/humanoid';
 import {
   MermaidTail, MermaidTailBone, MermaidShellBra,
@@ -59,6 +64,11 @@ import {
   SkeletonArmBack, SkeletonArmFront,
   SkeletonLegBack, SkeletonLegFront,
   SkeletonSkull, SkeletonJointKnobs, SkeletonCracks,
+  PhoenixSkull, PhoenixRibcage, PhoenixPelvis, PhoenixTailBone,
+  PhoenixLegBackBone, PhoenixLegFrontBone, PhoenixJointKnobs,
+  GoblinSkull, GoblinRibcage, GoblinPelvis,
+  GoblinArmBackBone, GoblinArmFrontBone,
+  GoblinLegBackBone, GoblinLegFrontBone, GoblinJointKnobs,
 } from './creature_parts/skeleton';
 import { LichCrown, LichEyes, PhoenixFlames } from './creature_parts/ethereal';
 import {
@@ -210,6 +220,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     'phoenix',       // bird legs + fire
     'harpy',         // bird legs + wings
     'goat',          // digitigrade
+    'goblin',        // short hunched humanoid
     'zombie',        // upright undead — intentionally beats plain human
     'slime',         // blob
     'giant_spider',  // 8-legged — lowest priority; anything else takes the torso
@@ -246,7 +257,32 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   // Body plans that carry paired arms (upright biped torso + hands)
   const hasBipedArms = body === 'mermaid'
-                    || body === 'zombie' || body === 'human';
+                    || body === 'zombie' || body === 'human' || body === 'goblin';
+
+  // Unified ear slots: host body defines two ear anchors; highest-priority ear
+  // contributor fills those slots. Torso ownership does not grant ear priority.
+  const HOST_EAR_ANCHOR_MAP: Partial<Record<BodyPlan | 'human', EarAnchor[]>> = {
+    human:       HUMANOID_EAR_ANCHORS,
+    zombie:      HUMANOID_EAR_ANCHORS,
+    mermaid:     HUMANOID_EAR_ANCHORS,
+    giant_rat:   HUMANOID_EAR_ANCHORS,
+    giant_snake: HUMANOID_EAR_ANCHORS.map(({ cx, cy, layer }) => ({ cx, cy: cy - 12, layer })),
+    // Phoenix side profile: anchors are on the rear skull edge opposite beak.
+    // Shifted upward 10px along the skull line for boss-mode composition.
+    phoenix:     [{ cx: 66, cy: 82, layer: 'back' }, { cx: 68, cy: 98, layer: 'back' }],
+    harpy:       HUMANOID_EAR_ANCHORS,
+    goat:        HUMANOID_EAR_ANCHORS,
+    goblin:      GOBLIN_EAR_ANCHORS,
+  };
+  const hostEarAnchors = HOST_EAR_ANCHOR_MAP[body] ?? HUMANOID_EAR_ANCHORS;
+  const backEarAnchors = hostEarAnchors.filter(a => a.layer === 'back');
+  const frontEarAnchors = hostEarAnchors.filter(a => a.layer === 'front');
+
+  const earContributor: 'goblin' | 'giant_rat' | null = has('goblin')
+    ? 'goblin'
+    : has('giant_rat')
+      ? 'giant_rat'
+      : null;
 
   // Horse barrel flesh colour tinted by coexisting snake/rat keywords
   const horseFlesh = has('giant_snake') ? { base: '#2d5a1e', hi: '#4a8c2e' }
@@ -256,18 +292,26 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   // ── Biped part helpers ────────────────────────────────────────────────────
   // All upright-torso slots (torso, head, arms, legs) run through bipedStyle so
   // zombie styling flows through centaur, mermaid, harpy, etc. automatically.
-  const bpTorso    = (k: string) => bipedStyle === 'zombie'
-    ? <ZombieBody       key={k} layer="flesh" ghost={ghost}/>
-    : <UprightTorso     key={k} layer="flesh" ghost={ghost}/>;
-  const bpHead     = (k: string) => bipedStyle === 'zombie'
-    ? <ZombieHead       key={k} layer="flesh" ghost={ghost}/>
-    : <HumanoidHead     key={k} layer="flesh" ghost={ghost}/>;
-  const bpArmBack  = (k: string) => bipedStyle === 'zombie'
-    ? <ZombieArmBack    key={k} layer="flesh" ghost={ghost}/>
-    : <HumanoidArmBack  key={k} layer="flesh" ghost={ghost}/>;
-  const bpArmFront = (k: string) => bipedStyle === 'zombie'
-    ? <ZombieArmFront   key={k} layer="flesh" ghost={ghost}/>
-    : <HumanoidArmFront key={k} layer="flesh" ghost={ghost}/>;
+  const bpTorso    = (k: string) => body === 'goblin'
+    ? <GoblinTorso      key={k} layer="flesh" ghost={ghost}/>
+    : (bipedStyle === 'zombie'
+      ? <ZombieBody       key={k} layer="flesh" ghost={ghost}/>
+      : <UprightTorso     key={k} layer="flesh" ghost={ghost}/>);
+  const bpHead     = (k: string) => body === 'goblin'
+    ? <GoblinHead       key={k} layer="flesh" ghost={ghost}/>
+    : (bipedStyle === 'zombie'
+      ? <ZombieHead       key={k} layer="flesh" ghost={ghost}/>
+      : <HumanoidHead     key={k} layer="flesh" ghost={ghost}/>);
+  const bpArmBack  = (k: string) => body === 'goblin'
+    ? <GoblinArmBack    key={k} layer="flesh" ghost={ghost}/>
+    : (bipedStyle === 'zombie'
+      ? <ZombieArmBack    key={k} layer="flesh" ghost={ghost}/>
+      : <HumanoidArmBack  key={k} layer="flesh" ghost={ghost}/>);
+  const bpArmFront = (k: string) => body === 'goblin'
+    ? <GoblinArmFront   key={k} layer="flesh" ghost={ghost}/>
+    : (bipedStyle === 'zombie'
+      ? <ZombieArmFront   key={k} layer="flesh" ghost={ghost}/>
+      : <HumanoidArmFront key={k} layer="flesh" ghost={ghost}/>);
 
   // ── Leg rendering ──────────────────────────────────────────────────────────
   // Central dispatcher: converts a LegAnchor into the correct React node.
@@ -276,8 +320,12 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     const v = anchor.variant ?? anchor.layer;
     if (boneMode) {
       switch (anchor.type) {
-        case 'biped': case 'harpy': case 'phoenix':
+        case 'biped': case 'harpy':
           return v === 'back' ? <SkeletonLegBack  key={anchor.key}/> : <SkeletonLegFront key={anchor.key}/>;
+        case 'goblin':
+          return v === 'back' ? <GoblinLegBackBone key={anchor.key}/> : <GoblinLegFrontBone key={anchor.key}/>;
+        case 'phoenix':
+          return v === 'back' ? <PhoenixLegBackBone key={anchor.key}/> : <PhoenixLegFrontBone key={anchor.key}/>;
         case 'rat-hind':
           return <RatLegBackBone  key={anchor.key} cx={anchor.cx!} topY={anchor.topY!}/>;
         case 'rat-fore':
@@ -290,6 +338,8 @@ export function compositeCreature(keywords: string[]): CompositorResult {
         return v === 'back'
           ? (bipedStyle === 'zombie' ? <ZombieLegBack   key={anchor.key} layer="flesh" ghost={ghost}/> : <HumanoidLegBack  key={anchor.key} layer="flesh" ghost={ghost}/>)
           : (bipedStyle === 'zombie' ? <ZombieLegFront  key={anchor.key} layer="flesh" ghost={ghost}/> : <HumanoidLegFront key={anchor.key} layer="flesh" ghost={ghost}/>);
+      case 'goblin':
+        return v === 'back' ? <GoblinLegBack key={anchor.key} layer="flesh" ghost={ghost}/> : <GoblinLegFront key={anchor.key} layer="flesh" ghost={ghost}/>;
       case 'rat-hind':
         return <RatLegBack  key={anchor.key} cx={anchor.cx!} topY={anchor.topY!} ghost={ghost}/>;
       case 'rat-fore':
@@ -311,6 +361,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   const LEG_ANCHOR_MAP: Partial<Record<BodyPlan | 'human', LegAnchor[]>> = {
     human:     HUMANOID_LEG_ANCHORS,
     zombie:    HUMANOID_LEG_ANCHORS,
+    goblin:    GOBLIN_LEG_ANCHORS,
     phoenix:   PHOENIX_LEG_ANCHORS,
     harpy:     HARPY_LEG_ANCHORS,
     giant_rat: RAT_LEG_ANCHORS,
@@ -430,6 +481,12 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     parts.push(<SnakeCoil key="snake-coil" layer="flesh" ghost={ghost}/>);
   }
 
+  // Phoenix tail fan: apex is inside the torso, clipped at y=258 (waist-band bottom)
+  // so the fan emerges below the torso/waist. Rendered early so everything sits on top.
+  if (body === 'phoenix' && !boneMode) {
+    parts.push(<PhoenixTail key="phoenix-tail" layer="flesh" ghost={ghost}/>);
+  }
+
   // §3.5. Horse hindquarters — barrel + near-side legs (behind back arm and upright torso)
   // Fires for any body plan; centaur is no longer a competing body plan.
   if (hasHindquarters) {
@@ -449,16 +506,20 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     parts.push(<SpiderChimeraLimbs key="spider-back" anchors={spiderBackAnchors} bone={boneMode} ghost={ghost}/>);
   }
 
+  const phoenixNoSideArms = body === 'phoenix';
+
   // Back arm — primary pair from body plan, then extra chimera pairs (rotated)
   if (!boneMode) {
-    if (hasBipedArms) parts.push(bpArmBack('arm-back'));
+    if (hasBipedArms && !phoenixNoSideArms) parts.push(bpArmBack('arm-back'));
   } else {
-    if (body !== 'giant_rat' && body !== 'giant_snake' && body !== 'goat') {
+    if (body === 'goblin' && !phoenixNoSideArms) {
+      parts.push(<GoblinArmBackBone key="arm-back-bone"/>);
+    } else if (body !== 'giant_rat' && body !== 'giant_snake' && body !== 'goat' && !phoenixNoSideArms) {
       parts.push(<SkeletonArmBack key="arm-back-bone"/>);
     }
   }
   // Extra chimera arm pairs: each numbered pair fans back/up by 22° from the shoulder pivot
-  extraArmKeywords.forEach((kw, i) => {
+  (!phoenixNoSideArms ? extraArmKeywords : []).forEach((kw, i) => {
     const rot = -(i + 1) * 22;
     parts.push(
       <g key={`arm-back-wrap-${kw}`} transform={`rotate(${rot}, 110, 112)`}>
@@ -469,6 +530,15 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   // Back leg — driven by body's leg anchors (computed above)
   backLegAnchors.forEach(a => { const n = renderLeg(a); if (n) parts.push(n); });
+
+  // Phoenix head is drawn in §4, so its "back" ears must be emitted now.
+  if (!boneMode && body === 'phoenix' && earContributor && backEarAnchors.length > 0) {
+    if (earContributor === 'goblin') {
+      parts.push(<GoblinEars key="ears-goblin-back" layer="flesh" ghost={ghost} anchors={backEarAnchors}/>);
+    } else {
+      parts.push(<RatEars key="ears-rat-back" layer="flesh" ghost={ghost} anchors={backEarAnchors}/>);
+    }
+  }
 
   // ── 4. Main body ──────────────────────────────────────────────────────────
   switch (body) {
@@ -506,12 +576,23 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       else          parts.push(<GoatBody key="goat-body" layer="flesh" ghost={ghost}/>);
       break;
 
+    case 'goblin':
+      if (!boneMode) parts.push(bpTorso('torso'));
+      break;
+
     case 'slime':
       if (!boneMode) parts.push(<SlimeBody key="slime-body" layer="flesh" ghost={ghost}/>);
       break;
 
     default: // 'human', 'zombie', 'phoenix', 'harpy'
-      if (!boneMode) parts.push(bpTorso('torso'));
+      if (body === 'phoenix' && !boneMode) {
+        // Beak + head drawn first so the oval body bites into the head base.
+        parts.push(<PhoenixBeak key="phoenix-beak" layer="flesh" ghost={ghost}/>);
+        parts.push(<PhoenixHead key="phoenix-head" layer="flesh" ghost={ghost}/>);
+        parts.push(<PhoenixTorso key="torso" layer="flesh" ghost={ghost}/>);
+      } else if (!boneMode) {
+        parts.push(bpTorso('torso'));
+      }
       break;
   }
 
@@ -527,6 +608,14 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     } else if (body === 'giant_snake' || chimeraOf('giant_snake')) {
       // Includes centaur+snake chimera: centaur gets horse+snake ribcage
       parts.push(<SnakeRibcage key="snake-ribcage"/>);
+    } else if (body === 'phoenix') {
+      parts.push(
+        <PhoenixRibcage key="phoenix-ribcage"/>,
+        <PhoenixPelvis key="phoenix-pelvis"/>,
+        <PhoenixTailBone key="phoenix-tail-bone"/>,
+      );
+    } else if (body === 'goblin') {
+      parts.push(<GoblinRibcage key="goblin-ribcage"/>, <GoblinPelvis key="goblin-pelvis"/>);
     } else if (body !== 'goat') {
       // GoatSkeletonBody (§4) is self-contained; skip humanoid internals for pure goat.
       // Fish tail replaces the pelvis entirely — mermaid gets ribcage only here.
@@ -539,6 +628,9 @@ export function compositeCreature(keywords: string[]): CompositorResult {
         giant_rat:   RAT_CRACK_SEGS,
         giant_snake: SNAKE_CRACK_SEGS,
         goat:        GOAT_CRACK_SEGS,
+        goblin:      GOBLIN_CRACK_SEGS,
+        phoenix:     PHOENIX_CRACK_SEGS,
+        harpy:       HARPY_CRACK_SEGS,
       };
       parts.push(<SkeletonCracks key="cracks" segs={CRACK_MAP[body] ?? HUMANOID_CRACK_SEGS}/>);
     }
@@ -553,11 +645,13 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     const hornDy = body === 'giant_snake' ? -12 : body === 'giant_rat' ? -4 : 0;
     parts.push(<GoatHornsChimera key="goat-horns" layer="flesh" ghost={ghost} dy={hornDy}/>);
   }
-  // Rat ears: chimera graft, drawn BEFORE head (head renders on top).
-  // Suppressed when goat horns are present (horns replace the ear visual).
-  if (chimeraOf('giant_rat') && !boneMode && body !== 'giant_spider' && !chimeraOf('goat')) {
-    const earDy = body === 'giant_snake' ? -12 : -4;
-    parts.push(<RatEars key="rat-ears" layer="flesh" ghost={ghost} dy={earDy}/>);
+  // For non-phoenix heads (drawn in §5), emit back ears now.
+  if (!boneMode && body !== 'giant_spider' && body !== 'slime' && body !== 'phoenix' && earContributor && backEarAnchors.length > 0) {
+    if (earContributor === 'goblin') {
+      parts.push(<GoblinEars key="ears-goblin-back" layer="flesh" ghost={ghost} anchors={backEarAnchors}/>);
+    } else {
+      parts.push(<RatEars key="ears-rat-back" layer="flesh" ghost={ghost} anchors={backEarAnchors}/>);
+    }
   }
 
   // Head dispatch
@@ -590,6 +684,15 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
     case 'goat':
       // GoatBody / GoatSkeletonBody is self-contained (skull, horns, eyes all included)
+      break;
+
+    case 'phoenix':
+      if (boneMode) parts.push(<PhoenixSkull key="phoenix-skull"/>);
+      break;
+
+    case 'goblin':
+      if (boneMode) parts.push(<GoblinSkull key="goblin-skull"/>);
+      else          parts.push(bpHead('head'));
       break;
 
     default: // mermaid, phoenix, harpy, zombie, human
@@ -630,12 +733,18 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       giant_rat:   RAT_EYE_ANCHORS,
       giant_snake: SNAKE_EYE_ANCHORS,
       goat:        GOAT_EYE_ANCHORS,
+      goblin:      GOBLIN_EYE_ANCHORS,
+      phoenix:     PHOENIX_EYE_ANCHORS,
+      harpy:       HARPY_EYE_ANCHORS,
     };
     const CROWN_ANCHOR_MAP: Partial<Record<BodyPlan | 'human', HeadPt>> = {
       mermaid:     MERMAID_CROWN_ANCHOR,
       giant_rat:   RAT_CROWN_ANCHOR,
       giant_snake: SNAKE_CROWN_ANCHOR,
       goat:        GOAT_CROWN_ANCHOR,
+      goblin:      GOBLIN_CROWN_ANCHOR,
+      phoenix:     PHOENIX_CROWN_ANCHOR,
+      harpy:       HARPY_CROWN_ANCHOR,
     };
     parts.push(<LichCrown key="lich-crown" anchor={CROWN_ANCHOR_MAP[body] ?? HUMANOID_CROWN_ANCHOR}/>);
     parts.push(<LichEyes  key="lich-eyes"  eyes={EYE_ANCHOR_MAP[body]   ?? HUMANOID_EYE_ANCHORS}/>);
@@ -644,13 +753,15 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   // ── 6. Front limbs (in front of body) ────────────────────────────────────
 
   // Arms — primary pair from body plan, then extra chimera pairs (rotated)
-  if (!boneMode && hasBipedArms) {
+  if (!boneMode && hasBipedArms && !phoenixNoSideArms) {
     parts.push(bpArmFront('arm-front'));
-  } else if (boneMode && body !== 'giant_rat' && body !== 'giant_snake' && body !== 'goat') {
+  } else if (boneMode && body === 'goblin' && !phoenixNoSideArms) {
+    parts.push(<GoblinArmFrontBone key="arm-front-bone"/>);
+  } else if (boneMode && body !== 'giant_rat' && body !== 'giant_snake' && body !== 'goat' && !phoenixNoSideArms) {
     parts.push(<SkeletonArmFront key="arm-front-bone"/>);
   }
   // Extra chimera arm pairs: fan forward/up by 22° per additional pair
-  extraArmKeywords.forEach((kw, i) => {
+  (!phoenixNoSideArms ? extraArmKeywords : []).forEach((kw, i) => {
     const rot = (i + 1) * 22;
     parts.push(
       <g key={`arm-front-wrap-${kw}`} transform={`rotate(${rot}, 46, 112)`}>
@@ -675,8 +786,14 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   }
 
   // ── 7. Joint knobs always last ────────────────────────────────────────────
-  if (boneMode && body !== 'giant_rat' && body !== 'giant_snake' && body !== 'goat') {
-    parts.push(<SkeletonJointKnobs key="joint-knobs" includeHips={body !== 'mermaid'}/>);
+  if (boneMode && body === 'phoenix') {
+    parts.push(<PhoenixJointKnobs key="phoenix-joint-knobs"/>);
+  } else if (boneMode && body === 'goblin') {
+    parts.push(<GoblinJointKnobs key="goblin-joint-knobs"/>);
+  } else if (boneMode && body !== 'giant_rat' && body !== 'giant_snake' && body !== 'goat') {
+    // Spider has no skeleton legs — only arms render in bone mode, so suppressing
+    // hip + knee knobs avoids floating joints with nothing to connect to.
+    parts.push(<SkeletonJointKnobs key="joint-knobs" includeHips={body !== 'mermaid' && body !== 'giant_spider'}/>);
   }
 
   // ── 8. Slime goop overlay ─────────────────────────────────────────────────
@@ -688,16 +805,39 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       giant_rat:    RAT_SLIME_GOOP_PTS,
       mermaid:      MERMAID_SLIME_GOOP_PTS,
       goat:         GOAT_SLIME_GOOP_PTS,
+      goblin:       GOBLIN_SLIME_GOOP_PTS,
+      phoenix:      PHOENIX_SLIME_GOOP_PTS,
+      harpy:        HARPY_SLIME_GOOP_PTS,
     };
     parts.push(<SlimeGoop key="slime-goop" pts={SLIME_GOOP_MAP[body] ?? HUMANOID_SLIME_GOOP_PTS}/>);
   }
 
   // ── 9. Flames on top of everything ───────────────────────────────────────
-  if (has('phoenix')) parts.push(<PhoenixFlames key="phoenix-flames"/>);
+  if (has('phoenix')) {
+    if (body === 'phoenix') {
+      // PhoenixFlames was authored across a humanoid-style vertical span.
+      // Remap it to the actual bird silhouette (top≈78, tail tip≈292) so the
+      // effect tracks the bird body instead of the default humanoid height.
+      parts.push(
+        <g key="phoenix-flames-wrap" transform="translate(0,65) scale(1,0.568)">
+          <PhoenixFlames key="phoenix-flames"/>
+        </g>
+      );
+    } else {
+      parts.push(<PhoenixFlames key="phoenix-flames"/>);
+    }
+  }
 
   // ── Wing anchor ───────────────────────────────────────────────────────────
-  const wingAnchorX = 80;
-  const wingAnchorY = (body === 'giant_spider' && !boneMode) ? 90 : 125;
+  const phoenixScale = body === 'phoenix' ? 1.2 : 1;
+  const WING_ANCHOR_MAP: Partial<Record<BodyPlan | 'human', HeadPt>> = {
+    goblin: GOBLIN_WING_ANCHOR,
+    phoenix: PHOENIX_WING_ANCHOR,
+  };
+  const defaultWingAnchor: HeadPt = { cx: 80, cy: (body === 'giant_spider' && !boneMode) ? 90 : 125 };
+  const baseWingAnchor = WING_ANCHOR_MAP[body] ?? defaultWingAnchor;
+  const wingAnchorX = Math.round(baseWingAnchor.cx * phoenixScale);
+  const wingAnchorY = Math.round(baseWingAnchor.cy * phoenixScale);
 
   return {
     parts,
@@ -706,12 +846,12 @@ export function compositeCreature(keywords: string[]): CompositorResult {
            : body === 'phoenix'  ? '-20 -30 200 450'
            : body === 'harpy'    ? '0 -50 160 480'
            :                       '0 0 160 420',
-    width:   body === 'mermaid'  ? 190 : body === 'phoenix' ? 180 : 160,
-    height:  body === 'mermaid'  ? 460 : body === 'phoenix'  ? 405
+    width:   body === 'mermaid'  ? 190 : body === 'phoenix' ? 216 : 160,
+    height:  body === 'mermaid'  ? 460 : body === 'phoenix'  ? 486
            : body === 'harpy'    ? 480 :                       420,
     hasWings,
     goatBody: body === 'goat',
-    wingsBackground: body === 'giant_spider' && !boneMode,
+    wingsBackground: (body === 'giant_spider' && !boneMode) || body === 'harpy' || body === 'phoenix',
     wingAnchorX,
     wingAnchorY,
   };

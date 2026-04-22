@@ -303,21 +303,14 @@ function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[
               <object type="image/svg+xml" data={WING_SVG} aria-label="right wing"
                 style={wingStyleRight}
               />
-              {wingsBackground && (
-                <object type="image/svg+xml" data={WING_SVG} aria-label="left wing"
-                  style={wingStyleLeft}
-                />
-              )}
+              <object type="image/svg+xml" data={WING_SVG} aria-label="left wing"
+                style={wingStyleLeft}
+              />
             </>
           )}
           <div style={{ position: 'absolute', left: 270, top: 60, zIndex: 10 }}>
             <CreatureCompositor keywords={selected}/>
           </div>
-          {hasWings && !goatBody && !wingsBackground && (
-            <object type="image/svg+xml" data={WING_SVG} aria-label="left wing"
-              style={{ ...wingStyleLeft, zIndex: 20 }}
-            />
-          )}
         </div>
         {/* Goat near wing — in front of body, X-axis flap */}
         {hasWings && goatBody && (

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PartProps, partClass, SpiderLimbAnchor, LegAnchor, Pt, HeadPt, CrackSeg } from './types';
+import { PartProps, partClass, SpiderLimbAnchor, LegAnchor, Pt, HeadPt, EarAnchor, CrackSeg } from './types';
 
 // ─── ═══════════════════════ FLESH PARTS ════════════════════════ ─────────────
 
@@ -127,6 +127,125 @@ export function HumanoidLegFront({ ghost }: PartProps) {
   );
 }
 
+// ── Goblin parts ─────────────────────────────────────────────────────────────
+export const GOBLIN_EAR_ANCHORS: EarAnchor[] = [
+  { cx: 52, cy: 72, layer: 'back' },
+  { cx: 104, cy: 72, layer: 'back' },
+];
+export const HUMANOID_EAR_ANCHORS: EarAnchor[] = [
+  { cx: 88, cy: 25, layer: 'back' },
+  { cx: 62, cy: 21, layer: 'back' },
+];
+
+export function GoblinEars({ ghost, anchors = GOBLIN_EAR_ANCHORS }: PartProps & { anchors?: EarAnchor[] }) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)} strokeLinejoin="round">
+      {anchors.map(({ cx, cy }, i) => {
+        const leftSide = cx <= 80;
+        return (
+          <path
+            key={`goblin-ear-${i}`}
+            d={leftSide
+              ? `M ${cx},${cy} L ${cx - 16},${cy - 20} L ${cx - 6},${cy + 2} Z`
+              : `M ${cx},${cy} L ${cx + 16},${cy - 20} L ${cx + 6},${cy + 2} Z`}
+            fill="#57a53c"
+            stroke="black"
+            strokeWidth="2"
+          />
+        );
+      })}
+    </g>
+  );
+}
+
+export function GoblinTorso({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       strokeLinecap="round" strokeLinejoin="round">
+      <path d="M 56,116 C 42,124 38,142 42,164 C 46,186 54,206 60,224
+               L 58,246 L 100,246 L 102,222
+               C 108,204 114,182 116,164
+               C 118,142 114,124 100,116 Z"
+            fill="#57a53c" stroke="black" strokeWidth="2"/>
+      <path d="M 60,240 L 58,258 L 100,258 L 98,240 Z"
+            fill="#4a9233" stroke="black" strokeWidth="1.8"/>
+      <path d="M 63,156 C 74,162 86,164 96,160" fill="none" stroke="#3d7f2b" strokeWidth="1.1"/>
+      <path d="M 62,198 C 72,203 85,205 96,200" fill="none" stroke="#3d7f2b" strokeWidth="1.0"/>
+    </g>
+  );
+}
+
+export function GoblinHead({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)} strokeLinejoin="round">
+      <path d="M 50,66 C 54,50 66,38 82,38 C 98,38 110,50 112,66
+               C 114,82 106,96 90,100 C 74,104 56,98 52,84 Z"
+            fill="#66b245" stroke="black" strokeWidth="2"/>
+      <ellipse cx="92" cy="63" rx="4.6" ry="5.2" fill="black" stroke="none"/>
+      <ellipse cx="72" cy="64" rx="3.6" ry="4.2" fill="black" stroke="none" opacity="0.7"/>
+      <path d="M 66,82 C 75,93 93,94 104,84" fill="none" stroke="black" strokeWidth="2.4" strokeLinecap="round"/>
+      <polygon points="74,84 77,90 80,84" fill="white" stroke="black" strokeWidth="0.9"/>
+      <polygon points="82,86 85,92 88,86" fill="white" stroke="black" strokeWidth="0.9"/>
+      <polygon points="90,86 93,92 96,86" fill="white" stroke="black" strokeWidth="0.9"/>
+      <polygon points="98,84 101,90 104,84" fill="white" stroke="black" strokeWidth="0.9"/>
+    </g>
+  );
+}
+
+export function GoblinArmBack({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="#66b245" stroke="black" strokeWidth="2" strokeLinejoin="round">
+      <path d="M 102,130 C 112,136 120,148 122,164 L 114,168
+               C 111,153 104,141 95,136 Z"/>
+      <path d="M 114,166 C 118,178 120,192 119,210 L 111,212
+               C 112,194 110,180 106,167 Z"/>
+      <ellipse cx="114" cy="220" rx="7" ry="9" transform="rotate(-10,114,220)"/>
+    </g>
+  );
+}
+
+export function GoblinArmFront({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="#66b245" stroke="black" strokeWidth="2" strokeLinejoin="round">
+      <path d="M 58,132 C 48,138 42,150 40,166 L 48,170
+               C 50,154 56,142 64,136 Z"/>
+      <path d="M 48,168 C 44,180 42,194 43,212 L 51,210
+               C 50,194 52,180 56,168 Z"/>
+      <ellipse cx="46" cy="220" rx="7" ry="9" transform="rotate(10,46,220)"/>
+    </g>
+  );
+}
+
+export function GoblinLegBack({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="#66b245" stroke="black" strokeWidth="2" strokeLinejoin="round">
+      <path d="M 81,256 C 82,268 83,286 82,312 L 93,312
+               C 94,286 95,268 95,256 Z"/>
+      <path d="M 82,310 C 82,323 83,338 83,356 L 94,356
+               C 94,338 95,323 94,310 Z"/>
+      <path d="M 94,355 L 82,355 C 77,355 75,364 79,372
+               C 84,374 91,373 95,369 C 96,365 96,359 94,355 Z"/>
+    </g>
+  );
+}
+
+export function GoblinLegFront({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       fill="#66b245" stroke="black" strokeWidth="2" strokeLinejoin="round">
+      <path d="M 61,256 C 62,268 63,286 63,312 L 74,312
+               C 75,286 75,268 75,256 Z"/>
+      <path d="M 63,310 C 63,323 63,338 63,356 L 74,356
+               C 74,338 75,323 75,310 Z"/>
+      <path d="M 74,355 L 62,355 C 57,355 55,364 59,372
+               C 64,374 71,373 75,369 C 76,365 76,359 74,355 Z"/>
+    </g>
+  );
+}
+
 // ── Horse barrel ──────────────────────────────────────────────────────────────
 export function HorseBarrel({ ghost, fill = 'white' }: PartProps & { fill?: string }) {
   return (
@@ -233,18 +352,35 @@ export function HorseLegBone({ cx, topY }: { cx: number; topY: number }) {
   );
 }
 
+// ── Phoenix torso ─────────────────────────────────────────────────────────────
+// Top-heavy vertical oval matching the original phoenix.svg.
+// The head is rendered before this so the body bites into the head base.
+// All y-coords shifted -20 vs the original SVG (which had -20 baked into its group transform).
+export function PhoenixTorso({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       strokeLinejoin="round">
+      <path d="M 78,110 C 120,112 107,272 78,275 C 49,272 36,112 78,110 Z"
+            fill="#d66379" stroke="black" strokeWidth="2"/>
+    </g>
+  );
+}
+
 // ── Phoenix bird legs ───────────────────────────────────────────────────────────
-// Anchored at the humanoid hip positions (back cx=90 y=262, front cx=66 y=262).
-// Reversed-knee bird leg: thigh goes down+out, lower goes back up, claws fan outward.
+// Legs moved 33% toward each other from the prior stance (x shift: ±28).
+// Lower leg + claw block is flipped 180deg around each knee, then claws are
+// rebuilt with shorter two-joint claws that splay outward from each leg.
 export function PhoenixLegBack({ ghost }: PartProps) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
        fill="none" stroke="black" strokeLinecap="round">
-      <path d="M 90,262 L 99,310" strokeWidth="7"/>
-      <path d="M 99,310 L 108,268" strokeWidth="5"/>
-      <path d="M 108,268 L 137,264" strokeWidth="3"/>
-      <path d="M 108,268 L 135,271" strokeWidth="2"/>
-      <path d="M 108,268 L 91,275"  strokeWidth="2"/>
+      {/* Hip and knee shifted toward center; lower leg rotated 180 around knee */}
+      <path d="M 66,195 L 58,245" strokeWidth="7"/>
+      <path d="M 58,245 L 40,195" strokeWidth="5"/>
+      {/* Short outward talons (two joints each) */}
+      <path d="M 40,195 L 34,198 L 30,204 L 28,210" strokeWidth="3"/>
+      <path d="M 40,195 L 35,202 L 32,208 L 30,214" strokeWidth="2"/>
+      <path d="M 40,195 L 37,205 L 35,211 L 34,217" strokeWidth="2"/>
     </g>
   );
 }
@@ -253,41 +389,55 @@ export function PhoenixLegFront({ ghost }: PartProps) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
        fill="none" stroke="black" strokeLinecap="round">
-      <path d="M 66,262 L 57,310" strokeWidth="7"/>
-      <path d="M 57,310 L 48,268" strokeWidth="5"/>
-      <path d="M 48,268 L 19,264" strokeWidth="3"/>
-      <path d="M 48,268 L 21,271" strokeWidth="2"/>
-      <path d="M 48,268 L 65,275"  strokeWidth="2"/>
+      {/* Hip and knee shifted toward center; lower leg rotated 180 around knee */}
+      <path d="M 94,195 L 102,245" strokeWidth="7"/>
+      <path d="M 102,245 L 120,195" strokeWidth="5"/>
+      {/* Short outward talons (two joints each), mirrored rightward */}
+      <path d="M 120,195 L 126,198 L 130,204 L 132,210" strokeWidth="3"/>
+      <path d="M 120,195 L 125,202 L 128,208 L 130,214" strokeWidth="2"/>
+      <path d="M 120,195 L 123,205 L 125,211 L 126,217" strokeWidth="2"/>
     </g>
   );
 }
 
-// Apex inside the torso area — about half the tail is hidden behind the torso/waist.
-// A clipPath at y=258 (bottom of the waist band) hard-clips the top so the apex
-// never becomes visible when the torso ghosts out.
+// Tail fan: apex at (78,237) is inside the body; clip hides everything above
+// the body bottom (y=275) so only the fan below emerges.
 // Drawn early in the stack so legs and torso both render on top.
 export function PhoenixTail({ ghost }: PartProps) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}>
       <defs>
         <clipPath id="cc-tailClip">
-          {/* Allow everything from the waist-band bottom downward */}
-          <rect x="-50" y="258" width="300" height="200"/>
+          <rect x="-50" y="255" width="300" height="200"/>
         </clipPath>
       </defs>
-      <polygon points="78,180 26,400 130,400"
-               fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round"
+      <polygon points="78,217 52,292 104,292"
+               fill="#e5788e" stroke="black" strokeWidth="2" strokeLinejoin="round"
                clipPath="url(#cc-tailClip)"/>
     </g>
   );
 }
 
-// Drawn before head so the cranium overlaps the beak base.
+// Beak: drawn before head so the head ellipse overlaps its base (y shifted -20).
 export function PhoenixBeak({ ghost }: PartProps) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
-      <polygon points="134,45 102,38 102,55"/>
+       fill="#f5a9b8" stroke="black" strokeWidth="2" strokeLinejoin="round">
+      <polygon points="134,98 99,92 99,105"/>
+    </g>
+  );
+}
+
+// Head: ellipse matching original phoenix.svg (y shifted -20 vs original).
+// Body is pushed after this so the oval bites into the head base.
+export function PhoenixHead({ ghost }: PartProps) {
+  return (
+    <g data-layer="flesh" className={partClass('flesh', ghost)}
+       strokeLinejoin="round">
+      <ellipse cx="78" cy="98" rx="21" ry="20"
+               fill="#df6d84" stroke="black" strokeWidth="2"/>
+      <circle cx="86" cy="92" r="3.5" fill="black" stroke="none"/>
+      <circle cx="87" cy="91" r="1"   fill="white" stroke="none"/>
     </g>
   );
 }
@@ -470,9 +620,18 @@ export const HARPY_LEG_ANCHORS: LegAnchor[] = [
   { key: 'harpy-leg-front', layer: 'front', slot: 'fore', type: 'harpy', goatTx: 0 },
 ];
 export const PHOENIX_LEG_ANCHORS: LegAnchor[] = [
-  { key: 'bird-leg-back',  layer: 'back',  slot: 'hind', type: 'phoenix', goatTx: 0 },
-  { key: 'bird-leg-front', layer: 'front', slot: 'fore', type: 'phoenix', goatTx: 0 },
+  { key: 'bird-leg-back',  layer: 'front', variant: 'back',  slot: 'hind', type: 'phoenix', cx: 66, topY: 195, goatTx: 0 },
+  { key: 'bird-leg-front', layer: 'front', variant: 'front', slot: 'fore', type: 'phoenix', cx: 94, topY: 195, goatTx: 0 },
 ];
+export const GOBLIN_LEG_ANCHORS: LegAnchor[] = [
+  { key: 'goblin-leg-back',  layer: 'back',  slot: 'hind', type: 'goblin', goatTx: 0 },
+  { key: 'goblin-leg-front', layer: 'front', slot: 'fore', type: 'goblin', goatTx: 0 },
+];
+
+// Wing root anchor on the phoenix torso back (pre-flip canvas coords).
+// External fly wings pin their path origin to this point via CreaturePlayground.
+export const PHOENIX_WING_ANCHOR: HeadPt = { cx: 92, cy: 132 };
+export const GOBLIN_WING_ANCHOR: HeadPt = { cx: 80, cy: 132 };
 
 // ─── Head overlay anchors ─────────────────────────────────────────────────────
 // Eye positions match the SkeletonSkull orbit centres.
@@ -489,5 +648,51 @@ export const HUMANOID_CRACK_SEGS: CrackSeg[] = [
   { pts: [[91,270],[88,290],[93,310],[89,325]], w: 1.0 },               // back thigh
   { pts: [[68,330],[71,350],[66,370],[70,390]], w: 1.0 },               // front shin
   { pts: [[114,115],[118,135],[115,155],[119,175],[116,200]], w: 1.0 }, // far rib side
+];
+
+// ─── Phoenix anchor exports ───────────────────────────────────────────────────
+// Anchors match the dedicated phoenix head/skull position.
+// Slime goop wraps the compact bird-leg silhouette (thigh-stump + back-talons ~y=312).
+export const PHOENIX_EYE_ANCHORS: HeadPt[] = [{ cx: 86, cy: 92 }];
+export const PHOENIX_CROWN_ANCHOR: HeadPt = { cx: 78, cy: 74 };
+export const PHOENIX_CRACK_SEGS: CrackSeg[] = [
+  { pts: [[80,82],[77,92],[82,101],[78,110]], w: 1.2 },
+  { pts: [[85,116],[82,130],[87,146],[83,162],[87,178],[84,194],[88,210]], w: 1.25 },
+  { pts: [[66,184],[70,195],[64,208],[69,219]], w: 1.0 },
+  { pts: [[92,186],[96,198],[91,211],[95,223]], w: 1.0 },
+  { pts: [[62,205],[58,222],[54,237]], w: 0.95 },
+  { pts: [[98,205],[102,222],[106,237]], w: 0.95 },
+  { pts: [[78,236],[76,251],[80,266],[77,282]], w: 1.0 },
+];
+export const PHOENIX_SLIME_GOOP_PTS: Pt[] = [
+  [78,18],[118,44],[130,100],[148,200],[130,260],
+  [136,268],[100,312],[56,312],[20,268],
+  [26,260],[28,200],[26,100],[36,44],
+];
+
+// ─── Harpy anchor exports ─────────────────────────────────────────────────────
+// Harpy also uses bpHead at humanoid position; SkeletonLegBack/Front in bone mode.
+// Slime goop wraps the full harpy silhouette including long talon-tipped legs (~y=428).
+export const HARPY_EYE_ANCHORS:    HeadPt[]   = HUMANOID_EYE_ANCHORS;
+export const HARPY_CROWN_ANCHOR:   HeadPt     = HUMANOID_CROWN_ANCHOR;
+export const HARPY_CRACK_SEGS:     CrackSeg[] = HUMANOID_CRACK_SEGS;
+export const HARPY_SLIME_GOOP_PTS: Pt[] = [
+  [78,18],[118,44],[130,100],[148,200],[130,260],
+  [102,256],[120,408],[84,428],[68,390],[40,408],[60,256],
+  [28,260],[26,200],[26,100],[36,44],
+];
+
+// ─── Goblin anchor exports ───────────────────────────────────────────────────
+export const GOBLIN_EYE_ANCHORS: HeadPt[] = [{ cx: 92, cy: 63 }];
+export const GOBLIN_CROWN_ANCHOR: HeadPt = { cx: 82, cy: 44 };
+export const GOBLIN_CRACK_SEGS: CrackSeg[] = [
+  { pts: [[84,44],[80,54],[86,62],[82,72]], w: 1.2 },
+  { pts: [[87,104],[84,120],[90,136],[86,154],[91,172],[87,190],[92,208]], w: 1.2 },
+  { pts: [[96,130],[101,146],[99,164],[103,182]], w: 1.0 },
+  { pts: [[68,132],[64,148],[67,165],[63,182]], w: 1.0 },
+  { pts: [[86,250],[84,268],[88,286],[85,308]], w: 1.0 },
+];
+export const GOBLIN_SLIME_GOOP_PTS: Pt[] = [
+  [82,38],[108,56],[122,110],[126,180],[112,258],[92,372],[64,372],[48,258],[38,180],[44,110],[58,56],
 ];
 

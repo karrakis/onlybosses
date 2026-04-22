@@ -43,6 +43,7 @@ export interface SpiderLimbAnchor {
 /** Descriptor for one of a body's leg attachment slots. */
 export type LegAnchorType =
   | 'biped'      // human/zombie legs; layer selects back/front component
+  | 'goblin'     // GoblinLegBack/Front and goblin bone legs
   | 'rat-hind'   // RatLegBack / RatLegBackBone; requires cx, topY
   | 'rat-fore'   // RatLegFront / RatLegFrontBone; requires cx, topY
   | 'goat-hind'  // GoatLegBack; respects tx
@@ -84,6 +85,12 @@ export interface LegAnchor {
  * Used for lich eye glow positions and lich crown placement.
  */
 export interface HeadPt { cx: number; cy: number; }
+
+/** One ear attachment slot on a host head silhouette. */
+export interface EarAnchor extends HeadPt {
+  /** back = render before head (behind), front = render after head (in front). */
+  layer: 'back' | 'front';
+}
 
 /** One zigzag crack polyline on a skeleton bone. pts is a sequence of [x,y] vertices. w is stroke-width (default 1). */
 export interface CrackSeg { pts: Pt[]; w?: number; }

@@ -127,8 +127,6 @@ export function SlimeGoop({ pts, pad = 18 }: { pts: Pt[]; pad?: number }) {
   const loosePad = pad + 8;
   const tightPath = slimeSilhouette(pts, pad);
   const loosePath = slimeSilhouette(pts, loosePad);
-  const hiTight   = slimeHighlight(pts, pad);
-  const hiLoose   = slimeHighlight(pts, loosePad);
   const DUR = '3.4s';
   const KS  = '0.42,0,0.58,1;0.42,0,0.58,1';
   const anim = (t: string, l: string, begin = '0s') => (
@@ -150,10 +148,6 @@ export function SlimeGoop({ pts, pad = 18 }: { pts: Pt[]; pad?: number }) {
       {/* inner body: slightly smaller, lighter green — gives the rounded 3-D look */}
       <path d={slimeSilhouette(pts, pad - 6)} fill="#3da822" stroke="none" opacity="0.30">
         {anim(slimeSilhouette(pts, pad-6), slimeSilhouette(pts, loosePad-6), '0.4s')}
-      </path>
-      {/* refraction highlight */}
-      <path d={hiTight} fill="#6ef030" stroke="none" opacity="0.38">
-        {anim(hiTight, hiLoose, '0.8s')}
       </path>
     </g>
   );
