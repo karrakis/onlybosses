@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PartProps, partClass } from './types';
+import { PartProps, partClass, SpiderLimbAnchor } from './types';
 
 // ─── Giant Spider ────────────────────────────────────────────────────────────
 // All parts authored directly in the standard 160×420 compositor space.
@@ -118,66 +118,51 @@ export function SpiderEyes({ ghost }: { ghost?: boolean }) {
   );
 }
 
-// ─── Spider × Bone mode extra parts ──────────────────────────────────────────
-// When giant_spider + skeleton/lich: bone mode wins; spider adds extra limbs.
+// ─── Spider chimera limbs ─────────────────────────────────────────────────────
+// Renders spider limbs at the anchor points defined by the host torso component.
+// The caller (compositor) passes only the back-layer OR front-layer anchors for
+// a given push, so rendering order is controlled by the anchor's layer field.
+//
+// Flesh mode: black/white highlighted segments matching SpiderLegs aesthetic.
+// Bone mode:  grey strut segments with joint knobs.
 
-// Two extra arm pairs splaying out from the shoulders at 45° / 30° angles.
-// Each pair pivots around the shoulder point with an independent animation.
-export function SpiderBonusArms() {
-  // Each entry: [shoulderX, shoulderY, elbowX, elbowY, handX, handY, amp, dur, begin]
-  const arms = [
-    // Back-side extras (behind body): upper-back shoulder, mid-back shoulder
-    [110, 104,  136, 68,  158,  32,  3.5, 2.2, 0.0],
-    [110, 104,  140,125,  162, 152,  3.0, 1.9, 0.5],
-    // Front-side extras (in front of body)
-    [ 46, 104,   20, 68,   -2,  32, -3.5, 2.0, 0.3],
-    [ 46, 104,   22,125,    0, 152, -3.0, 2.3, 0.8],
-  ];
+export function SpiderChimeraLimbs({
+  anchors = [], ghost, bone,
+}: {
+  anchors?: SpiderLimbAnchor[];
+  ghost?: boolean;
+  bone?: boolean;
+}) {
+  if (anchors.length === 0) return null;
+
+  const outerW1 = bone ? 9   : 12;
+  const innerW1 = bone ? 5.5 : 10;
+  const outerW2 = bone ? 7   : 8;
+  const innerW2 = bone ? 4   : 6;
+  const innerColor = bone ? '#666' : 'white';
+  const kneeR    = bone ? 5.5 : 6;
+  const kneeFill = bone ? '#555' : 'black';
+
   return (
-    <g data-layer="bone">
-      {arms.map((a, i) => {
-        const [sx, sy, ex, ey, hx, hy, amp, dur, begin] = a;
-        const vals = `0 ${sx} ${sy}; ${amp} ${sx} ${sy}; 0 ${sx} ${sy}; ${-amp} ${sx} ${sy}; 0 ${sx} ${sy}`;
+    <g data-layer={bone ? 'bone' : 'flesh'} className={bone ? undefined : partClass('flesh', ghost)}>
+      {anchors.map((a, i) => {
+        const amp   = a.amp   ?? 2.5;
+        const dur   = a.dur   ?? 2.0;
+        const phase = a.phase ?? 0;
+        const ex = a.x + a.knee.dx;
+        const ey = a.y + a.knee.dy;
+        const hx = ex  + a.tip.dx;
+        const hy = ey  + a.tip.dy;
+        const vals = `0 ${a.x} ${a.y}; ${amp} ${a.x} ${a.y}; 0 ${a.x} ${a.y}; ${-amp} ${a.x} ${a.y}; 0 ${a.x} ${a.y}`;
         return (
           <g key={i}>
             <animateTransform attributeName="transform" type="rotate"
-              values={vals} dur={`${dur}s`} begin={`${begin}s`} repeatCount="indefinite"/>
-            <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="black" strokeWidth="9" strokeLinecap="round"/>
-            <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="#666" strokeWidth="5.5" strokeLinecap="round"/>
-            <line x1={ex} y1={ey} x2={hx} y2={hy} stroke="black" strokeWidth="7" strokeLinecap="round"/>
-            <line x1={ex} y1={ey} x2={hx} y2={hy} stroke="#666" strokeWidth="4" strokeLinecap="round"/>
-            <circle cx={ex} cy={ey} r={5.5} fill="#555" stroke="black" strokeWidth="1.5"/>
-          </g>
-        );
-      })}
-    </g>
-  );
-}
-
-// Two extra leg pairs branching from the hip area at diagonal angles.
-export function SpiderBonusLegs() {
-  const legs = [
-    // Rear pair, back
-    [90, 262,  124, 314,  142, 378,  2.5, 2.1, 0.1],
-    [90, 262,  116, 332,  128, 400,  2.0, 1.8, 0.6],
-    // Front pair, front
-    [66, 262,   32, 314,   14, 378, -2.5, 2.3, 0.4],
-    [66, 262,   40, 332,   28, 400, -2.0, 1.9, 0.9],
-  ];
-  return (
-    <g data-layer="bone">
-      {legs.map((l, i) => {
-        const [rx, ry, kx, ky, fx, fy, amp, dur, begin] = l;
-        const vals = `0 ${rx} ${ry}; ${amp} ${rx} ${ry}; 0 ${rx} ${ry}; ${-amp} ${rx} ${ry}; 0 ${rx} ${ry}`;
-        return (
-          <g key={i}>
-            <animateTransform attributeName="transform" type="rotate"
-              values={vals} dur={`${dur}s`} begin={`${begin}s`} repeatCount="indefinite"/>
-            <line x1={rx} y1={ry} x2={kx} y2={ky} stroke="black" strokeWidth="11" strokeLinecap="round"/>
-            <line x1={rx} y1={ry} x2={kx} y2={ky} stroke="#666" strokeWidth="7" strokeLinecap="round"/>
-            <line x1={kx} y1={ky} x2={fx} y2={fy} stroke="black" strokeWidth="9" strokeLinecap="round"/>
-            <line x1={kx} y1={ky} x2={fx} y2={fy} stroke="#666" strokeWidth="5.5" strokeLinecap="round"/>
-            <circle cx={kx} cy={ky} r={6} fill="#555" stroke="black" strokeWidth="1.5"/>
+              values={vals} dur={`${dur}s`} begin={`${phase}s`} repeatCount="indefinite"/>
+            <line x1={a.x} y1={a.y} x2={ex} y2={ey} stroke="black" strokeWidth={outerW1} strokeLinecap="round"/>
+            <line x1={a.x} y1={a.y} x2={ex} y2={ey} stroke={innerColor} strokeWidth={innerW1} strokeLinecap="round"/>
+            <line x1={ex} y1={ey} x2={hx} y2={hy} stroke="black" strokeWidth={outerW2} strokeLinecap="round"/>
+            <line x1={ex} y1={ey} x2={hx} y2={hy} stroke={innerColor} strokeWidth={innerW2} strokeLinecap="round"/>
+            <circle cx={ex} cy={ey} r={kneeR} fill={kneeFill} stroke="black" strokeWidth="1.5"/>
           </g>
         );
       })}

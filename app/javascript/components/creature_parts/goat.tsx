@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PartProps, partClass } from './types';
+import { PartProps, partClass, SpiderLimbAnchor, SpiderLimbAnchor } from './types';
 
 // ─── ════════════════════ GOAT / PAN PARTS ══════════════════════ ─────────────
 // Goat and satyr anatomy. Canvas 160×420, pre-flip (right-facing).
@@ -558,5 +558,25 @@ export function GoatLegFront({ ghost }: PartProps) {
     </g>
   );
 }
+
+// ─── Spider limb anchors for goat body ───────────────────────────────────────
+// Goat has 4 leg joints; each gets 2 spider limbs (one up-out, one down-out).
+// Far-side anchors (lower x, behind body barrel) → layer:'back'.
+// Near-side anchors (higher x, in front of body barrel) → layer:'front'.
+// Anchor positions taken from GoatBody leg joint comments in goat.tsx.
+export const GOAT_SPIDER_LIMB_ANCHORS: SpiderLimbAnchor[] = [
+  // Far front shoulder (102, 178) — splay rightward, behind barrel
+  { x: 102, y: 178, knee: { dx:  36, dy: -38 }, tip: { dx:  24, dy: -36 }, layer: 'back',  amp: 2.5, dur: 2.2, phase: 0.0 },
+  { x: 102, y: 178, knee: { dx:  38, dy:  28 }, tip: { dx:  24, dy:  26 }, layer: 'back',  amp: 2.0, dur: 1.9, phase: 0.5 },
+  // Near front shoulder (114, 176) — splay rightward, in front of barrel
+  { x: 114, y: 176, knee: { dx:  36, dy: -38 }, tip: { dx:  24, dy: -36 }, layer: 'front', amp: 2.5, dur: 2.0, phase: 0.3 },
+  { x: 114, y: 176, knee: { dx:  38, dy:  28 }, tip: { dx:  24, dy:  26 }, layer: 'front', amp: 2.0, dur: 2.3, phase: 0.8 },
+  // Far hind hip (29, 194) — splay leftward, behind barrel
+  { x:  29, y: 194, knee: { dx: -36, dy: -38 }, tip: { dx: -24, dy: -36 }, layer: 'back',  amp: 2.5, dur: 2.1, phase: 0.1 },
+  { x:  29, y: 194, knee: { dx: -38, dy:  28 }, tip: { dx: -24, dy:  26 }, layer: 'back',  amp: 2.0, dur: 1.8, phase: 0.6 },
+  // Near hind hip (42, 192) — splay leftward, in front of barrel
+  { x:  42, y: 192, knee: { dx: -36, dy: -38 }, tip: { dx: -24, dy: -36 }, layer: 'front', amp: 2.5, dur: 2.3, phase: 0.4 },
+  { x:  42, y: 192, knee: { dx: -38, dy:  28 }, tip: { dx: -24, dy:  26 }, layer: 'front', amp: 2.0, dur: 1.9, phase: 0.9 },
+];
 
 // ─── ═══════════════════════ WING PARTS ═════════════════════════ ─────────────

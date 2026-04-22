@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PartProps, partClass } from './types';
+import { PartProps, partClass, SpiderLimbAnchor, SpiderLimbAnchor } from './types';
 
 // ─── ═══════════════════════ FLESH PARTS ════════════════════════ ─────────────
 
@@ -7,7 +7,7 @@ import { PartProps, partClass } from './types';
 export function UprightTorso({ ghost }: PartProps) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill="white" stroke="black" stroke-width="2" stroke-linejoin="round">
+       fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
       {/* Torso */}
       <path d="M 50,100 C 38,105 34,120 36,145 C 38,168 42,185 48,195
                L 50,230 L 110,230 L 112,195
@@ -24,7 +24,7 @@ export function UprightTorso({ ghost }: PartProps) {
 export function HumanoidHead({ ghost }: PartProps) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill="white" stroke="black" stroke-width="2" stroke-linejoin="round">
+       fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
       <ellipse cx="78" cy="48" rx="28" ry="30"/>
       {/* Eye */}
       <circle cx="92" cy="46" r="5" fill="black" stroke="none"/>
@@ -72,7 +72,7 @@ export function HumanoidArmFront({ ghost }: PartProps) {
 export function HumanoidLegBack({ ghost }: PartProps) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill="white" stroke="black" stroke-width="2" stroke-linejoin="round">
+       fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
       <path d="M 83,256 C 84,270 86,295 85,330 L 98,330
                C 99,295 100,270 100,256 Z"/>
       <path d="M 83,328 C 83,345 84,365 84,390 L 98,390
@@ -86,7 +86,7 @@ export function HumanoidLegBack({ ghost }: PartProps) {
 export function HumanoidLegFront({ ghost }: PartProps) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill="white" stroke="black" stroke-width="2" stroke-linejoin="round">
+       fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
       <path d="M 60,256 C 61,270 62,295 62,330 L 75,330
                C 76,295 76,270 76,256 Z"/>
       <path d="M 60,328 C 60,345 60,365 60,390 L 74,390
@@ -101,7 +101,7 @@ export function HumanoidLegFront({ ghost }: PartProps) {
 export function HorseBarrel({ ghost, fill = 'white' }: PartProps & { fill?: string }) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill={fill} stroke="black" stroke-width="2">
+       fill={fill} stroke="black" strokeWidth="2">
       <path d="M 90,152 C 84,136 65,128 42,130
                C 22,132 8,148 8,172 C 8,200 18,222 38,228
                C 56,232 78,228 90,220 C 96,210 96,168 90,152 Z"/>
@@ -118,7 +118,7 @@ export function HorseLeg({ cx, topY, ghost, fill = 'white' }: { cx: number; topY
   const hoofY = topY + 152;
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill={fill} stroke="black" stroke-width="2">
+       fill={fill} stroke="black" strokeWidth="2">
       <line x1={cx} y1={topY}   x2={cx - 2} y2={kneeY} stroke="black" strokeWidth="10" strokeLinecap="round"/>
       <line x1={cx} y1={topY}   x2={cx - 2} y2={kneeY} stroke={fill}  strokeWidth="6"  strokeLinecap="round"/>
       <line x1={cx - 2} y1={kneeY} x2={cx}  y2={hoofY} stroke="black" strokeWidth="8"  strokeLinecap="round"/>
@@ -207,7 +207,7 @@ export function HorseLegBone({ cx, topY }: { cx: number; topY: number }) {
 export function FishTail({ ghost }: PartProps) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill="white" stroke="black" stroke-width="2">
+       fill="white" stroke="black" strokeWidth="2">
       {/* caudal fin upper lobe */}
       <path d="M 124,366 C 136,352 158,338 162,320 C 154,334 148,360 134,378 L 122,384 Z"/>
       {/* caudal fin lower lobe */}
@@ -425,4 +425,25 @@ export function HarpyLegFront({ ghost }: PartProps) {
     </g>
   );
 }
+
+// ─── Spider limb anchors for upright humanoid torso ───────────────────────────
+// 8 anchors: 4 at shoulders (2 per side), 4 at hips (2 per side).
+// layer:'back' anchors render before the body; layer:'front' render after.
+// knee/tip offsets are relative to the root so geometry travels with the anchor.
+export const HUMANOID_SPIDER_LIMB_ANCHORS: SpiderLimbAnchor[] = [
+  // Back shoulder (110, 104) — upper limb fans upward-right (behind body)
+  { x: 110, y: 104, knee: { dx:  26, dy: -36 }, tip: { dx:  22, dy: -36 }, layer: 'back',  amp: 3.5, dur: 2.2, phase: 0.0 },
+  // Back shoulder — lower limb fans downward-right (in front of body)
+  { x: 110, y: 104, knee: { dx:  30, dy:  21 }, tip: { dx:  22, dy:  27 }, layer: 'front', amp: 3.0, dur: 1.9, phase: 0.5 },
+  // Front shoulder (46, 104) — upper limb fans upward-left (behind body)
+  { x:  46, y: 104, knee: { dx: -26, dy: -36 }, tip: { dx: -22, dy: -36 }, layer: 'back',  amp: 3.5, dur: 2.0, phase: 0.3 },
+  // Front shoulder — lower limb fans downward-left (in front of body)
+  { x:  46, y: 104, knee: { dx: -24, dy:  21 }, tip: { dx: -22, dy:  27 }, layer: 'front', amp: 3.0, dur: 2.3, phase: 0.8 },
+  // Back hip (90, 262) — two limbs fan downward-right (behind body)
+  { x:  90, y: 262, knee: { dx:  34, dy:  52 }, tip: { dx:  18, dy:  64 }, layer: 'back',  amp: 2.5, dur: 2.1, phase: 0.1 },
+  { x:  90, y: 262, knee: { dx:  26, dy:  70 }, tip: { dx:  12, dy:  68 }, layer: 'back',  amp: 2.0, dur: 1.8, phase: 0.6 },
+  // Front hip (66, 262) — two limbs fan downward-left (in front of body)
+  { x:  66, y: 262, knee: { dx: -34, dy:  52 }, tip: { dx: -18, dy:  64 }, layer: 'front', amp: 2.5, dur: 2.3, phase: 0.4 },
+  { x:  66, y: 262, knee: { dx: -26, dy:  70 }, tip: { dx: -12, dy:  68 }, layer: 'front', amp: 2.0, dur: 1.9, phase: 0.9 },
+];
 
