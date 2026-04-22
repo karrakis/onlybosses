@@ -11,8 +11,8 @@
  *
  * ── Part tagging ───────────────────────────────────────────────────────────
  * Every part <g> carries a `data-layer` attribute which is one of:
- *   "flesh"   – organic body (affected by ghost fade)
- *   "bone"    – skeletal (NOT affected by ghost fade; always visible)
+ *   "flesh"   – organic body
+ *   "bone"    – skeletal
  *   "ethereal"– overlay effects (crown, glow halos)
  *   "wing"    – wing layer (sits behind body)
  *
@@ -109,8 +109,7 @@ import {
 const COMPOSITOR_CSS = `
 @keyframes ghost-fade {
   0%,100% { opacity: 1; }
-  40%     { opacity: 0.15; }
-  60%     { opacity: 0.15; }
+  50%     { opacity: 0.35; }
 }
 @keyframes eye-pulse {
   0%,100% { opacity: 1; }
@@ -120,7 +119,7 @@ const COMPOSITOR_CSS = `
   0%,100% { r: 7; }
   50%     { r: 9.5; }
 }
-.ghost-flesh { animation: ghost-fade 3s ease-in-out infinite; }
+.ghost-flesh { animation: ghost-fade 3s linear infinite; }
 .eye-orb     { animation: eye-grow  2.2s ease-in-out infinite; }
 .eye-glow    { animation: eye-pulse 2.2s ease-in-out infinite; }
 @keyframes phoenix-glow {
@@ -878,6 +877,10 @@ export default function CreatureCompositor({ keywords, animStyle = {} }: Creatur
 
   const { parts, viewBox, width, height } = compositeCreature(keywords);
   const isOnFire = keywords.includes('phoenix');
+  const isGhost = keywords.includes('ghost');
+  const rootClassName = [isOnFire ? 'phoenix-on-fire' : '', isGhost ? 'ghost-flesh' : '']
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <svg
@@ -887,7 +890,7 @@ export default function CreatureCompositor({ keywords, animStyle = {} }: Creatur
       height={height}
       style={{ overflow: 'visible', ...animStyle }}
     >
-      <g transform="translate(160,0) scale(-1,1)" className={isOnFire ? 'phoenix-on-fire' : undefined}>
+      <g transform="translate(160,0) scale(-1,1)" className={rootClassName || undefined}>
         {parts}
       </g>
     </svg>
