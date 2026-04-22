@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PartProps, partClass } from './types';
+import { PartProps, partClass, LegAnchor, Pt } from './types';
 
 // ─── Giant Rat ───────────────────────────────────────────────────────────────
 // Upright bipedal posture — standing on hind legs so the body occupies the
@@ -285,4 +285,19 @@ export function RatLegFrontBone({ cx, topY }: { cx: number; topY: number }) {
     </g>
   );
 }
+
+// ─── Slime goop silhouette pts ────────────────────────────────────────────────
+export const RAT_SLIME_GOOP_PTS: Pt[] = [
+  [78,18],[118,50],[142,100],[142,168],[118,280],[78,300],[38,280],[14,168],[14,100],[38,50],
+];
+
+// ─── Leg anchors ──────────────────────────────────────────────────────────────
+// Far hind renders behind body; near hind renders in front of it.
+// Forepaw anchors are goatImmune — goat chimera only replaces hind legs.
+export const RAT_LEG_ANCHORS: LegAnchor[] = [
+  { key: 'rat-hl-far',    layer: 'back',  slot: 'hind', type: 'rat-hind', cx: 90,  topY: 258, goatTx: 24 },
+  { key: 'rat-hl-near',   layer: 'front', slot: 'hind', type: 'rat-hind', cx: 66,  topY: 258, goatTx: 24 },
+  { key: 'rat-paw-back',  layer: 'front', slot: 'fore', type: 'rat-fore', cx: 110, topY: 112, goatImmune: true },
+  { key: 'rat-paw-front', layer: 'front', slot: 'fore', type: 'rat-fore', cx: 46,  topY: 112, goatImmune: true },
+];
 

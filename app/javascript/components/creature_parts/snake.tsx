@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PartProps, partClass } from './types';
+import { PartProps, partClass, Pt } from './types';
 
 // ─── Giant Snake ─────────────────────────────────────────────────────────────
 // Cobra-style: coiled lower body (y≈316–420), raised neck tube (y≈76–306),
@@ -213,4 +213,9 @@ export function SnakeSkullHead() {
     </g>
   );
 }
+
+// ─── Slime goop silhouette pts ────────────────────────────────────────────────
+export const SNAKE_SLIME_GOOP_PTS: Pt[] = [
+  [78,10],[124,44],[148,106],[104,190],[91,306],[118,370],[78,390],[38,370],[22,306],[52,190],[8,106],[40,44],
+];
 

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PartProps, partClass, SpiderLimbAnchor } from './types';
+import { PartProps, partClass, SpiderLimbAnchor, Pt } from './types';
 
 // ─── Giant Spider ────────────────────────────────────────────────────────────
 // All parts authored directly in the standard 160×420 compositor space.
@@ -188,3 +188,8 @@ export function SpiderBoneEyes() {
     </g>
   );
 }
+
+// ─── Slime goop silhouette pts ────────────────────────────────────────────────
+export const SPIDER_SLIME_GOOP_PTS: Pt[] = [
+  [80,34],[130,60],[155,100],[155,220],[130,280],[80,295],[28,280],[2,220],[2,100],[28,60],
+];

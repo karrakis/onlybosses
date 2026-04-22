@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PartProps, partClass, SpiderLimbAnchor, SpiderLimbAnchor } from './types';
+import { PartProps, partClass, SpiderLimbAnchor, LegAnchor, Pt } from './types';
 
 // ─── ════════════════════ GOAT / PAN PARTS ══════════════════════ ─────────────
 // Goat and satyr anatomy. Canvas 160×420, pre-flip (right-facing).
@@ -577,6 +577,21 @@ export const GOAT_SPIDER_LIMB_ANCHORS: SpiderLimbAnchor[] = [
   // Near hind hip (42, 192) — splay leftward, in front of barrel
   { x:  42, y: 192, knee: { dx: -36, dy: -38 }, tip: { dx: -24, dy: -36 }, layer: 'front', amp: 2.5, dur: 2.3, phase: 0.4 },
   { x:  42, y: 192, knee: { dx: -38, dy:  28 }, tip: { dx: -24, dy:  26 }, layer: 'front', amp: 2.0, dur: 1.9, phase: 0.9 },
+];
+
+// ─── Slime goop silhouette pts ────────────────────────────────────────────────
+export const GOAT_SLIME_GOOP_PTS: Pt[] = [
+  [78,2],[124,8],[124,26],[130,100],[148,200],
+  [112,262],[108,310],[96,414],[60,414],
+  [48,310],[44,262],[28,200],[26,100],[30,26],[30,8],
+];
+
+// ─── Goat chimera leg anchors ─────────────────────────────────────────────────
+// Used when goat is a chimera on another body.
+// hind tx is set to 0 here; the compositor overrides it using the host's goatTx.
+export const GOAT_CHIMERA_LEG_ANCHORS: LegAnchor[] = [
+  { key: 'goat-leg-back',  layer: 'back',  slot: 'hind', type: 'goat-hind', tx: 0 },
+  { key: 'goat-leg-front', layer: 'front', slot: 'fore', type: 'goat-fore', tx: 0 },
 ];
 
 // ─── ═══════════════════════ WING PARTS ═════════════════════════ ─────────────

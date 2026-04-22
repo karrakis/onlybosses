@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PartProps, partClass, SpiderLimbAnchor, SpiderLimbAnchor } from './types';
+import { PartProps, partClass, SpiderLimbAnchor, LegAnchor, Pt } from './types';
 
 // ─── ═══════════════════════ FLESH PARTS ════════════════════════ ─────────────
 
@@ -445,5 +445,27 @@ export const HUMANOID_SPIDER_LIMB_ANCHORS: SpiderLimbAnchor[] = [
   // Front hip (66, 262) — two limbs fan downward-left (in front of body)
   { x:  66, y: 262, knee: { dx: -34, dy:  52 }, tip: { dx: -18, dy:  64 }, layer: 'front', amp: 2.5, dur: 2.3, phase: 0.4 },
   { x:  66, y: 262, knee: { dx: -26, dy:  70 }, tip: { dx: -12, dy:  68 }, layer: 'front', amp: 2.0, dur: 1.9, phase: 0.9 },
+];
+
+// ─── Slime goop silhouette pts ────────────────────────────────────────────────
+export const HUMANOID_SLIME_GOOP_PTS: Pt[] = [
+  [78,18],[118,44],[130,100],[148,200],[130,260],[110,420],[66,420],[46,260],[28,200],[26,100],[36,44],
+];
+export const MERMAID_SLIME_GOOP_PTS: Pt[] = [
+  [78,18],[120,46],[130,108],[130,220],[110,320],[90,430],[60,430],[46,320],[26,220],[26,108],[36,46],
+];
+
+// ─── Leg anchors ──────────────────────────────────────────────────────────────
+export const HUMANOID_LEG_ANCHORS: LegAnchor[] = [
+  { key: 'leg-back',  layer: 'back',  slot: 'hind', type: 'biped', goatTx: 0 },
+  { key: 'leg-front', layer: 'front', slot: 'fore', type: 'biped', goatTx: 0 },
+];
+export const HARPY_LEG_ANCHORS: LegAnchor[] = [
+  { key: 'harpy-leg-back',  layer: 'back',  slot: 'hind', type: 'harpy', goatTx: 0 },
+  { key: 'harpy-leg-front', layer: 'front', slot: 'fore', type: 'harpy', goatTx: 0 },
+];
+export const PHOENIX_LEG_ANCHORS: LegAnchor[] = [
+  { key: 'bird-leg-back',  layer: 'back',  slot: 'hind', type: 'phoenix', goatTx: 0 },
+  { key: 'bird-leg-front', layer: 'front', slot: 'fore', type: 'phoenix', goatTx: 0 },
 ];
 

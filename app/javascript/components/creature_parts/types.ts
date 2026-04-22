@@ -40,6 +40,45 @@ export interface SpiderLimbAnchor {
   phase?: number;
 }
 
+/** Descriptor for one of a body's leg attachment slots. */
+export type LegAnchorType =
+  | 'biped'      // human/zombie legs; layer selects back/front component
+  | 'rat-hind'   // RatLegBack / RatLegBackBone; requires cx, topY
+  | 'rat-fore'   // RatLegFront / RatLegFrontBone; requires cx, topY
+  | 'goat-hind'  // GoatLegBack; respects tx
+  | 'goat-fore'  // GoatLegFront
+  | 'harpy'      // HarpyLegBack/Front; layer selects variant
+  | 'phoenix';   // PhoenixLegBack/Front; layer selects variant
+
+/** A leg attachment point on a body torso. */
+export interface LegAnchor {
+  key: string;
+  /** Render order: 'back' renders before the torso, 'front' after. */
+  layer: 'back' | 'front';
+  /** Logical role for chimera slot replacement. */
+  slot: 'hind' | 'fore';
+  type: LegAnchorType;
+  /** X position on the 160×420 canvas. Required for rat-hind / rat-fore. */
+  cx?: number;
+  /** Top Y position. Required for rat-hind / rat-fore. */
+  topY?: number;
+  /** X translation for goat chimera components (GoatLegBack tx prop). */
+  tx?: number;
+  /**
+   * Component variant override. Absent = use layer.
+   * Set when layer changes for render-order deferral but the original
+   * back/front component must be preserved (e.g. phoenix + spider chimera).
+   */
+  variant?: 'back' | 'front';
+  /** When true, goat chimera will not replace this anchor. */
+  goatImmune?: true;
+  /**
+   * X translation GoatLegBack should receive when replacing this slot.
+   * Default 0 (most bodies); 24 for rat (hip offset correction).
+   */
+  goatTx?: number;
+}
+
 // Utility: build the data-layer + optional ghost class string
 export function partClass(layer: Layer, ghost?: boolean): string {
   const cls: string[] = [];

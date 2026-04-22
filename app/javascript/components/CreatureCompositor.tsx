@@ -34,7 +34,7 @@
 import * as React from 'react';
 
 // ─── Part components (organised by creature) ──────────────────────────────────
-import { Pt, SpiderLimbAnchor } from './creature_parts/types';
+import { Pt, SpiderLimbAnchor, LegAnchor } from './creature_parts/types';
 import {
   UprightTorso, HumanoidHead,
   HumanoidArmBack, HumanoidArmFront,
@@ -45,6 +45,8 @@ import {
   PhoenixLegBack, PhoenixLegFront, PhoenixTail, PhoenixBeak,
   HarpyCrest, HarpyTeeth, HarpyLegBack, HarpyLegFront,
   HUMANOID_SPIDER_LIMB_ANCHORS,
+  HUMANOID_LEG_ANCHORS, HARPY_LEG_ANCHORS, PHOENIX_LEG_ANCHORS,
+  HUMANOID_SLIME_GOOP_PTS, MERMAID_SLIME_GOOP_PTS,
 } from './creature_parts/humanoid';
 import {
   SkeletonRibcage, SkeletonPelvis,
@@ -58,14 +60,17 @@ import {
   RatEars, RatWhiskers,
   RatRibcage, RatPelvis, RatSkullHead,
   RatLegBackBone, RatLegFrontBone,
+  RAT_LEG_ANCHORS, RAT_SLIME_GOOP_PTS,
 } from './creature_parts/rat';
 import {
   SnakeCoil, SnakeBody, SnakeCoilFront, SnakeHood, SnakeHead,
   SnakeRibcage, SnakeSkullHead,
+  SNAKE_SLIME_GOOP_PTS,
 } from './creature_parts/snake';
 import {
   SpiderLegs, SpiderBody, SpiderHairs, SpiderEyes,
   SpiderBoneEyes, SpiderChimeraLimbs,
+  SPIDER_SLIME_GOOP_PTS,
 } from './creature_parts/spider';
 import { SlimeBody, SlimeGoop } from './creature_parts/slime';
 import {
@@ -73,6 +78,7 @@ import {
   GoatHornsChimera, GoatEyeOverlay,
   GoatLegBack, GoatLegFront,
   GOAT_SPIDER_LIMB_ANCHORS,
+  GOAT_CHIMERA_LEG_ANCHORS, GOAT_SLIME_GOOP_PTS,
 } from './creature_parts/goat';
 import {
   ZombieBody, ZombieHead,
@@ -232,10 +238,6 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   const hasBipedArms = body === 'mermaid'
                     || body === 'zombie' || body === 'human';
 
-  // Goat legs graft onto upright hosts (not mermaid/snake/spider/rat/slime/goat)
-  const goatLegChimera = chimeraOf('goat') && !boneMode &&
-    (body === 'human' || body === 'zombie' || body === 'phoenix' || body === 'harpy');
-
   // Horse barrel flesh colour tinted by coexisting snake/rat keywords
   const horseFlesh = has('giant_snake') ? { base: '#2d5a1e', hi: '#4a8c2e' }
                    : has('giant_rat')   ? { base: '#c8963c', hi: '#e8b870' }
@@ -256,12 +258,82 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   const bpArmFront = (k: string) => bipedStyle === 'zombie'
     ? <ZombieArmFront   key={k} layer="flesh" ghost={ghost}/>
     : <HumanoidArmFront key={k} layer="flesh" ghost={ghost}/>;
-  const bpLegBack  = (k: string) => bipedStyle === 'zombie'
-    ? <ZombieLegBack    key={k} layer="flesh" ghost={ghost}/>
-    : <HumanoidLegBack  key={k} layer="flesh" ghost={ghost}/>;
-  const bpLegFront = (k: string) => bipedStyle === 'zombie'
-    ? <ZombieLegFront   key={k} layer="flesh" ghost={ghost}/>
-    : <HumanoidLegFront key={k} layer="flesh" ghost={ghost}/>;
+
+  // ── Leg rendering ──────────────────────────────────────────────────────────
+  // Central dispatcher: converts a LegAnchor into the correct React node.
+  // Component variant (back/front) is anchor.variant ?? anchor.layer.
+  function renderLeg(anchor: LegAnchor): React.ReactNode {
+    const v = anchor.variant ?? anchor.layer;
+    if (boneMode) {
+      switch (anchor.type) {
+        case 'biped': case 'harpy': case 'phoenix':
+          return v === 'back' ? <SkeletonLegBack  key={anchor.key}/> : <SkeletonLegFront key={anchor.key}/>;
+        case 'rat-hind':
+          return <RatLegBackBone  key={anchor.key} cx={anchor.cx!} topY={anchor.topY!}/>;
+        case 'rat-fore':
+          return <RatLegFrontBone key={anchor.key} cx={anchor.cx!} topY={anchor.topY!}/>;
+        default: return null;
+      }
+    }
+    switch (anchor.type) {
+      case 'biped':
+        return v === 'back'
+          ? (bipedStyle === 'zombie' ? <ZombieLegBack   key={anchor.key} layer="flesh" ghost={ghost}/> : <HumanoidLegBack  key={anchor.key} layer="flesh" ghost={ghost}/>)
+          : (bipedStyle === 'zombie' ? <ZombieLegFront  key={anchor.key} layer="flesh" ghost={ghost}/> : <HumanoidLegFront key={anchor.key} layer="flesh" ghost={ghost}/>);
+      case 'rat-hind':
+        return <RatLegBack  key={anchor.key} cx={anchor.cx!} topY={anchor.topY!} ghost={ghost}/>;
+      case 'rat-fore':
+        return <RatLegFront key={anchor.key} cx={anchor.cx!} topY={anchor.topY!} ghost={ghost}/>;
+      case 'goat-hind':
+        return <GoatLegBack  key={anchor.key} layer="flesh" ghost={ghost} tx={anchor.tx ?? 0}/>;
+      case 'goat-fore':
+        return <GoatLegFront key={anchor.key} layer="flesh" ghost={ghost}/>;
+      case 'harpy':
+        return v === 'back' ? <HarpyLegBack  key={anchor.key} layer="flesh" ghost={ghost}/> : <HarpyLegFront key={anchor.key} layer="flesh" ghost={ghost}/>;
+      case 'phoenix':
+        return v === 'back' ? <PhoenixLegBack key={anchor.key} layer="flesh" ghost={ghost}/> : <PhoenixLegFront key={anchor.key} layer="flesh" ghost={ghost}/>;
+      default: return null;
+    }
+  }
+
+  // ── Leg anchor computation ────────────────────────────────────────────────
+  // Each body owns its anchor geometry. Chimera goat overrides matching slots.
+  const LEG_ANCHOR_MAP: Partial<Record<BodyPlan | 'human', LegAnchor[]>> = {
+    human:     HUMANOID_LEG_ANCHORS,
+    zombie:    HUMANOID_LEG_ANCHORS,
+    phoenix:   PHOENIX_LEG_ANCHORS,
+    harpy:     HARPY_LEG_ANCHORS,
+    giant_rat: RAT_LEG_ANCHORS,
+    // mermaid, giant_snake, giant_spider, goat, slime: no discrete legs
+  };
+  let legAnchors: LegAnchor[] = LEG_ANCHOR_MAP[body] ?? [];
+
+  // Centaur provides all four horse legs — suppress the body's own.
+  if (hasHindquarters) legAnchors = [];
+
+  // Goat chimera: replace non-immune slots with goat's components.
+  // goatTx on the replaced anchor carries the host-specific offset (rat=24, others=0).
+  if (chimeraOf('goat') && !boneMode) {
+    const toReplace = legAnchors.filter(a => !a.goatImmune);
+    const immune    = legAnchors.filter(a =>  a.goatImmune);
+    const slotsGone = new Set(toReplace.map(a => a.slot));
+    const hindTx    = toReplace.find(a => a.slot === 'hind')?.goatTx ?? 0;
+    legAnchors = [
+      ...immune,
+      ...GOAT_CHIMERA_LEG_ANCHORS
+        .filter(a => slotsGone.has(a.slot))
+        .map(a => (a.slot === 'hind' ? { ...a, tx: hindTx } : a)),
+    ];
+  }
+
+  // Phoenix + spider chimera: defer both bird legs to front so they render
+  // in front of the spider abdomen. variant preserves original component selection.
+  if (body === 'phoenix' && chimeraOf('giant_spider')) {
+    legAnchors = legAnchors.map(a => ({ ...a, layer: 'front' as const, variant: a.layer }));
+  }
+
+  const backLegAnchors  = legAnchors.filter(a => a.layer === 'back');
+  const frontLegAnchors = legAnchors.filter(a => a.layer === 'front');
 
   // ── Arm contributor system ────────────────────────────────────────────────
   // How many weapon-holding arm pairs each keyword contributes.
@@ -384,31 +456,8 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     );
   });
 
-  // Back leg
-  if (body === 'giant_rat') {
-    if (!boneMode) {
-      // Goat chimera: goat hind legs replace rat's own hind legs (forepaws kept)
-      if (chimeraOf('goat')) parts.push(<GoatLegBack key="goat-leg-back" layer="flesh" ghost={ghost} tx={24}/>);
-      else                   parts.push(<RatLegBack  key="rat-hl-back"   cx={90} topY={258} ghost={ghost}/>);
-    } else {
-      parts.push(<RatLegBackBone key="rat-hl-back-b" cx={90} topY={258}/>);
-    }
-  } else if (!boneMode) {
-    if (goatLegChimera) {
-      parts.push(<GoatLegBack key="goat-leg-back" layer="flesh" ghost={ghost}/>);
-    } else if ((body === 'zombie' || body === 'human') && !hasHindquarters) {
-      parts.push(bpLegBack('leg-back'));
-    } else if (body === 'harpy') {
-      parts.push(<HarpyLegBack key="leg-back" layer="flesh" ghost={ghost}/>);
-    } else if (body === 'phoenix') {
-      // Phoenix+spider: abdomen occludes back leg — defer both phoenix legs to §6
-      if (!chimeraOf('giant_spider')) {
-        parts.push(<PhoenixLegBack key="bird-leg-back" layer="flesh" ghost={ghost}/>);
-      }
-    }
-  } else if (body !== 'mermaid' && body !== 'giant_snake' && body !== 'goat') {
-    parts.push(<SkeletonLegBack key="leg-back-bone"/>);
-  }
+  // Back leg — driven by body's leg anchors (computed above)
+  backLegAnchors.forEach(a => { const n = renderLeg(a); if (n) parts.push(n); });
 
   // ── 4. Main body ──────────────────────────────────────────────────────────
   switch (body) {
@@ -576,50 +625,14 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     parts.push(<SpiderChimeraLimbs key="spider-front" anchors={spiderFrontAnchors} bone={boneMode} ghost={ghost}/>);
   }
 
-  // Legs
-  if (body === 'giant_rat') {
-    if (!boneMode) {
-      if (chimeraOf('goat')) {
-        // GoatLegBack (§2) already renders both near+far hind legs as a pair.
-        // Keep rat's own forepaws for the front — GoatLegFront starts at y=258
-        // which would stack on top of the hind legs.
-        parts.push(
-          <RatLegFront key="rat-paw-back"  cx={110} topY={112} ghost={ghost}/>,
-          <RatLegFront key="rat-paw-front" cx={46}  topY={112} ghost={ghost}/>,
-        );
-      } else {
-        parts.push(
-          <RatLegBack  key="rat-hl-front"  cx={66}  topY={258} ghost={ghost}/>,
-          <RatLegFront key="rat-paw-back"  cx={110} topY={112} ghost={ghost}/>,
-          <RatLegFront key="rat-paw-front" cx={46}  topY={112} ghost={ghost}/>,
-        );
-      }
-    } else {
-      parts.push(
-        <RatLegBackBone  key="rat-hl-front-b"  cx={66}  topY={258}/>,
-        <RatLegFrontBone key="rat-paw-back-b"  cx={110} topY={112}/>,
-        <RatLegFrontBone key="rat-paw-front-b" cx={46}  topY={112}/>,
-      );
-    }
-  } else if (!boneMode) {
-    if (goatLegChimera) {
-      parts.push(<GoatLegFront key="goat-leg-front" layer="flesh" ghost={ghost}/>);
-    } else if ((body === 'zombie' || body === 'human') && !hasHindquarters) {
-      parts.push(bpLegFront('leg-front'));
-    } else if (body === 'harpy') {
-      parts.push(<HarpyLegFront key="leg-front" layer="flesh" ghost={ghost}/>);
-    } else if (body === 'phoenix') {
-      // Back leg already in §2; just the front leg here
-      parts.push(<PhoenixLegFront key="bird-leg-front" layer="flesh" ghost={ghost}/>);
-    } else if (body === 'giant_spider' && chimeraOf('phoenix')) {
-      // Both phoenix legs deferred here so they render in front of spider abdomen
-      parts.push(
-        <PhoenixLegBack  key="bird-leg-back"  layer="flesh" ghost={ghost}/>,
-        <PhoenixLegFront key="bird-leg-front" layer="flesh" ghost={ghost}/>,
-      );
-    }
-  } else if (body !== 'mermaid' && body !== 'giant_snake' && body !== 'goat') {
-    parts.push(<SkeletonLegFront key="leg-front-bone"/>);
+  // Front legs — driven by body's leg anchors (computed above)
+  frontLegAnchors.forEach(a => { const n = renderLeg(a); if (n) parts.push(n); });
+  // Spider body + phoenix chimera: both phoenix legs render here, in front of the abdomen.
+  if (body === 'giant_spider' && chimeraOf('phoenix') && !boneMode) {
+    parts.push(
+      <PhoenixLegBack  key="bird-leg-back"  layer="flesh" ghost={ghost}/>,
+      <PhoenixLegFront key="bird-leg-front" layer="flesh" ghost={ghost}/>,
+    );
   }
 
   // ── 7. Joint knobs always last ────────────────────────────────────────────
@@ -628,55 +641,16 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   }
 
   // ── 8. Slime goop overlay ─────────────────────────────────────────────────
-  // Fires when slime is a chimera contributor (i.e. any creature + slime keyword).
-  // Silhouette polygon is chosen based on the dominant body plan.
+  // Fires when slime is a chimera contributor. Silhouette pts live on each body file.
   if (chimeraOf('slime')) {
-    let goopPts: Pt[];
-
-    switch (body) {
-      case 'giant_snake':
-        goopPts = [
-          [78, 10],  [124,44],  [148,106], [104,190], [91, 306],
-          [118,370], [78, 390], [38, 370], [22, 306],
-          [52, 190], [8,  106], [40, 44],
-        ];
-        break;
-      case 'giant_spider':
-        goopPts = [
-          [80,  34],  [130, 60],  [155, 100], [155, 220],
-          [130, 280], [80,  295], [28,  280], [2,   220],
-          [2,   100], [28,  60],
-        ];
-        break;
-      case 'giant_rat':
-        goopPts = [
-          [78,  18],  [118, 50],  [142, 100], [142, 168],
-          [118, 280], [78,  300], [38,  280], [14,  168],
-          [14,  100], [38,  50],
-        ];
-        break;
-      case 'mermaid':
-        goopPts = [
-          [78,  18],  [120, 46],  [130, 108], [130, 220],
-          [110, 320], [90,  430], [60,  430], [46,  320],
-          [26,  220], [26,  108], [36,  46],
-        ];
-        break;
-      case 'goat':
-        goopPts = [
-          [78,  2],   [124, 8],  [124, 26], [130, 100], [148, 200],
-          [112, 262], [108, 310],[96,  414], [60,  414],
-          [48,  310], [44,  262],[28,  200], [26,  100], [30,  26], [30,  8],
-        ];
-        break;
-      default: // human, zombie, phoenix, harpy, chimera biped hosts
-        goopPts = [
-          [78,  18],  [118, 44],  [130, 100], [148, 200],
-          [130, 260], [110, 420], [66,  420], [46,  260],
-          [28,  200], [26,  100], [36,  44],
-        ];
-    }
-    parts.push(<SlimeGoop key="slime-goop" pts={goopPts}/>);
+    const SLIME_GOOP_MAP: Partial<Record<BodyPlan | 'human', Pt[]>> = {
+      giant_snake:  SNAKE_SLIME_GOOP_PTS,
+      giant_spider: SPIDER_SLIME_GOOP_PTS,
+      giant_rat:    RAT_SLIME_GOOP_PTS,
+      mermaid:      MERMAID_SLIME_GOOP_PTS,
+      goat:         GOAT_SLIME_GOOP_PTS,
+    };
+    parts.push(<SlimeGoop key="slime-goop" pts={SLIME_GOOP_MAP[body] ?? HUMANOID_SLIME_GOOP_PTS}/>);
   }
 
   // ── 9. Flames on top of everything ───────────────────────────────────────
