@@ -1,11 +1,16 @@
 import * as React from 'react';
-import { PartProps, partClass } from './types';
+import { HeadPt } from './types';
 
 // ─── ═══════════════════════ ETHEREAL PARTS ══════════════════════ ────────────
 
-export function LichCrown() {
+// Crown geometry is authored at center cx=78, base cy=22.
+// anchor.cx/cy translates it to match the host head's skull top.
+export function LichCrown({ anchor }: { anchor?: HeadPt } = {}) {
+  const dx = (anchor?.cx ?? 78) - 78;
+  const dy = (anchor?.cy ?? 22) - 22;
+  const transform = (dx || dy) ? `translate(${dx},${dy})` : undefined;
   return (
-    <g data-layer="ethereal">
+    <g data-layer="ethereal" transform={transform}>
       <path d="M 52,22 L 52,10 L 58,18 L 64,4 L 70,18 L 76,6 L 82,18
                L 88,4 L 94,18 L 100,8 L 104,22 L 104,30 L 52,30 Z"
             fill="#555" stroke="black" strokeWidth="1.5" strokeLinejoin="miter"/>
@@ -14,7 +19,7 @@ export function LichCrown() {
   );
 }
 
-export function LichEyes({ eyes = [{ cx: 91, cy: 40 }, { cx: 63, cy: 40 }] }: { eyes?: { cx: number; cy: number }[] }) {
+export function LichEyes({ eyes = [{ cx: 91, cy: 40 }, { cx: 63, cy: 40 }] }: { eyes?: HeadPt[] }) {
   return (
     <g data-layer="ethereal">
       <defs>
@@ -39,7 +44,6 @@ export function LichEyes({ eyes = [{ cx: 91, cy: 40 }, { cx: 63, cy: 40 }] }: { 
 }
 
 // ─── Phoenix flames ── rendered on top of all body parts ────────────────────
-// One flame gradient + smoke blur filter shared across all tongues.
 // Flame paths: base sits on the body contour, tip points toward lower y (up).
 export function PhoenixFlames() {
   return (

@@ -34,20 +34,26 @@
 import * as React from 'react';
 
 // ─── Part components (organised by creature) ──────────────────────────────────
-import { Pt, SpiderLimbAnchor, LegAnchor } from './creature_parts/types';
+import { Pt, SpiderLimbAnchor, LegAnchor, HeadPt, CrackSeg } from './creature_parts/types';
 import {
   UprightTorso, HumanoidHead,
   HumanoidArmBack, HumanoidArmFront,
   HumanoidLegBack, HumanoidLegFront,
   HorseBarrel, HorseLeg, HorseTail,
   HorseRibcage, HorsePelvis, HorseLegBone,
-  FishTail,
   PhoenixLegBack, PhoenixLegFront, PhoenixTail, PhoenixBeak,
   HarpyCrest, HarpyTeeth, HarpyLegBack, HarpyLegFront,
   HUMANOID_SPIDER_LIMB_ANCHORS,
   HUMANOID_LEG_ANCHORS, HARPY_LEG_ANCHORS, PHOENIX_LEG_ANCHORS,
-  HUMANOID_SLIME_GOOP_PTS, MERMAID_SLIME_GOOP_PTS,
+  HUMANOID_SLIME_GOOP_PTS,
+  HUMANOID_EYE_ANCHORS, HUMANOID_CROWN_ANCHOR, HUMANOID_CRACK_SEGS,
 } from './creature_parts/humanoid';
+import {
+  MermaidTail, MermaidTailBone, MermaidShellBra,
+  MERMAID_LEG_ANCHORS, MERMAID_SPIDER_LIMB_ANCHORS,
+  MERMAID_SLIME_GOOP_PTS,
+  MERMAID_EYE_ANCHORS, MERMAID_CROWN_ANCHOR, MERMAID_CRACK_SEGS,
+} from './creature_parts/mermaid';
 import {
   SkeletonRibcage, SkeletonPelvis,
   SkeletonArmBack, SkeletonArmFront,
@@ -61,11 +67,13 @@ import {
   RatRibcage, RatPelvis, RatSkullHead,
   RatLegBackBone, RatLegFrontBone,
   RAT_LEG_ANCHORS, RAT_SLIME_GOOP_PTS,
+  RAT_EYE_ANCHORS, RAT_CROWN_ANCHOR, RAT_CRACK_SEGS,
 } from './creature_parts/rat';
 import {
   SnakeCoil, SnakeBody, SnakeCoilFront, SnakeHood, SnakeHead,
   SnakeRibcage, SnakeSkullHead,
   SNAKE_SLIME_GOOP_PTS,
+  SNAKE_EYE_ANCHORS, SNAKE_CROWN_ANCHOR, SNAKE_CRACK_SEGS,
 } from './creature_parts/snake';
 import {
   SpiderLegs, SpiderBody, SpiderHairs, SpiderEyes,
@@ -79,6 +87,7 @@ import {
   GoatLegBack, GoatLegFront,
   GOAT_SPIDER_LIMB_ANCHORS,
   GOAT_CHIMERA_LEG_ANCHORS, GOAT_SLIME_GOOP_PTS,
+  GOAT_EYE_ANCHORS, GOAT_CROWN_ANCHOR, GOAT_CRACK_SEGS,
 } from './creature_parts/goat';
 import {
   ZombieBody, ZombieHead,
@@ -227,7 +236,8 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   // Anchor lookup for spider chimera limbs — keyed by body plan.
   // Falls back to humanoid anchors for any body not explicitly listed.
   const SPIDER_LIMB_ANCHOR_MAP: Partial<Record<string, SpiderLimbAnchor[]>> = {
-    goat: GOAT_SPIDER_LIMB_ANCHORS,
+    mermaid: MERMAID_SPIDER_LIMB_ANCHORS,
+    goat:    GOAT_SPIDER_LIMB_ANCHORS,
   };
   const _spiderAnchors    = SPIDER_LIMB_ANCHOR_MAP[body] ?? HUMANOID_SPIDER_LIMB_ANCHORS;
   const spiderBackAnchors  = _spiderAnchors.filter(a => a.layer === 'back');
@@ -304,7 +314,8 @@ export function compositeCreature(keywords: string[]): CompositorResult {
     phoenix:   PHOENIX_LEG_ANCHORS,
     harpy:     HARPY_LEG_ANCHORS,
     giant_rat: RAT_LEG_ANCHORS,
-    // mermaid, giant_snake, giant_spider, goat, slime: no discrete legs
+    mermaid:   MERMAID_LEG_ANCHORS,
+    // giant_snake, giant_spider, goat, slime: no discrete legs
   };
   let legAnchors: LegAnchor[] = LEG_ANCHOR_MAP[body] ?? [];
 
@@ -472,7 +483,12 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       break;
 
     case 'mermaid':
-      parts.push(<FishTail key="fish-tail" layer="flesh" ghost={ghost}/>);
+      if (!boneMode) {
+        parts.push(bpTorso('torso'));
+        parts.push(<MermaidTail key="mermaid-tail" layer="flesh" ghost={ghost}/>);
+      } else {
+        parts.push(<MermaidTailBone key="mermaid-tail-bone"/>);
+      }
       break;
 
     case 'giant_spider':
@@ -512,10 +528,20 @@ export function compositeCreature(keywords: string[]): CompositorResult {
       // Includes centaur+snake chimera: centaur gets horse+snake ribcage
       parts.push(<SnakeRibcage key="snake-ribcage"/>);
     } else if (body !== 'goat') {
-      // GoatSkeletonBody (§4) is self-contained; skip humanoid internals for pure goat
-      parts.push(<SkeletonRibcage key="ribcage"/>, <SkeletonPelvis key="pelvis"/>);
+      // GoatSkeletonBody (§4) is self-contained; skip humanoid internals for pure goat.
+      // Fish tail replaces the pelvis entirely — mermaid gets ribcage only here.
+      parts.push(<SkeletonRibcage key="ribcage"/>);
+      if (body !== 'mermaid') parts.push(<SkeletonPelvis key="pelvis"/>);
     }
-    if (has('lich')) parts.push(<SkeletonCracks key="cracks"/>);
+    if (has('lich')) {
+      const CRACK_MAP: Partial<Record<BodyPlan | 'human', CrackSeg[]>> = {
+        mermaid:     MERMAID_CRACK_SEGS,
+        giant_rat:   RAT_CRACK_SEGS,
+        giant_snake: SNAKE_CRACK_SEGS,
+        goat:        GOAT_CRACK_SEGS,
+      };
+      parts.push(<SkeletonCracks key="cracks" segs={CRACK_MAP[body] ?? HUMANOID_CRACK_SEGS}/>);
+    }
   }
 
   // ── 5. Head ───────────────────────────────────────────────────────────────
@@ -593,13 +619,26 @@ export function compositeCreature(keywords: string[]): CompositorResult {
   if (body === 'harpy' && !boneMode) {
     parts.push(<HarpyTeeth key="harpy-teeth" layer="flesh" ghost={ghost}/>);
   }
-  // Lich crown + glowing eyes
+  // Mermaid shell bra: flesh-only overlay on the torso
+  if (body === 'mermaid' && !boneMode) {
+    parts.push(<MermaidShellBra key="shell-bra" layer="flesh" ghost={ghost}/>);
+  }
+  // Lich crown + glowing eyes — anchors live on each body file
   if (has('lich')) {
-    parts.push(<LichCrown key="lich-crown"/>);
-    const lichEyes = body === 'giant_snake' ? [{ cx: 94, cy: 44 }]
-                   : body === 'giant_rat'   ? [{ cx: 62, cy: 46 }]
-                   :                          undefined;
-    parts.push(<LichEyes key="lich-eyes" eyes={lichEyes}/>);
+    const EYE_ANCHOR_MAP: Partial<Record<BodyPlan | 'human', HeadPt[]>> = {
+      mermaid:     MERMAID_EYE_ANCHORS,
+      giant_rat:   RAT_EYE_ANCHORS,
+      giant_snake: SNAKE_EYE_ANCHORS,
+      goat:        GOAT_EYE_ANCHORS,
+    };
+    const CROWN_ANCHOR_MAP: Partial<Record<BodyPlan | 'human', HeadPt>> = {
+      mermaid:     MERMAID_CROWN_ANCHOR,
+      giant_rat:   RAT_CROWN_ANCHOR,
+      giant_snake: SNAKE_CROWN_ANCHOR,
+      goat:        GOAT_CROWN_ANCHOR,
+    };
+    parts.push(<LichCrown key="lich-crown" anchor={CROWN_ANCHOR_MAP[body] ?? HUMANOID_CROWN_ANCHOR}/>);
+    parts.push(<LichEyes  key="lich-eyes"  eyes={EYE_ANCHOR_MAP[body]   ?? HUMANOID_EYE_ANCHORS}/>);
   }
 
   // ── 6. Front limbs (in front of body) ────────────────────────────────────

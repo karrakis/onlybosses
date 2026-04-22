@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PartProps, partClass, Pt } from './types';
+import { PartProps, partClass, Pt, HeadPt, CrackSeg } from './types';
 
 // ─── Giant Snake ─────────────────────────────────────────────────────────────
 // Cobra-style: coiled lower body (y≈316–420), raised neck tube (y≈76–306),
@@ -217,5 +217,22 @@ export function SnakeSkullHead() {
 // ─── Slime goop silhouette pts ────────────────────────────────────────────────
 export const SNAKE_SLIME_GOOP_PTS: Pt[] = [
   [78,10],[124,44],[148,106],[104,190],[91,306],[118,370],[78,390],[38,370],[22,306],[52,190],[8,106],[40,44],
+];
+
+// ─── Head overlay anchors ─────────────────────────────────────────────────────
+// Snake has one visible eye (forward-facing).
+// Skull top is ~y=10 at x≈90; crown base sits 6px into skull → cy=16, cx=82.
+export const SNAKE_EYE_ANCHORS:  HeadPt[] = [{ cx: 94, cy: 44 }];
+export const SNAKE_CROWN_ANCHOR: HeadPt   = { cx: 82, cy: 16 };
+
+// Crack segments for lich mode.
+// Skull: top ~y=14 at x≈84. Spine runs x=78, y=76–306. Widest rib (hw=38) at y=146 → tips (116,151)/(40,151).
+export const SNAKE_CRACK_SEGS: CrackSeg[] = [
+  { pts: [[84,14],[80,28],[86,42],[82,56],[88,68]], w: 1.2 },           // skull top/back
+  { pts: [[108,34],[112,46],[116,60],[121,72]], w: 1.0 },               // skull cheek toward fang
+  { pts: [[81,76],[78,94],[84,112],[79,130],[85,148],[80,166],[86,184],[81,202]], w: 1.3 }, // upper spine
+  { pts: [[81,214],[78,234],[84,254],[79,274],[85,296]], w: 1.1 },      // lower spine
+  { pts: [[116,151],[112,165],[108,178]], w: 1.0 },                     // far hood rib (widest)
+  { pts: [[40,151],[44,165],[48,178]], w: 1.0 },                        // near hood rib
 ];
 

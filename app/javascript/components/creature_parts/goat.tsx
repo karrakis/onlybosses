@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PartProps, partClass, SpiderLimbAnchor, LegAnchor, Pt } from './types';
+import { PartProps, partClass, SpiderLimbAnchor, LegAnchor, Pt, HeadPt, CrackSeg } from './types';
 
 // ─── ════════════════════ GOAT / PAN PARTS ══════════════════════ ─────────────
 // Goat and satyr anatomy. Canvas 160×420, pre-flip (right-facing).
@@ -592,6 +592,24 @@ export const GOAT_SLIME_GOOP_PTS: Pt[] = [
 export const GOAT_CHIMERA_LEG_ANCHORS: LegAnchor[] = [
   { key: 'goat-leg-back',  layer: 'back',  slot: 'hind', type: 'goat-hind', tx: 0 },
   { key: 'goat-leg-front', layer: 'front', slot: 'fore', type: 'goat-fore', tx: 0 },
+];
+
+// ─── Head overlay anchors ─────────────────────────────────────────────────────
+// Far eye (smaller/dimmer) + near eye (larger/prominent) from GoatBody.
+// Cranium: cx=128 cy=54 rx=24 ry=27 → skull top cy=27 → crown at cx=128, cy=33.
+export const GOAT_EYE_ANCHORS:  HeadPt[] = [{ cx: 118, cy: 46 }, { cx: 144, cy: 47 }];
+export const GOAT_CROWN_ANCHOR: HeadPt   = { cx: 128, cy: 33 };
+
+// Crack segments for lich mode.
+// Skull: cranium cx=128 cy=54 rx=24 → top at y=27. Muzzle extends toward x=160.
+// Neck vertebrae (120,90)→(112,163). Spine path from withers (108,172) to rump (22,203).
+export const GOAT_CRACK_SEGS: CrackSeg[] = [
+  { pts: [[126,27],[122,42],[128,54],[124,66],[130,78]], w: 1.2 },      // skull top down
+  { pts: [[148,84],[152,96],[148,106]], w: 1.0 },                       // muzzle/jaw
+  { pts: [[119,90],[115,110],[117,128],[115,146],[113,164]], w: 1.1 },  // neck vertebrae
+  { pts: [[108,172],[94,176],[80,178],[66,181],[52,185],[38,190],[26,196]], w: 1.3 }, // spine
+  { pts: [[99,181],[97,198],[95,212]], w: 1.0 },                        // far rib
+  { pts: [[44,192],[50,222],[54,248],[46,282],[40,311]], w: 1.0 },      // near hind leg
 ];
 
 // ─── ═══════════════════════ WING PARTS ═════════════════════════ ─────────────

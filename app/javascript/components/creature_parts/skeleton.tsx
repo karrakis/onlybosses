@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PartProps, partClass } from './types';
+import { PartProps, partClass, CrackSeg } from './types';
 
 // ─── ═══════════════════════ BONE PARTS ═════════════════════════ ─────────────
 // Bone parts are always tagged data-layer="bone" and are EXEMPT from ghost fade.
@@ -134,16 +134,12 @@ export function SkeletonJointKnobs({ includeHips = true }: { includeHips?: boole
   );
 }
 
-export function SkeletonCracks() {
+export function SkeletonCracks({ segs }: { segs: CrackSeg[] }) {
   return (
     <g data-layer="bone" fill="none" stroke="#cc0000" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="82,18 79,28 85,36 80,48 77,55" strokeWidth="1.2"/>
-      <polyline points="94,32 90,42 96,52 92,66 96,74" strokeWidth="1"/>
-      <polyline points="85,100 82,115 88,130 83,148 89,165 84,183 88,200 83,220 87,240" strokeWidth="1.3"/>
-      <polyline points="70,228 75,238 68,250 73,262 69,272" strokeWidth="1"/>
-      <polyline points="91,270 88,290 93,310 89,325" strokeWidth="1"/>
-      <polyline points="68,330 71,350 66,370 70,390" strokeWidth="1"/>
-      <polyline points="114,115 118,135 115,155 119,175 116,200" strokeWidth="1"/>
+      {segs.map(({ pts, w = 1 }, i) => (
+        <polyline key={i} points={pts.map(([x, y]) => `${x},${y}`).join(' ')} strokeWidth={w}/>
+      ))}
     </g>
   );
 }

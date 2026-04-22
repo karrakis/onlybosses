@@ -1,21 +1,51 @@
 import * as React from 'react';
-import { PartProps, partClass, SpiderLimbAnchor, LegAnchor, Pt } from './types';
+import { PartProps, partClass, SpiderLimbAnchor, LegAnchor, Pt, HeadPt, CrackSeg } from './types';
 
 // ─── ═══════════════════════ FLESH PARTS ════════════════════════ ─────────────
 
 // ── Upright humanoid torso (shoulders, body, waist, neck) ────────────────────
+// 3/4 camera. Key anchors (pre-flip, right-facing):
+//   Neck top: cx≈78 y=76  |  Shoulder back: cx≈48 y=102  |  Shoulder front: cx≈112 y=102
+//   Hip band bottom: y=258 (matches leg / mermaid tail junction exactly)
 export function UprightTorso({ ghost }: PartProps) {
   return (
     <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill="white" stroke="black" strokeWidth="2" strokeLinejoin="round">
-      {/* Torso */}
-      <path d="M 50,100 C 38,105 34,120 36,145 C 38,168 42,185 48,195
-               L 50,230 L 110,230 L 112,195
-               C 118,185 122,168 124,145 C 126,120 122,105 110,100 Z"/>
-      {/* Waist / hip band */}
-      <path d="M 50,225 L 48,258 L 112,258 L 110,225 Z"/>
-      {/* Neck */}
-      <path d="M 70,76 L 68,96 L 88,96 L 86,76 Z"/>
+       strokeLinecap="round" strokeLinejoin="round">
+
+      {/* Neck — slightly tapered column */}
+      <path d="M 70,76 C 68,82 67,92 68,98 L 88,98 C 89,92 88,82 86,76 Z"
+            fill="#f0ece2" stroke="black" strokeWidth="1.8"/>
+
+      {/* Main torso — organic 3/4 silhouette
+          Back (far) shoulder ≈(48,102); front (near) shoulder ≈(112,102).
+          Curves inward at mid-chest then widens slightly to the waist block. */}
+      <path d="M 48,102 C 34,108 30,128 32,152 C 34,175 40,194 46,206
+               L 48,232 L 112,232 L 114,206
+               C 120,194 126,175 128,152
+               C 130,128 126,108 112,102 Z"
+            fill="#f0ece2" stroke="black" strokeWidth="2"/>
+
+      {/* Hip band — slightly warmer tone, connects torso to leg anchors at y=258 */}
+      <path d="M 48,228 L 46,258 L 114,258 L 112,228 Z"
+            fill="#e4dac8" stroke="black" strokeWidth="1.8"/>
+
+      {/* Clavicle arcs */}
+      <path d="M 72,100 C 63,104 56,106 48,103"
+            fill="none" stroke="#c4b8a0" strokeWidth="1.3"/>
+      <path d="M 88,100 C 97,104 104,106 112,103"
+            fill="none" stroke="#c4b8a0" strokeWidth="1.3"/>
+
+      {/* Pectoral line — gentle arch across upper chest */}
+      <path d="M 52,130 C 62,136 73,138 80,138 C 87,138 98,136 108,130"
+            fill="none" stroke="#c4b8a0" strokeWidth="1.1"/>
+
+      {/* Upper abdominal crease */}
+      <path d="M 50,196 C 60,200 72,202 80,202 C 88,202 100,200 110,196"
+            fill="none" stroke="#c4b8a0" strokeWidth="1.0"/>
+
+      {/* Navel */}
+      <ellipse cx="80" cy="218" rx="2.5" ry="2" fill="#c8bfaf" stroke="none"/>
+
     </g>
   );
 }
@@ -199,27 +229,6 @@ export function HorseLegBone({ cx, topY }: { cx: number; topY: number }) {
       <line x1={cx - 6} y1={hoofY - 2} x2={cx + 6} y2={hoofY} stroke="#333" strokeWidth="9" />
       <circle cx={cx - 2} cy={kneeY} r={6}   fill="#555" stroke="black" strokeWidth="1.5"/>
       <circle cx={cx}     cy={topY}  r={5}   fill="#555" stroke="black" strokeWidth="1.5"/>
-    </g>
-  );
-}
-
-// ── Fish tail (mermaid) ───────────────────────────────────────────────────────
-export function FishTail({ ghost }: PartProps) {
-  return (
-    <g data-layer="flesh" className={partClass('flesh', ghost)}
-       fill="white" stroke="black" strokeWidth="2">
-      {/* caudal fin upper lobe */}
-      <path d="M 124,366 C 136,352 158,338 162,320 C 154,334 148,360 134,378 L 122,384 Z"/>
-      {/* caudal fin lower lobe */}
-      <path d="M 128,382 C 144,388 166,376 170,360 C 158,372 146,392 128,400 L 118,396 Z"/>
-      {/* tail body */}
-      <path d="M 90,152 C 84,136 65,128 42,130 C 98,242 104,258 116,282 124,316
-               C 128,336 128,356 124,366 C 122,372 118,382 118,384
-               C 116,388 122,394 128,400 C 122,402 112,398 108,390
-               C 104,382 100,372 98,360 C 92,332 84,302 80,278
-               C 76,262 72,250 68,244
-               C 62,232 52,216 46,82
-               C 52,72 62,64 78,64 C 94,64 104,72 110,82 Z"/>
     </g>
   );
 }
@@ -451,10 +460,6 @@ export const HUMANOID_SPIDER_LIMB_ANCHORS: SpiderLimbAnchor[] = [
 export const HUMANOID_SLIME_GOOP_PTS: Pt[] = [
   [78,18],[118,44],[130,100],[148,200],[130,260],[110,420],[66,420],[46,260],[28,200],[26,100],[36,44],
 ];
-export const MERMAID_SLIME_GOOP_PTS: Pt[] = [
-  [78,18],[120,46],[130,108],[130,220],[110,320],[90,430],[60,430],[46,320],[26,220],[26,108],[36,46],
-];
-
 // ─── Leg anchors ──────────────────────────────────────────────────────────────
 export const HUMANOID_LEG_ANCHORS: LegAnchor[] = [
   { key: 'leg-back',  layer: 'back',  slot: 'hind', type: 'biped', goatTx: 0 },
@@ -467,5 +472,22 @@ export const HARPY_LEG_ANCHORS: LegAnchor[] = [
 export const PHOENIX_LEG_ANCHORS: LegAnchor[] = [
   { key: 'bird-leg-back',  layer: 'back',  slot: 'hind', type: 'phoenix', goatTx: 0 },
   { key: 'bird-leg-front', layer: 'front', slot: 'fore', type: 'phoenix', goatTx: 0 },
+];
+
+// ─── Head overlay anchors ─────────────────────────────────────────────────────
+// Eye positions match the SkeletonSkull orbit centres.
+// Crown anchor: center of the base band (authored at cx=78, cy=22).
+export const HUMANOID_EYE_ANCHORS:  HeadPt[] = [{ cx: 91, cy: 40 }, { cx: 63, cy: 40 }];
+export const HUMANOID_CROWN_ANCHOR: HeadPt   = { cx: 78, cy: 22 };
+
+// Crack segments for lich mode. Points extracted from the humanoid SkeletonCracks geometry.
+export const HUMANOID_CRACK_SEGS: CrackSeg[] = [
+  { pts: [[82,18],[79,28],[85,36],[80,48],[77,55]], w: 1.2 },           // skull top
+  { pts: [[94,32],[90,42],[96,52],[92,66],[96,74]], w: 1.0 },           // cheek
+  { pts: [[85,100],[82,115],[88,130],[83,148],[89,165],[84,183],[88,200],[83,220],[87,240]], w: 1.3 }, // spine
+  { pts: [[70,228],[75,238],[68,250],[73,262],[69,272]], w: 1.0 },      // pelvis
+  { pts: [[91,270],[88,290],[93,310],[89,325]], w: 1.0 },               // back thigh
+  { pts: [[68,330],[71,350],[66,370],[70,390]], w: 1.0 },               // front shin
+  { pts: [[114,115],[118,135],[115,155],[119,175],[116,200]], w: 1.0 }, // far rib side
 ];
 

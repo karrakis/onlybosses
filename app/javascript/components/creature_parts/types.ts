@@ -79,6 +79,15 @@ export interface LegAnchor {
   goatTx?: number;
 }
 
+/**
+ * A 2D canvas point used as a head overlay anchor.
+ * Used for lich eye glow positions and lich crown placement.
+ */
+export interface HeadPt { cx: number; cy: number; }
+
+/** One zigzag crack polyline on a skeleton bone. pts is a sequence of [x,y] vertices. w is stroke-width (default 1). */
+export interface CrackSeg { pts: Pt[]; w?: number; }
+
 // Utility: build the data-layer + optional ghost class string
 export function partClass(layer: Layer, ghost?: boolean): string {
   const cls: string[] = [];

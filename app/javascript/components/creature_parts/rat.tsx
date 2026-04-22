@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { PartProps, partClass, LegAnchor, Pt } from './types';
+import { PartProps, partClass, LegAnchor, Pt, HeadPt, CrackSeg } from './types';
 
 // ─── Giant Rat ───────────────────────────────────────────────────────────────
 // Upright bipedal posture — standing on hind legs so the body occupies the
@@ -299,5 +299,24 @@ export const RAT_LEG_ANCHORS: LegAnchor[] = [
   { key: 'rat-hl-near',   layer: 'front', slot: 'hind', type: 'rat-hind', cx: 66,  topY: 258, goatTx: 24 },
   { key: 'rat-paw-back',  layer: 'front', slot: 'fore', type: 'rat-fore', cx: 110, topY: 112, goatImmune: true },
   { key: 'rat-paw-front', layer: 'front', slot: 'fore', type: 'rat-fore', cx: 46,  topY: 112, goatImmune: true },
+];
+
+// ─── Head overlay anchors ─────────────────────────────────────────────────────
+// Near eye (large, forward) + far eye (small, back of cranium).
+// Cranium: cx=76 cy=52 rx=28 ry=30 → skull top cy=22 → crown at cx=76, cy=22.
+export const RAT_EYE_ANCHORS:  HeadPt[] = [{ cx: 62, cy: 46 }, { cx: 90, cy: 54 }];
+export const RAT_CROWN_ANCHOR: HeadPt   = { cx: 76, cy: 22 };
+
+// Crack segments for lich mode.
+// Skull: cranium cx=76 cy=52 rx=28 → top at y=22. Muzzle extends to x≈118.
+// Spine follows RatRibcage (x=78, y=82–258). Legs: hind knee at (98/74, y=330).
+export const RAT_CRACK_SEGS: CrackSeg[] = [
+  { pts: [[78,22],[74,34],[80,46],[76,58],[82,68]], w: 1.2 },           // skull top → cranium
+  { pts: [[94,60],[99,70],[96,80],[100,90]], w: 1.0 },                  // muzzle
+  { pts: [[83,100],[80,116],[86,132],[81,150],[87,167],[82,185],[86,202],[81,224],[85,242]], w: 1.3 }, // spine
+  { pts: [[114,116],[118,136],[115,156],[116,177]], w: 1.0 },           // far rib
+  { pts: [[70,230],[75,240],[68,252],[73,264]], w: 1.0 },               // pelvis
+  { pts: [[91,258],[96,290],[93,314],[97,330]], w: 1.0 },               // far hind thigh → knee
+  { pts: [[67,258],[71,290],[68,314],[72,330]], w: 1.0 },               // near hind thigh → knee
 ];
 
