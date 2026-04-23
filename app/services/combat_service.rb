@@ -129,11 +129,7 @@ class CombatService
         game_status["#{target}ForcedNextAction"] = force
       end
       if (debuff = target_fx['add_debuff'])
-        target_data['active_debuffs'] ||= {}
-        target_data['active_debuffs'][debuff['name']] = {
-          'turns'      => debuff['turns'].to_i,
-          'multiplier' => debuff['multiplier']
-        }.compact
+        apply_debuff(target_data, debuff)
       end
     end
 
@@ -142,6 +138,11 @@ class CombatService
 
   # Tick buffs, debuffs, and cooldowns on one entity at end of round.
   # Call once per entity per round (after both sides have acted and regen'd).
+  #
+  # Supported debuff properties (set on the debuff data hash):
+  #   damage_per_turn  - deal this much flat damage of damage_type each tick
+  #   per_turn_debuff  - apply a nested debuff hash each tick while this debuff is active
+  #   turns: -1        - permanent; never expires (used for vulnerability stacks)
   def self.tick_entity_effects(game_status, entity_key)
     entity = game_status[entity_key]
     return game_status unless entity
@@ -152,8 +153,28 @@ class CombatService
     end
 
     if (debuffs = entity['active_debuffs'])
-      debuffs.each { |name, data| debuffs[name] = data.merge('turns' => data['turns'] - 1) }
-      debuffs.reject! { |_, data| data['turns'] <= 0 }
+      # DoT and per-turn side effects fire before the turn counter decrements
+      debuffs.each do |_name, data|
+        # Damage-over-time (poison, burning, etc.)
+        if (dot = data['damage_per_turn'].to_f) > 0
+          dmg_type    = data['damage_type'] || 'physical'
+          life_res    = DamageCalculator.get_life_resource(entity)
+          life_key    = "#{entity_key}#{life_res.capitalize}"
+          game_status[life_key] = [game_status[life_key].to_f - dot, 0].max
+        end
+
+        # Per-turn secondary debuff (acid applies a vulnerability stack each round)
+        if (inner = data['per_turn_debuff'])
+          apply_debuff(entity, inner)
+        end
+      end
+
+      # Tick durations — permanent debuffs (turns == -1) are skipped
+      debuffs.each do |name, data|
+        next if data['turns'].to_i == -1
+        debuffs[name] = data.merge('turns' => data['turns'].to_i - 1)
+      end
+      debuffs.reject! { |_, data| data['turns'].to_i != -1 && data['turns'].to_i <= 0 }
     end
 
     if (cooldowns = entity['cooldowns'])
@@ -207,6 +228,17 @@ class CombatService
     # Sync flat keys back into the entity object so next-turn reads are current
     entity_data['mana']    = game_status["#{entity_key}Mana"]
     entity_data['stamina'] = game_status["#{entity_key}Stamina"]
+
+    # regenerate_health passive — always restores actual life, never the life_resource
+    # substitute (e.g. ethereal entities use mana as their life pool, but health
+    # regeneration still applies to life — mana has its own regen path above).
+    regen_hp = health_regen_amount(entity_data)
+    if regen_hp > 0
+      life_key = "#{entity_key}Life"
+      max_life = get_max_resource(entity_data, 'life')
+      game_status[life_key] = max_life ? [game_status[life_key].to_f + regen_hp, max_life].min
+                                       : game_status[life_key].to_f + regen_hp
+    end
 
     game_status
   end
@@ -321,6 +353,8 @@ class CombatService
     resource_key = "#{target}#{life_resource.capitalize}"
     game_status[resource_key] = [game_status[resource_key] - total_damage, 0].max
 
+    apply_spell_leech(game_status, action_taker, attacker_data, total_damage)
+
     game_status
   end
 
@@ -360,6 +394,69 @@ class CombatService
   def self.get_max_resource(entity_data, resource_name)
     entity_data["max_#{resource_name}"] ||
       entity_data.dig('stats', 'base_stats', resource_name)
+  end
+
+  # Sum of regenerate_health passive values across all keywords.
+  private_class_method def self.health_regen_amount(entity_data)
+    total = 0
+    (entity_data['keywords'] || []).each do |kw_name|
+      kw = BossKeyword.find_by(name: kw_name)
+      next unless kw
+      total += kw.properties['regenerate_health'].to_f if kw.properties&.dig('regenerate_health')
+    end
+    total
+  end
+
+  # Apply stacking or non-stacking debuff to an entity's active_debuffs hash.
+  # Stacking vulnerability: multipliers compound multiplicatively; turns is kept
+  # at the highest value (or -1 if either stack is permanent).
+  private_class_method def self.apply_debuff(entity_data, debuff)
+    entity_data['active_debuffs'] ||= {}
+    name    = debuff['name']
+    turns   = debuff['turns'].to_i
+    existing = entity_data['active_debuffs'][name]
+
+    if debuff['stacking'] && existing
+      # Compound multipliers; permanent (-1) wins over any finite duration
+      old_mult = (existing['multiplier'] || 1.0).to_f
+      new_mult = (debuff['multiplier']   || 1.0).to_f
+      old_turns = existing['turns'].to_i
+      entity_data['active_debuffs'][name] = existing.merge(
+        'multiplier' => old_mult * new_mult,
+        'stacking'   => true,
+        'turns'      => (old_turns == -1 || turns == -1) ? -1 : [old_turns, turns].max
+      )
+    else
+      entity_data['active_debuffs'][name] = {
+        'turns'           => turns,
+        'multiplier'      => debuff['multiplier'],
+        'damage_per_turn' => debuff['damage_per_turn'],
+        'damage_type'     => debuff['damage_type'],
+        'per_turn_debuff' => debuff['per_turn_debuff'],
+        'stacking'        => debuff['stacking']
+      }.compact
+    end
+  end
+
+  # Apply spell_leech (heals caster based on spell damage dealt).
+  private_class_method def self.apply_spell_leech(game_status, action_taker, attacker_data, damage_dealt)
+    leech = 0.0
+    attacker_life_resource = 'life'
+    (attacker_data['keywords'] || []).each do |kw_name|
+      kw = BossKeyword.find_by(name: kw_name)
+      next unless kw
+      leech                 += kw.properties['spell_leech'].to_f  if kw.properties&.dig('spell_leech')
+      attacker_life_resource = kw.properties['life_resource']     if kw.properties&.dig('life_resource')
+    end
+    return unless leech > 0
+
+    healing               = (damage_dealt * leech).ceil
+    attacker_resource_key = "#{action_taker}#{attacker_life_resource.capitalize}"
+    attacker_max_key      = "max_#{attacker_life_resource}"
+    game_status[attacker_resource_key] = game_status[attacker_resource_key].to_f + healing
+    if attacker_data[attacker_max_key]
+      game_status[attacker_resource_key] = [game_status[attacker_resource_key], attacker_data[attacker_max_key]].min
+    end
   end
 
   private_class_method def self.apply_lifesteal(game_status, action_taker, attacker_data, damage_dealt)

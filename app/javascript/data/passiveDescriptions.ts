@@ -20,6 +20,11 @@ export const passiveDescriptions: Record<string, string> = {
     revive: "50% chance to revive on death.",
     chimerism: "Allows acquiring one additional creature type.",
     evasion: "8% chance to completely dodge all incoming damage per hit. Stacks with diminishing returns. Light damage cannot be evaded.",
+    vitality: "+10% health regeneration rate.",
+    soulbind: "Heals for 5% of spell damage dealt.",
+    regenerate_health: "Increases base health regeneration by 2.",
+    spell_leech: "Heals for 5% of spell damage dealt.",
+    cancerous_ideology: "Increases base health regeneration by 2. Increases health regeneration by 10%, but reduces max life by 10%.",
 };
 
 export const getPassiveDescription = (passiveName: string): string => {

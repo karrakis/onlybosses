@@ -20,3 +20,6 @@
 {"name":"evasion","category":"passive","rarity":2,"attributes":{"evasion_chance":0.08}}
 {"name":"regeneration","category":"passive","rarity":1,"attributes":{"regenerate_health":1}}
 {"name":"soulbind","category":"passive","rarity":3,"attributes":{"spell_leech":0.05}}
+{"name":"rejuvenation","category":"passive","rarity":2,"attributes":{"regenerate_health":2}}
+{"name":"cancerous_ideology","category":"passive","rarity":3,"attributes":{"regenerate_health":2,"health_regen_multiplier":1.1, "multipliers":{"life":0.9}}}
+{"name":"spell_leech","category":"passive","rarity":2,"attributes":{"spell_leech":0.05}}

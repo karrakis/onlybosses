@@ -43,14 +43,18 @@ class DamageCalculator
       damage_by_type[type] = amount * amplification
     end
 
-    # 5b. Apply active debuffs on defender that amplify incoming damage by type.
-    #     (e.g. fire_vulnerability from web adds a multiplier to fire damage)
+    # 5b. Apply active debuffs on defender that amplify incoming damage.
+    #   fire_vulnerability — amplifies fire damage only (legacy, from web).
+    #   vulnerability      — amplifies ALL incoming damage types (stacking, from apply_vulnerability/acid).
     if (debuffs = defender_data['active_debuffs'])
       debuffs.each do |debuff_name, data|
         case debuff_name
         when 'fire_vulnerability'
           mult = (data['multiplier'] || 1.5).to_f
           damage_by_type['fire'] = (damage_by_type['fire'] || 0) * mult if damage_by_type['fire']
+        when 'vulnerability'
+          mult = (data['multiplier'] || 1.25).to_f
+          damage_by_type.each_key { |t| damage_by_type[t] = damage_by_type[t] * mult }
         end
       end
     end
