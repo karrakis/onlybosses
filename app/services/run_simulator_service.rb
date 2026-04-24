@@ -130,49 +130,21 @@ class RunSimulatorService
     MAX_TURNS_PER_FIGHT.times do
       gs = build_game_status(player_e, boss_e)
 
-      # ── Player turn ──────────────────────────────────────────────────────
-      player_action = player_forced || CombatService.choose_player_action(gs)
-      player_forced = nil
-      player_stamina_before = gs['playerStamina']
-      player_mana_before    = gs['playerMana']
+      round = CombatService.resolve_round(
+        gs,
+        player_action: CombatService.choose_player_action(gs),
+        forced_player_action: player_forced,
+        forced_boss_action: boss_forced,
+        boss_action_resolver: ->(state) { CombatService.choose_boss_action(state) }
+      )
 
-      gs = CombatService.apply_action(gs, player_action, 'player', 'boss')
-
-      # Capture forced follow-up (e.g. smash → guard)
-      if gs['playerForcedNextAction']
-        player_forced = gs.delete('playerForcedNextAction')
-      end
-
-      sync_entities(gs, player_e, boss_e)
-      return :boss_died if dead?(boss_e, registry)
-
-      # ── Boss turn ────────────────────────────────────────────────────────
-      boss_action = boss_forced || CombatService.choose_boss_action(gs)
-      boss_forced = nil
-      boss_stamina_before = gs['bossStamina']
-      boss_mana_before    = gs['bossMana']
-
-      gs = CombatService.apply_action(gs, boss_action, 'boss', 'player')
-
-      if gs['bossForcedNextAction']
-        boss_forced = gs.delete('bossForcedNextAction')
-      end
-
-      # ── End-of-turn regeneration (boss first, then player — mirrors live game) ──
-      boss_mana_cost    = gs['bossMana']    < boss_mana_before
-      boss_stamina_cost = gs['bossStamina'] < boss_stamina_before
-      gs = CombatService.apply_regeneration(gs, 'boss',   mana_cost: boss_mana_cost,   stamina_cost: boss_stamina_cost)
-
-      player_mana_cost    = gs['playerMana']    < player_mana_before
-      player_stamina_cost = gs['playerStamina'] < player_stamina_before
-      gs = CombatService.apply_regeneration(gs, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
-
-      # End-of-round: tick buff/debuff/cooldown counters for both entities
-      gs = CombatService.tick_entity_effects(gs, 'player')
-      gs = CombatService.tick_entity_effects(gs, 'boss')
+      gs = round[:game_status]
+      player_forced = round[:forced_player_action]
+      boss_forced   = round[:forced_boss_action]
 
       sync_entities(gs, player_e, boss_e)
-      return :player_died if dead?(player_e, registry)
+      return :boss_died if round[:boss_died]
+      return :player_died if round[:player_died]
     end
 
     # Turn limit hit — whoever has more % of their life resource remaining wins

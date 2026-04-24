@@ -71,6 +71,101 @@ class CombatService
     choose_action_for(game_status, 'player', 'boss')
   end
 
+  # Canonical full-round resolver used by both the live game and the simulator.
+  # This is the single source of truth for turn sequencing:
+  #   player action -> boss death check -> boss action -> player death check
+  #   -> boss regen -> player regen -> effect ticks -> final death checks.
+  #
+  # Returns a hash:
+  #   :game_status            mutated game status
+  #   :boss_action            action boss took this round (or nil if boss died first)
+  #   :forced_player_action   forced follow-up set for player's next turn
+  #   :forced_boss_action     forced follow-up set for boss's next turn
+  #   :player_after_player_action  snapshot of player's resources right after player action
+  #   :player_died, :boss_died
+  def self.resolve_round(game_status, player_action:, player_payload: nil, forced_player_action: nil, forced_boss_action: nil, boss_action_resolver: nil)
+    player_action_used = forced_player_action || player_action
+    player_payload     = nil if forced_player_action
+
+    player_mana_turn_start    = game_status['playerMana']
+    player_stamina_turn_start = game_status['playerStamina']
+
+    # Player turn
+    apply_action(game_status, player_action_used, 'player', 'boss', player_payload)
+    next_forced_player = game_status.delete('playerForcedNextAction')
+
+    player_after_player_action = {
+      'life'    => game_status['playerLife'],
+      'stamina' => game_status['playerStamina'],
+      'mana'    => game_status['playerMana']
+    }
+
+    # Boss can die to the player action before taking a turn
+    if entity_dead?(game_status, 'boss')
+      player_mana_cost    = game_status['playerMana']    < player_mana_turn_start
+      player_stamina_cost = game_status['playerStamina'] < player_stamina_turn_start
+      apply_regeneration(game_status, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
+      tick_entity_effects(game_status, 'player')
+      tick_entity_effects(game_status, 'boss')
+
+      return {
+        game_status: game_status,
+        boss_action: nil,
+        forced_player_action: nil,
+        forced_boss_action: forced_boss_action,
+        player_after_player_action: player_after_player_action,
+        player_died: entity_dead?(game_status, 'player'),
+        boss_died: true
+      }
+    end
+
+    # Boss turn
+    boss_action = forced_boss_action || (boss_action_resolver ? boss_action_resolver.call(game_status) : choose_boss_action(game_status))
+    next_forced_boss = nil
+    if known_action?(boss_action)
+      boss_mana_before    = game_status['bossMana']
+      boss_stamina_before = game_status['bossStamina']
+
+      apply_action(game_status, boss_action, 'boss', 'player')
+      next_forced_boss = game_status.delete('bossForcedNextAction')
+
+      # Death resolves immediately on incoming damage (before regen/ticks)
+      if entity_dead?(game_status, 'player')
+        return {
+          game_status: game_status,
+          boss_action: boss_action,
+          forced_player_action: next_forced_player,
+          forced_boss_action: next_forced_boss,
+          player_after_player_action: player_after_player_action,
+          player_died: true,
+          boss_died: false
+        }
+      end
+
+      boss_mana_cost    = game_status['bossMana']    < boss_mana_before
+      boss_stamina_cost = game_status['bossStamina'] < boss_stamina_before
+      apply_regeneration(game_status, 'boss', mana_cost: boss_mana_cost, stamina_cost: boss_stamina_cost)
+    end
+
+    # Player end-of-turn regen and round-end effect ticking
+    player_mana_cost    = game_status['playerMana']    < player_mana_turn_start
+    player_stamina_cost = game_status['playerStamina'] < player_stamina_turn_start
+    apply_regeneration(game_status, 'player', mana_cost: player_mana_cost, stamina_cost: player_stamina_cost)
+
+    tick_entity_effects(game_status, 'player')
+    tick_entity_effects(game_status, 'boss')
+
+    {
+      game_status: game_status,
+      boss_action: boss_action,
+      forced_player_action: next_forced_player,
+      forced_boss_action: next_forced_boss,
+      player_after_player_action: player_after_player_action,
+      player_died: entity_dead?(game_status, 'player'),
+      boss_died: entity_dead?(game_status, 'boss')
+    }
+  end
+
   # ── Abilities (buff/debuff, non-damaging) ─────────────────────────────────
 
   # Execute an ability-category keyword action.  Applies stamina cost, cooldown,
@@ -394,6 +489,14 @@ class CombatService
   def self.get_max_resource(entity_data, resource_name)
     entity_data["max_#{resource_name}"] ||
       entity_data.dig('stats', 'base_stats', resource_name)
+  end
+
+  # True when the entity's active life resource (life or mana) is <= 0.
+  private_class_method def self.entity_dead?(game_status, entity_key)
+    entity = game_status[entity_key]
+    return false unless entity
+    res_key = DamageCalculator.get_life_resource(entity)
+    game_status["#{entity_key}#{res_key.capitalize}"].to_f <= 0
   end
 
   # Sum of regenerate_health passive values across all keywords.
