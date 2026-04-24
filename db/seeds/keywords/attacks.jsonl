@@ -3,3 +3,5 @@
 {"name":"cleave","category":"attack","rarity":1,"attributes":{"stamina_cost":12,"base_damage_by_type":{"slashing":12},"hit_count":1}}
 {"name":"smash","category":"attack","rarity":2,"attributes":{"stamina_cost":20,"base_damage_by_type":{"blunt":30},"hit_count":1,"force_next_action":"guard","ignore_physical_reduction_fraction":0.5}}
 {"name":"piercing_arrow","category":"attack","rarity":1,"attributes":{"stamina_cost":10,"base_damage_by_type":{"piercing":15},"hit_count":1}}
+{"name":"vampire_bite", "category":"attack","rarity":2, "cooldown":3, "attributes":{"stamina_cost":20, "mana_cost":10, "base_damage_by_type":{"physical":10,"dark":5},"hit_count":1,"lifesteal":1}}
+{"name":"poison_bite", "category":"attack","rarity":2,"attributes":{"stamina_cost":12,"base_damage_by_type":{"physical":10,"poison":5},"hit_count":1,"apply_debuff":{"name":"poisoned","turns":3,"damage_per_turn":{"poison":5}}}}
