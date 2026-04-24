@@ -12,6 +12,9 @@ import KeywordSelectionModal from './modals/KeywordSelectionModal';
 import PlayerStatusModal from './modals/PlayerStatusModal';
 import RaceConflictModal from './modals/RaceConflictModal';
 import WeaponConflictModal from './modals/WeaponConflictModal';
+import BottomPanel from './BottomPanel';
+import InitialKeywordSelectionScreen from './InitialKeywordSelectionScreen';
+import DepthCounter from './DepthCounter';
 
 interface GameProps {
     onExit: () => void;
@@ -1308,121 +1311,18 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     // Show initial keyword selection screen
     if (showInitialKeywordSelection) {
         return (
-            <div className="w-screen h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 text-white">
-                <div className="max-w-4xl p-8">
-                    <h1 className="text-4xl font-bold mb-4 text-center">Choose Your Path</h1>
-                    <p className="text-xl mb-8 text-center text-gray-300">Select 2 keywords to begin your journey</p>
-                    
-                    <div className="grid grid-cols-1 gap-4 mb-8">
-                        {initialKeywordOptions.map((keyword) => {
-                            const isSelected = selectedInitialKeywords.includes(keyword.name);
-                            let isBlocked = false;
-                            let blockReason: 'race' | 'hands_too_low' | 'hands_overflow' | 'slots_full' | null = null;
-
-                            if (!isSelected && selectedInitialKeywords.length >= 2) {
-                                isBlocked = true;
-                                blockReason = 'slots_full';
-                            } else if (!isSelected) {
-                                if (keyword.category === 'creature') {
-                                    const alreadyHasCreature = selectedInitialKeywords.some((n: string) => {
-                                        const kw = allKeywordsData.find((k: any) => k.name === n);
-                                        return kw?.category === 'creature';
-                                    });
-                                    if (alreadyHasCreature) {
-                                        isBlocked = true;
-                                        blockReason = 'race';
-                                    }
-                                    if (!isBlocked && keyword.properties?.max_hands != null) {
-                                        const handsUsed = selectedInitialKeywords.reduce((sum: number, n: string) => {
-                                            const kw = allKeywordsData.find((k: any) => k.name === n);
-                                            return kw?.category === 'weapon' ? sum + (kw.properties?.hands ?? 1) : sum;
-                                        }, 0);
-                                        if (handsUsed > keyword.properties.max_hands) {
-                                            isBlocked = true;
-                                            blockReason = 'hands_too_low';
-                                        }
-                                    }
-                                } else if (keyword.category === 'weapon') {
-                                    const newHands: number = keyword.properties?.hands ?? 1;
-                                    const creatureKw = selectedInitialKeywords
-                                        .map((n: string) => allKeywordsData.find((k: any) => k.name === n))
-                                        .find((k: any) => k?.category === 'creature' && k.properties?.max_hands != null);
-                                    const effectiveMaxHands: number = creatureKw ? creatureKw.properties.max_hands : 2;
-                                    const handsUsed = selectedInitialKeywords.reduce((sum: number, n: string) => {
-                                        const kw = allKeywordsData.find((k: any) => k.name === n);
-                                        return kw?.category === 'weapon' ? sum + (kw.properties?.hands ?? 1) : sum;
-                                    }, 0);
-                                    if (handsUsed + newHands > effectiveMaxHands) {
-                                        isBlocked = true;
-                                        blockReason = 'hands_overflow';
-                                    }
-                                }
-                            }
-
-                            const redAttrKeys: string[] =
-                                blockReason === 'hands_too_low' ? ['max_hands'] :
-                                blockReason === 'hands_overflow' ? ['hands'] :
-                                [];
-
-                            return (
-                                <button
-                                    key={keyword.name}
-                                    onClick={() => handleInitialKeywordToggle(keyword.name)}
-                                    disabled={isBlocked}
-                                    className={`p-6 rounded-lg border-2 transition-all text-left ${
-                                        isSelected 
-                                            ? 'border-green-500 bg-green-900 bg-opacity-30' 
-                                            : 'border-gray-600 bg-gray-800 hover:border-gray-400'
-                                    } ${isBlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                >
-                                    <div className="flex items-center justify-between mb-2">
-                                        <h3 className="text-2xl font-bold capitalize">{keyword.name}</h3>
-                                        <span className="text-sm px-3 py-1 rounded bg-gray-700">
-                                            {keyword.category} • Rarity {keyword.rarity}
-                                        </span>
-                                    </div>
-                                    <div className="text-sm text-gray-300">{renderKeywordAttributes(keyword, redAttrKeys)}</div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                    
-                    {tieredKeywords.length > 0 && (
-                        <div className="mb-8 p-4 border border-yellow-700 bg-yellow-900 bg-opacity-20 rounded-lg">
-                            <h3 className="text-lg font-bold text-yellow-400 mb-1">Destined for Depth {TIER_UP_DEPTH}</h3>
-                            <p className="text-sm text-gray-400 mb-3">
-                                These keywords are pre-ordained to join the boss at depth {TIER_UP_DEPTH}. They will not appear before then — use that time to prepare.
-                            </p>
-                            <div className="grid grid-cols-2 gap-3">
-                                {tieredKeywords.map(kwName => {
-                                    const kw = allKeywordsData.find((k: any) => k.name === kwName);
-                                    return kw ? (
-                                        <div key={kwName} className="p-3 border border-yellow-700 rounded bg-gray-800">
-                                            <div className="font-bold capitalize">{kw.name}</div>
-                                            <div className="text-xs text-gray-400">{kw.category} · Rarity {kw.rarity}</div>
-                                            <div className="text-xs text-gray-300 mt-1">{formatKeywordAttributes(kw)}</div>
-                                        </div>
-                                    ) : null;
-                                })}
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="flex justify-center">
-                        <button
-                            onClick={handleInitialKeywordConfirm}
-                            disabled={selectedInitialKeywords.length !== 2 || loading}
-                            className={`px-8 py-4 text-xl font-bold rounded-lg ${
-                                selectedInitialKeywords.length === 2 && !loading
-                                    ? 'bg-green-600 hover:bg-green-700 cursor-pointer'
-                                    : 'bg-gray-600 cursor-not-allowed opacity-50'
-                            }`}
-                        >
-                            {loading ? 'Loading...' : `Descend (${selectedInitialKeywords.length}/2 selected)`}
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <InitialKeywordSelectionScreen
+                initialKeywordOptions={initialKeywordOptions}
+                selectedInitialKeywords={selectedInitialKeywords}
+                allKeywordsData={allKeywordsData}
+                tieredKeywords={tieredKeywords}
+                tierUpDepth={TIER_UP_DEPTH}
+                loading={loading}
+                onToggleKeyword={handleInitialKeywordToggle}
+                onConfirm={handleInitialKeywordConfirm}
+                renderKeywordAttributes={renderKeywordAttributes}
+                formatKeywordAttributes={formatKeywordAttributes}
+            />
         );
     }
 
@@ -1430,40 +1330,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             <button className="z-10 absolute top-4 right-4 border border-white rounded px-4 py-2" onClick={async () => { await PlayerService.resetPlayer('quit'); onExit(); }}>Surrender</button>
 
             {/* Depth counter */}
-            {player && (() => {
-                const t = Math.min((depth - 1) / 9, 1);
-                const orange = Math.round(255 * t);
-                const red = Math.round(180 * t);
-                const glowSpread = Math.round(4 + t * 20);
-                const glowBlur = Math.round(8 + t * 32);
-                const flickerAnim = t > 0.3 ? 'depth-flicker' : undefined;
-                return (
-                    <div
-                        className="z-10 absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center select-none pointer-events-none"
-                        style={{
-                            textShadow: t > 0
-                                ? `0 0 ${glowBlur / 2}px rgba(255,${255 - orange},0,${0.6 + t * 0.4}), 0 0 ${glowBlur}px rgba(255,${100 - red},0,${0.4 + t * 0.4}), 0 0 ${glowSpread * 2}px rgba(200,0,0,${t * 0.5})`
-                                : undefined,
-                            animation: flickerAnim ? 'depthFlicker 1.8s ease-in-out infinite alternate' : undefined,
-                        }}
-                    >
-                        <span
-                            className="text-xs uppercase tracking-widest font-semibold"
-                            style={{ color: `rgba(255, ${Math.round(200 - orange * 0.6)}, ${Math.round(180 - orange)}, 0.85)` }}
-                        >
-                            Depth
-                        </span>
-                        <span
-                            className="text-4xl font-black leading-none"
-                            style={{
-                                color: `rgb(255, ${Math.round(220 - orange * 0.8)}, ${Math.round(80 - 80 * t)})`,
-                            }}
-                        >
-                            {depth}
-                        </span>
-                    </div>
-                );
-            })()}
+            {player && <DepthCounter depth={depth} />}
             <div className="w-3/4 h-3/4 border-4 border-dashed border-gray-400 flex flex-col">
             <div className="h-full flex items-center justify-center relative">
                 <div id="game-background" className="absolute inset-0 -z-1 flex flex-col">
@@ -1595,134 +1462,24 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                     </div> 
                 </div>
             </div>
-                <div id="bottom-panel" className="w-full h-32 border-t-2 border-gray-400 flex items-center justify-between px-4">
-                    <div id="life-bar" className="flex items-center gap-2">
-                        <div className="w-24 h-24 rounded-full bg-black border-2 border-gray-400 relative overflow-hidden">
-                            <div className="absolute bottom-0 w-full bg-red-600" style={{height: `${((player?.life || 0) / (player?.max_life || 100)) * 100}%`}}></div>
-                            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{Math.round(player?.life || 0)}</div>
-                        </div>
-                    </div>
-                    <div id="stamina-bar" className="flex items-center gap-2">
-                        <div className="w-24 h-24 rounded-full bg-black border-2 border-gray-400 relative overflow-hidden">
-                            <div className="absolute bottom-0 w-full bg-green-600" style={{height: `${((player?.stamina || 0) / (player?.max_stamina || 100)) * 100}%`}}></div>
-                            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{Math.round(player?.stamina || 0)}</div>
-                        </div>
-                    </div>
-                    <div id="mana-bar" className="flex items-center gap-2">
-                        <div className="w-24 h-24 rounded-full bg-black border-2 border-gray-400 relative overflow-hidden">
-                            <div className="absolute bottom-0 w-full bg-blue-600" style={{height: `${((player?.mana || 0) / (player?.max_mana || 100)) * 100}%`}}></div>
-                            <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">{Math.round(player?.mana || 0)}</div>
-                        </div>
-                    </div>
-                    <div id="character-picture" className="flex items-center gap-2">
-                        <button
-                            onClick={() => setShowPlayerStatus(true)}
-                            className="w-24 h-24 rounded-full bg-gray-800 border-2 border-gray-400 hover:bg-gray-700 transition-colors flex items-center justify-center text-xs font-bold tracking-wide"
-                        >
-                            Status
-                        </button>
-                    </div>
-                    <div id="action-bar" className="flex items-center gap-2 w-full">
-                        {boss && (isDead(boss, bossKeywordData) || bossDying) ? (
-                            <div 
-                                className={`w-64 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center ${
-                                    descendClicked 
-                                        ? 'bg-gray-900 text-gray-600 cursor-not-allowed' 
-                                        : 'cursor-pointer bg-green-800 hover:bg-green-700 active:bg-green-600'
-                                }`}
-                                onClick={handleDescend}
-                            >
-                                Descend
-                            </div>
-                        ) : (
-                            <>
-                                {forcedPlayerAction && (
-                                    <div className="shrink-0 px-3 h-24 rounded-lg border-2 border-yellow-500 bg-yellow-900 bg-opacity-40 flex flex-col items-center justify-center text-yellow-300 text-xs font-semibold gap-1">
-                                        <span className="uppercase tracking-widest text-yellow-500" style={{fontSize:'0.6rem'}}>Forced</span>
-                                        <span className="text-sm capitalize">{forcedPlayerAction}</span>
-                                    </div>
-                                )}
-                                <div 
-                                    className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
-                                        actionInProgress || bossDying || (forcedPlayerAction && forcedPlayerAction !== 'attack')
-                                            ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40' 
-                                            : 'bg-gray-800 hover:bg-gray-700 active:bg-gray-600'
-                                    }`}
-                                    onClick={() => !actionInProgress && !bossDying && (!forcedPlayerAction || forcedPlayerAction === 'attack') && handleAction('attack')}
-                                >
-                                    Attack
-                                </div>
-                                <div
-                                    className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
-                                        actionInProgress || bossDying || (forcedPlayerAction && forcedPlayerAction !== 'guard')
-                                            ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40'
-                                            : 'bg-yellow-900 hover:bg-yellow-800 active:bg-yellow-700'
-                                    }`}
-                                    onClick={() => !actionInProgress && !bossDying && (!forcedPlayerAction || forcedPlayerAction === 'guard') && handleAction('guard')}
-                                >
-                                    Guard
-                                </div>
-                                {physicalAbilities.map((ability) => (
-                                    <div
-                                        key={ability}
-                                        className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
-                                            actionInProgress || bossDying || (forcedPlayerAction && forcedPlayerAction !== ability)
-                                                ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40'
-                                                : 'bg-orange-900 hover:bg-orange-800 active:bg-orange-700'
-                                        }`}
-                                        onClick={() => !actionInProgress && !bossDying && (!forcedPlayerAction || forcedPlayerAction === ability) && handleAction(ability)}
-                                    >
-                                        {formatSpellName(ability)}
-                                    </div>
-                                ))}
-                                {activeAbilities.map((ability) => {
-                                    const cooldownTurns = ((player?.cooldowns?.[ability] ?? 0) as number);
-                                    const onCooldown = cooldownTurns > 0;
-                                    const abilityDisabled = actionInProgress || bossDying || onCooldown || (forcedPlayerAction != null && forcedPlayerAction !== ability);
-                                    return (
-                                        <div
-                                            key={ability}
-                                            className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex flex-col items-center justify-center cursor-pointer ${
-                                                abilityDisabled
-                                                    ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40'
-                                                    : 'bg-teal-900 hover:bg-teal-800 active:bg-teal-700'
-                                            }`}
-                                            onClick={() => !abilityDisabled && handleAction(ability)}
-                                        >
-                                            <span>{formatSpellName(ability)}</span>
-                                            {onCooldown && <span className="text-xs mt-1 opacity-80">{cooldownTurns} turn{cooldownTurns !== 1 ? 's' : ''}</span>}
-                                        </div>
-                                    );
-                                })}
-                                {canCast && (
-                                    <div
-                                        className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
-                                            actionInProgress || bossDying || (forcedPlayerAction && !forcedPlayerAction.startsWith('cast'))
-                                                ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40'
-                                                : 'bg-purple-800 hover:bg-purple-700 active:bg-purple-600'
-                                        }`}
-                                        onClick={() => !actionInProgress && !bossDying && (!forcedPlayerAction || forcedPlayerAction.startsWith('cast')) && setShowCastMenu(true)}
-                                    >
-                                        Cast
-                                    </div>
-                                )}
-                                {visibleActionBarSpells.map((spell) => (
-                                    <div
-                                        key={spell}
-                                        className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
-                                            actionInProgress || bossDying || (forcedPlayerAction && forcedPlayerAction !== `cast:${spell}`)
-                                                ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40'
-                                                : 'bg-blue-800 hover:bg-blue-700 active:bg-blue-600'
-                                        }`}
-                                        onClick={() => !actionInProgress && !bossDying && (!forcedPlayerAction || forcedPlayerAction === `cast:${spell}`) && handleAction(`cast:${spell}`)}
-                                    >
-                                        {formatSpellName(spell)}
-                                    </div>
-                                ))}
-                            </>
-                        )}
-                    </div>
-                </div>
+                <BottomPanel
+                    player={player}
+                    boss={boss}
+                    isBossDefeated={isDead(boss, bossKeywordData)}
+                    bossDying={bossDying}
+                    descendClicked={descendClicked}
+                    actionInProgress={actionInProgress}
+                    forcedPlayerAction={forcedPlayerAction}
+                    physicalAbilities={physicalAbilities}
+                    activeAbilities={activeAbilities}
+                    canCast={canCast}
+                    visibleActionBarSpells={visibleActionBarSpells}
+                    formatSpellName={formatSpellName}
+                    handleAction={handleAction}
+                    onOpenCastMenu={() => setShowCastMenu(true)}
+                    onDescend={handleDescend}
+                    onShowPlayerStatus={() => setShowPlayerStatus(true)}
+                />
             </div>
             
             <CastMenuModal
