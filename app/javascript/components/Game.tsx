@@ -7,6 +7,9 @@ import ShakeAnimation from './ShakeAnimation';
 import Tooltip from './Tooltip';
 import { getPassiveDescription } from '../data/passiveDescriptions';
 import PlayerDeathModal from './modals/PlayerDeath';
+import PlayerStatusModal from './modals/PlayerStatusModal';
+import RaceConflictModal from './modals/RaceConflictModal';
+import WeaponConflictModal from './modals/WeaponConflictModal';
 
 interface GameProps {
     onExit: () => void;
@@ -1778,97 +1781,18 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 </div>
             )}
 
-            {/* Player Status Modal */}
-            {showPlayerStatus && (
-                <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-                    <div className="bg-gray-800 border-4 border-cyan-500 rounded-lg p-8 w-full max-w-4xl max-h-[85vh] flex flex-col">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-3xl font-bold">Player Status</h2>
-                            <button
-                                onClick={() => setShowPlayerStatus(false)}
-                                className="text-gray-300 hover:text-white text-2xl"
-                            >
-                                ×
-                            </button>
-                        </div>
-
-                        <input
-                            type="text"
-                            placeholder="Search powers..."
-                            value={statusSearch}
-                            onChange={(e) => setStatusSearch(e.target.value)}
-                            className="w-full mb-4 px-4 py-2 rounded bg-gray-900 border border-gray-600 text-white"
-                        />
-
-                        <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-                            {/* Summary — always shown on page 1, hidden when searching/paginating into keywords */}
-                            {statusPage === 1 && !statusSearch && (
-                                <div className="bg-gray-700 border border-cyan-700 rounded-lg px-4 py-3 space-y-2">
-                                    {playerStatusData.summaryRows.map((row, idx) => (
-                                        <div
-                                            key={`summary-${row.label}-${idx}`}
-                                            className="flex justify-between gap-4"
-                                        >
-                                            <span className="font-semibold text-cyan-300 shrink-0">{row.label}</span>
-                                            <span className="text-gray-100 text-right break-words">{row.value}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* Keywords */}
-                            {paginatedKeywordRows.length === 0 && filteredKeywordRows.length === 0 && statusSearch ? (
-                                <div className="text-gray-400 text-center py-8">No powers match your search.</div>
-                            ) : (
-                                paginatedKeywordRows.map((row, idx) => (
-                                    <div
-                                        key={`keyword-${row.label}-${idx}`}
-                                        className="bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 relative"
-                                    >
-                                        {row.count > 1 && (
-                                            <span className="absolute top-2 right-2 bg-yellow-500 text-black text-xs font-bold px-1.5 py-0.5 rounded">
-                                                x{row.count}
-                                            </span>
-                                        )}
-                                        <div className="text-lg font-semibold capitalize mb-1">{row.label}</div>
-                                        <div className="text-sm text-gray-200 break-words">{row.value}</div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-
-                        {statusTotalPages > 1 && (
-                            <div className="mt-4 pt-4 border-t border-gray-600 flex items-center justify-between">
-                                <button
-                                    onClick={() => setStatusPage((p) => Math.max(1, p - 1))}
-                                    disabled={statusPage <= 1}
-                                    className={`px-4 py-2 rounded border ${
-                                        statusPage <= 1
-                                            ? 'bg-gray-700 border-gray-600 text-gray-500 cursor-not-allowed'
-                                            : 'bg-gray-700 border-gray-500 hover:bg-gray-600'
-                                    }`}
-                                >
-                                    Previous
-                                </button>
-                                <div className="text-sm text-gray-300">
-                                    Page {statusPage} / {statusTotalPages}
-                                </div>
-                                <button
-                                    onClick={() => setStatusPage((p) => Math.min(statusTotalPages, p + 1))}
-                                    disabled={statusPage >= statusTotalPages}
-                                    className={`px-4 py-2 rounded border ${
-                                        statusPage >= statusTotalPages
-                                            ? 'bg-gray-700 border-gray-600 text-gray-500 cursor-not-allowed'
-                                            : 'bg-gray-700 border-gray-500 hover:bg-gray-600'
-                                    }`}
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
+            <PlayerStatusModal
+                show={showPlayerStatus}
+                onClose={() => setShowPlayerStatus(false)}
+                statusSearch={statusSearch}
+                setStatusSearch={setStatusSearch}
+                statusPage={statusPage}
+                setStatusPage={setStatusPage}
+                statusTotalPages={statusTotalPages}
+                summaryRows={playerStatusData.summaryRows}
+                paginatedKeywordRows={paginatedKeywordRows}
+                filteredKeywordRows={filteredKeywordRows}
+            />
 
             {/* Keyword Selection Modal */}
             {showKeywordSelection && boss && (
@@ -1990,197 +1914,36 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 </div>
             )}
             
-            {/* Race Conflict Modal */}
-            {raceConflictPending && player && (() => {
-                const newRaceData = allKeywordsData.find((kw: any) => kw.name === raceConflictPending.newRace);
-                const currentRaceName = raceReplaceSelection || raceConflictPending.existingRaces[0] || '';
-                const currentRaceData = currentRaceName ? allKeywordsData.find((kw: any) => kw.name === currentRaceName) : null;
-                const explicitAfterSwap = (player.explicit_keywords || []).map((name: string) =>
-                    name === currentRaceName ? raceConflictPending.newRace : name
-                );
-                // Mirror PlayerFactory.recalculate_stats max_hands logic exactly.
-                const raceKeywordsAfterSwap = explicitAfterSwap
-                    .map((name: string) => allKeywordsData.find((kw: any) => kw.name === name))
-                    .filter((kw: any) => kw?.category === 'creature');
-                let maxHandsFromRaces: number | null = null;
-                raceKeywordsAfterSwap.forEach((kw: any) => {
-                    const creatureHands = kw?.properties?.max_hands;
-                    if (creatureHands != null) {
-                        maxHandsFromRaces = (maxHandsFromRaces ?? 0) + creatureHands;
-                    }
-                });
-                const postSwapMaxHands = maxHandsFromRaces == null ? 2 : maxHandsFromRaces;
-                const equippedWeapons = (player.explicit_keywords || [])
-                    .map((kw: string) => allKeywordsData.find((k: any) => k.name === kw))
-                    .filter((kw: any) => kw?.category === 'weapon');
-                const discardedHands = raceWeaponDiscardSelection.reduce((sum: number, name: string) => {
-                    const kw = allKeywordsData.find((k: any) => k.name === name);
-                    return sum + (kw?.properties?.hands ?? 1);
-                }, 0);
-                const requiredHandsToFree = Math.max(0, (player.equipped_hands ?? 0) - postSwapMaxHands);
-                const hasEnoughDiscards = discardedHands >= requiredHandsToFree;
-                const canConfirmSwap = !!currentRaceName && hasEnoughDiscards;
-                return (
-                    <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
-                        <div className="bg-gray-800 border-4 border-yellow-600 rounded-lg max-w-2xl w-full p-8">
-                            <h2 className="text-2xl font-bold text-yellow-400 text-center mb-2">Race Conflict</h2>
-                            <p className="text-gray-300 text-center text-sm mb-6">
-                                You are at creature capacity. Choose which existing race to replace with the new one.
-                                Either way, the boss loses this trait.
-                            </p>
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                <button
-                                    onClick={() => handleRaceConflictChoice('keep')}
-                                    className="bg-gray-700 hover:bg-gray-600 border-2 border-gray-400 rounded-lg p-4 text-left transition-colors"
-                                >
-                                    <div className="text-xs text-gray-400 mb-1">Keep current</div>
-                                    <div className="text-xl font-bold capitalize mb-2">Current races</div>
-                                    <div className="text-xs text-gray-300">{raceConflictPending.existingRaces.join(', ') || 'None'}</div>
-                                </button>
-                                <div className="bg-gray-700 border-2 border-yellow-600 rounded-lg p-4 text-left">
-                                    <div className="text-xs text-yellow-400 mb-1">Become new race</div>
-                                    <div className="text-xl font-bold capitalize mb-2">{raceConflictPending.newRace}</div>
-                                    {newRaceData && (
-                                        <div className="text-xs text-gray-300 mb-3">{formatKeywordAttributes(newRaceData)}</div>
-                                    )}
-                                    <label className="text-xs text-gray-400 block mb-1">Replace this existing race:</label>
-                                    <select
-                                        value={currentRaceName}
-                                        onChange={(e) => {
-                                            setRaceReplaceSelection(e.target.value);
-                                            setRaceWeaponDiscardSelection([]);
-                                        }}
-                                        className="w-full bg-gray-800 border border-gray-500 rounded px-2 py-1 text-sm"
-                                    >
-                                        {raceConflictPending.existingRaces.map((race: string) => (
-                                            <option key={race} value={race}>{race}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
+            <RaceConflictModal
+                raceConflictPending={raceConflictPending}
+                player={player}
+                allKeywordsData={allKeywordsData}
+                raceReplaceSelection={raceReplaceSelection}
+                setRaceReplaceSelection={setRaceReplaceSelection}
+                raceWeaponDiscardSelection={raceWeaponDiscardSelection}
+                setRaceWeaponDiscardSelection={setRaceWeaponDiscardSelection}
+                formatKeywordAttributes={formatKeywordAttributes}
+                onKeep={() => handleRaceConflictChoice('keep')}
+                onSwap={() => handleRaceConflictChoice('swap')}
+                onCancel={() => {
+                    setRaceConflictPending(null);
+                    setRaceWeaponDiscardSelection([]);
+                    setRaceReplaceSelection('');
+                }}
+            />
 
-                            {currentRaceData && requiredHandsToFree > 0 && (
-                                <div className="mb-4 bg-gray-900 border border-orange-700 rounded p-3">
-                                    <div className="text-sm text-orange-300 mb-2">
-                                        Swapping {currentRaceName} {'->'} {raceConflictPending.newRace} reduces hand capacity to {postSwapMaxHands}.
-                                        You must discard weapons freeing {requiredHandsToFree} hand{requiredHandsToFree !== 1 ? 's' : ''}.
-                                    </div>
-                                    <div className="space-y-2">
-                                        {equippedWeapons.map((kw: any) => {
-                                            const selected = raceWeaponDiscardSelection.includes(kw.name);
-                                            return (
-                                                <button
-                                                    key={kw.name}
-                                                    onClick={() => setRaceWeaponDiscardSelection(sel =>
-                                                        selected ? sel.filter(n => n !== kw.name) : [...sel, kw.name]
-                                                    )}
-                                                    className={`w-full rounded border px-3 py-2 text-left ${selected ? 'bg-red-900 border-red-500' : 'bg-gray-700 border-gray-500'}`}
-                                                >
-                                                    <span className="capitalize font-semibold">{kw.name}</span>
-                                                    <span className="text-xs text-gray-400 ml-2">{kw.properties?.hands ?? 1} hand{(kw.properties?.hands ?? 1) !== 1 ? 's' : ''}</span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    <div className="text-xs text-gray-400 mt-2">
-                                        Selected discard frees {discardedHands}/{requiredHandsToFree} hands.
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => {
-                                        setRaceConflictPending(null);
-                                        setRaceWeaponDiscardSelection([]);
-                                        setRaceReplaceSelection('');
-                                    }}
-                                    className="flex-1 py-2 rounded-lg border-2 border-gray-500 text-gray-300 hover:bg-gray-700 transition-colors text-sm"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={() => handleRaceConflictChoice('swap')}
-                                    disabled={!canConfirmSwap}
-                                    className={`flex-1 py-2 rounded-lg border-2 text-sm font-semibold transition-colors ${
-                                        canConfirmSwap
-                                            ? 'bg-yellow-800 border-yellow-500 hover:bg-yellow-700 text-white'
-                                            : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-                                    }`}
-                                >
-                                    {canConfirmSwap ? 'Confirm Swap' : 'Select valid replacement/discards'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            })()}
-
-            {/* Weapon Conflict Modal */}
-            {weaponConflictPending && player && (() => {
-                const newWeaponData = allKeywordsData.find((kw: any) => kw.name === weaponConflictPending.newWeapon);
-                const equippedWeapons = (player.explicit_keywords || [])
-                    .map((kw: string) => allKeywordsData.find((k: any) => k.name === kw))
-                    .filter((kw: any) => kw?.category === 'weapon');
-                const discardedHands = weaponDiscardSelection.reduce((sum: number, name: string) => {
-                    const kw = allKeywordsData.find((k: any) => k.name === name);
-                    return sum + (kw?.properties?.hands ?? 1);
-                }, 0);
-                const willFit = (player.equipped_hands ?? 0) - discardedHands + weaponConflictPending.handsNeeded <= (player.max_hands ?? 2);
-                return (
-                    <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
-                        <div className="bg-gray-800 border-4 border-orange-600 rounded-lg max-w-lg w-full p-8">
-                            <h2 className="text-2xl font-bold text-orange-400 text-center mb-1">Not Enough Hands</h2>
-                            <p className="text-gray-300 text-center text-sm mb-1">
-                                <span className="font-semibold capitalize">{weaponConflictPending.newWeapon}</span> needs {weaponConflictPending.handsNeeded} hand{weaponConflictPending.handsNeeded !== 1 ? 's' : ''}.
-                                You have {player.equipped_hands ?? 0}/{player.max_hands ?? 2} used.
-                            </p>
-                            <p className="text-gray-400 text-center text-xs mb-4">Select weapons to drop until you have room.</p>
-                            <div className="space-y-2 mb-4">
-                                {equippedWeapons.map((kw: any) => {
-                                    const selected = weaponDiscardSelection.includes(kw.name);
-                                    return (
-                                        <button
-                                            key={kw.name}
-                                            onClick={() => setWeaponDiscardSelection(sel =>
-                                                selected ? sel.filter(n => n !== kw.name) : [...sel, kw.name]
-                                            )}
-                                            className={`w-full rounded-lg border-2 px-4 py-3 text-left transition-colors ${
-                                                selected
-                                                    ? 'bg-red-900 border-red-500 text-white'
-                                                    : 'bg-gray-700 border-gray-500 hover:bg-gray-600'
-                                            }`}
-                                        >
-                                            <span className="font-semibold capitalize">{kw.name}</span>
-                                            <span className="text-xs text-gray-400 ml-2">{kw.properties?.hands ?? 1} hand{(kw.properties?.hands ?? 1) !== 1 ? 's' : ''}</span>
-                                            {selected && <span className="float-right text-red-400 text-xs font-bold">DROP</span>}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => { setWeaponConflictPending(null); setWeaponDiscardSelection([]); }}
-                                    className="flex-1 py-2 rounded-lg border-2 border-gray-500 text-gray-300 hover:bg-gray-700 transition-colors text-sm"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleWeaponConflictConfirm}
-                                    disabled={!willFit}
-                                    className={`flex-1 py-2 rounded-lg border-2 text-sm font-semibold transition-colors ${
-                                        willFit
-                                            ? 'bg-orange-800 border-orange-500 hover:bg-orange-700 text-white'
-                                            : 'bg-gray-800 border-gray-600 text-gray-500 cursor-not-allowed'
-                                    }`}
-                                >
-                                    {willFit ? `Equip ${weaponConflictPending.newWeapon}` : `Need ${weaponConflictPending.handsNeeded - ((player.max_hands ?? 2) - (player.equipped_hands ?? 0) + discardedHands)} more hand${weaponConflictPending.handsNeeded - ((player.max_hands ?? 2) - (player.equipped_hands ?? 0) + discardedHands) !== 1 ? 's' : ''} freed`}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            })()}
+            <WeaponConflictModal
+                weaponConflictPending={weaponConflictPending}
+                player={player}
+                allKeywordsData={allKeywordsData}
+                weaponDiscardSelection={weaponDiscardSelection}
+                setWeaponDiscardSelection={setWeaponDiscardSelection}
+                onCancel={() => {
+                    setWeaponConflictPending(null);
+                    setWeaponDiscardSelection([]);
+                }}
+                onConfirm={handleWeaponConflictConfirm}
+            />
 
             {/* Player Death Modal */}
             {playerDead && (
