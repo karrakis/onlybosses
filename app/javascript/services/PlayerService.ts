@@ -117,11 +117,11 @@ export const PlayerService = {
         return response.json();
     },
 
-    async swapRace(newKeyword: string, oldKeyword: string, depth?: number): Promise<Player> {
+    async swapRace(newKeyword: string, oldKeyword: string, oldWeapons: string[] = [], depth?: number): Promise<Player> {
         const response = await fetch('/swap_race', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ new_keyword: newKeyword, old_keyword: oldKeyword, depth }),
+            body: JSON.stringify({ new_keyword: newKeyword, old_keyword: oldKeyword, old_weapons: oldWeapons, depth }),
         });
         if (!response.ok) throw new Error('Failed to swap race');
         return response.json();

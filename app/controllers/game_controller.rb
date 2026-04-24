@@ -81,14 +81,24 @@ class GameController < ApplicationController
   end
 
   # POST /swap_race
-  # Atomically removes old_keyword and adds new_keyword, then levels up once.
+  # Atomically removes old_keyword, optionally removes old_weapons, then adds
+  # new_keyword and levels up once.
   def swap_race
     new_keyword = params[:new_keyword]
     old_keyword = params[:old_keyword]
+    old_weapons = Array(params[:old_weapons])
     depth       = params[:depth].to_i
     player      = PlayerFactory.get_player(session)
     PlayerFactory.remove_keyword(player, old_keyword)
+    old_weapons.each { |kw| PlayerFactory.remove_keyword(player, kw) }
     PlayerFactory.add_keyword(player, new_keyword)
+
+    if (player['equipped_hands'] || 0) > (player['max_hands'] || 2)
+      overflow = (player['equipped_hands'] || 0) - (player['max_hands'] || 2)
+      render json: { success: false, error: "Not enough hands after race swap", hands_to_free: overflow }, status: :unprocessable_entity
+      return
+    end
+
     PlayerFactory.level_up(player)
     PlayerFactory.save_player(session, player)
     SnapshotService.record_snapshot(session, player, get_current_boss, depth) if depth > 0
