@@ -117,16 +117,16 @@ export default function CreatureViewport({
     return (
       <div style={flipStyle}>
         <div className={className} style={{ position: 'relative', ...rootStyle }}>
-          <div style={{ position: 'absolute', inset: 0, perspective: '800px', ...animStyle }}>
-            {hasWings && goatBody && (
-              <object
-                type="image/svg+xml"
-                data={WING_SVG_FLAPX}
-                aria-label="right wing"
-                style={{ ...wingStyleRight, zIndex: 0 }}
-              />
-            )}
+          {hasWings && goatBody && (
+            <object
+              type="image/svg+xml"
+              data={WING_SVG_FLAPX}
+              aria-label="right wing"
+              style={{ ...wingStyleRight, zIndex: 0 }}
+            />
+          )}
 
+          <div style={{ position: 'absolute', inset: 0, perspective: '800px', ...animStyle }}>
             {hasWings && !goatBody && (
               <>
                 <object
@@ -147,16 +147,16 @@ export default function CreatureViewport({
             <div style={{ position: 'absolute', left: bodyLeft, top: bodyTop, zIndex: 10 }}>
               <CreatureCompositor keywords={keywords} />
             </div>
-
-            {hasWings && goatBody && (
-              <object
-                type="image/svg+xml"
-                data={WING_SVG_FLAPX}
-                aria-label="left wing"
-                style={{ ...wingStyleLeft, zIndex: 20 }}
-              />
-            )}
           </div>
+
+          {hasWings && goatBody && (
+            <object
+              type="image/svg+xml"
+              data={WING_SVG_FLAPX}
+              aria-label="left wing"
+              style={{ ...wingStyleLeft, zIndex: 20 }}
+            />
+          )}
         </div>
       </div>
     );
