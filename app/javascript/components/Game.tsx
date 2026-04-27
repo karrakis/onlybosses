@@ -1682,8 +1682,12 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                         />
                                     </div>
                                 </ShakeAnimation>
-                                
-                                {/* Cauldron display */}
+                            </div>
+                        )}
+
+                        {/* Cauldron display (positioned outside boss layout flow so it doesn't push boss upward) */}
+                        {boss && (
+                            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10">
                                 <Cauldron 
                                     depth={depth}
                                     cauldronStatus={cauldronStatus}
