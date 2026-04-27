@@ -88,14 +88,15 @@ class RunSimulatorService
   end
 
   private_class_method def self.build_boss_entity(all_kw_names, registry)
-    life_mult = stamina_mult = mana_mult = 1.0
+    life_mult = stamina_mult = mana_mult = life_regen_mult = 1.0
     all_kw_names.each do |name|
       kw    = registry[name]
       next unless kw
       mults = kw.properties&.dig('multipliers') || {}
-      life_mult    *= (mults['life']    || 1.0)
-      stamina_mult *= (mults['stamina'] || 1.0)
-      mana_mult    *= (mults['mana']    || 1.0)
+      life_mult        *= (mults['life']       || 1.0)
+      stamina_mult     *= (mults['stamina']    || 1.0)
+      mana_mult        *= (mults['mana']       || 1.0)
+      life_regen_mult  *= (mults['life_regen'] || 1.0)
     end
     max_life    = [(100 * life_mult).ceil,     1].max
     max_stamina = [(100 * stamina_mult).ceil, 10].max
@@ -105,6 +106,7 @@ class RunSimulatorService
       'life'        => max_life,    'max_life'    => max_life,
       'stamina'     => max_stamina, 'max_stamina' => max_stamina,
       'mana'        => max_mana,    'max_mana'    => max_mana,
+      'life_regen_multiplier' => life_regen_mult,
     }
   end
 

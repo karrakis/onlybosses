@@ -109,6 +109,7 @@ class BossFactory
       life_mult = 1.0
       stamina_mult = 1.0
       mana_mult = 1.0
+      life_regen_mult = 1.0
       
       # Track collections
       resistances = []
@@ -127,6 +128,7 @@ class BossFactory
           life_mult *= (attrs['multipliers']['life'] || 1.0)
           stamina_mult *= (attrs['multipliers']['stamina'] || 1.0)
           mana_mult *= (attrs['multipliers']['mana'] || 1.0)
+          life_regen_mult *= (attrs['multipliers']['life_regen'] || 1.0)
         end
         
         # Convert old resistances/vulnerabilities to damage_reduction_by_type
@@ -170,6 +172,7 @@ class BossFactory
         passives: passives,
         abilities: abilities,
         weapons: weapons,
+        life_regen_multiplier: life_regen_mult,
         special: {}
       }
     end

@@ -14,12 +14,11 @@
 {"name":"heartless","category":"passive","rarity":2,"attributes":{"flat_damage_reduction":2}}
 {"name":"towering","category":"passive","rarity":2,"attributes":{"multipliers":{"life":1.1}}}
 {"name":"nimble","category":"passive","rarity":2,"attributes":{"multipliers":{"stamina":1.1},"damage_output_by_type":{"physical":1.2}}}
-{"name":"vitality","category":"passive","rarity":2,"attributes":{"health_regen_multiplier":1.1}}
-{"name":"revive","category":"passive","rarity":3,"attributes":{"revive_chance":0.5}}
+{"name":"vitality","category":"passive","rarity":2,"attributes":{"multipliers":{"life_regen":1.1}}}
 {"name":"chimerism","category":"passive","rarity":2,"attributes":{"race_slots":1}}
 {"name":"evasion","category":"passive","rarity":2,"attributes":{"evasion_chance":0.08}}
 {"name":"regeneration","category":"passive","rarity":1,"attributes":{"regenerate_health":1}}
 {"name":"soulbind","category":"passive","rarity":3,"attributes":{"spell_leech":0.05}}
 {"name":"rejuvenation","category":"passive","rarity":2,"attributes":{"regenerate_health":2}}
-{"name":"cancerous_ideology","category":"passive","rarity":3,"attributes":{"regenerate_health":2,"health_regen_multiplier":1.1, "multipliers":{"life":0.9}}}
+{"name":"cancerous_ideology","category":"passive","rarity":3,"attributes":{"regenerate_health":2,"multipliers":{"life":0.9,"life_regen":1.1}}}
 {"name":"spell_leech","category":"passive","rarity":2,"attributes":{"spell_leech":0.05}}

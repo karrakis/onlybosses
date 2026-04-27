@@ -144,12 +144,13 @@ class PlayerFactory
     base_stamina = BASE_STAMINA + bosses_defeated * STAT_INCREASE_PER_BOSS
     base_mana    = BASE_MANA    + bosses_defeated * STAT_INCREASE_PER_BOSS
 
-    life_mult    = 1.0
-    stamina_mult = 1.0
-    mana_mult    = 1.0
+    life_mult     = 1.0
+    stamina_mult  = 1.0
+    mana_mult     = 1.0
+    life_regen_mult = 1.0
 
-    chimerism_count  = 0
     race_count       = 0
+    race_slots_count = 0
     max_hands_from_races = nil   # nil until at least one creature keyword is seen
 
     (player['keywords'] || []).each do |kw_name|
@@ -160,12 +161,13 @@ class PlayerFactory
 
       if props['multipliers']
         m = props['multipliers']
-        life_mult    *= (m['life']    || 1.0)
-        stamina_mult *= (m['stamina'] || 1.0)
-        mana_mult    *= (m['mana']    || 1.0)
+        life_mult      *= (m['life']       || 1.0)
+        stamina_mult   *= (m['stamina']    || 1.0)
+        mana_mult      *= (m['mana']       || 1.0)
+        life_regen_mult *= (m['life_regen'] || 1.0)
       end
 
-      chimerism_count += 1 if kw_name == 'chimerism'
+      race_slots_count += (props['race_slots'] || 0).to_i
 
       if kw.category == 'creature'
         race_count += 1
@@ -184,6 +186,9 @@ class PlayerFactory
     player['stamina'] = [[player['stamina'] || 0, 0].max, player['max_stamina']].min
     player['mana']    = [[player['mana']    || 0, 0].max, player['max_mana']].min
 
+    # Store life_regen multiplier for use in regeneration calculations
+    player['life_regen_multiplier'] = life_regen_mult
+
     # Weapon slots: sum hands of explicitly equipped weapons
     player['equipped_hands'] = (player['explicit_keywords'] || []).sum do |kw_name|
       kw = BossKeyword.find_by(name: kw_name)
@@ -193,7 +198,7 @@ class PlayerFactory
 
     # Hand capacity: from race keywords if present, otherwise human default
     player['max_hands']      = max_hands_from_races.nil? ? DEFAULT_MAX_HANDS : max_hands_from_races
-    player['max_race_slots'] = DEFAULT_MAX_RACE_SLOTS + chimerism_count
+    player['max_race_slots'] = DEFAULT_MAX_RACE_SLOTS + race_slots_count
     player['race_count']     = race_count
 
     player

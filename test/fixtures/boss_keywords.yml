@@ -1,13 +1,13 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
-  category: MyString
-  attributes: 
+  name: fixture_boss_keyword_one
+  category: creature
+  properties: {}
   rarity: 1
 
 two:
-  name: MyString
-  category: MyString
-  attributes: 
+  name: fixture_boss_keyword_two
+  category: weapon
+  properties: {}
   rarity: 1

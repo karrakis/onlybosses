@@ -370,12 +370,16 @@ class CombatService
   end
 
   # Data-driven multi-hit physical attack driven by the attack-category keyword row.
+  # Supports: stamina_cost, mana_cost, cooldown, hit_count, base_damage_by_type,
+  # force_next_action, ignore_physical_reduction_fraction, lifesteal, apply_debuff.
   def self.execute_physical_attack(game_status, action_taker, target, ability_name)
     attack_kw = BossKeyword.find_by(name: ability_name, category: 'attack')
     return game_status unless attack_kw
 
     attrs        = attack_kw.properties || {}
     stamina_cost = (attrs['stamina_cost'] || 10).to_i
+    mana_cost    = (attrs['mana_cost']    || 0).to_i
+    cooldown_val = (attrs['cooldown']     || 0).to_i
     hit_count    = (attrs['hit_count']    || 1).to_i
     base_damage  = attrs['base_damage_by_type'] || { 'physical' => 10 }
     force_next   = attrs['force_next_action']
@@ -385,15 +389,29 @@ class CombatService
     end
 
     stamina_key = "#{action_taker}Stamina"
+    mana_key    = "#{action_taker}Mana"
+    
+    # Check resources
     return game_status if game_status[stamina_key].nil? || game_status[stamina_key] < stamina_cost
-
-    game_status[stamina_key] -= stamina_cost
+    return game_status if mana_cost > 0 && (game_status[mana_key].nil? || game_status[mana_key] < mana_cost)
 
     attacker_data = game_status[action_taker]
+    
+    # Check cooldown
+    attacker_data['cooldowns'] ||= {}
+    return game_status if attacker_data['cooldowns'][ability_name].to_i > 0
+
+    # Spend resources
+    game_status[stamina_key] -= stamina_cost
+    game_status[mana_key] -= mana_cost if mana_cost > 0
+
+    # Set cooldown
+    attacker_data['cooldowns'][ability_name] = cooldown_val if cooldown_val > 0
+
     defender_data = game_status[target]
 
-    # Resolve lifesteal and attacker life-resource once — shared across all hits
-    lifesteal_amount       = 0
+    # Resolve lifesteal: keyword-based + attack-based
+    lifesteal_amount       = (attrs['lifesteal'] || 0).to_f  # attack-local lifesteal
     attacker_life_resource = 'life'
     (attacker_data['keywords'] || []).each do |kw_name|
       kw = BossKeyword.find_by(name: kw_name)
@@ -421,6 +439,11 @@ class CombatService
           game_status[attacker_resource_key] = [game_status[attacker_resource_key], attacker_data[attacker_max_key]].min
         end
       end
+    end
+
+    # Apply attack-local debuff if present
+    if (debuff = attrs['apply_debuff'])
+      apply_debuff(defender_data, debuff)
     end
 
     game_status["#{action_taker}ForcedNextAction"] = force_next if force_next
@@ -499,7 +522,7 @@ class CombatService
     game_status["#{entity_key}#{res_key.capitalize}"].to_f <= 0
   end
 
-  # Sum of regenerate_health passive values across all keywords.
+  # Sum of regenerate_health passive values across all keywords, multiplied by life_regen multiplier.
   private_class_method def self.health_regen_amount(entity_data)
     total = 0
     (entity_data['keywords'] || []).each do |kw_name|
@@ -507,7 +530,10 @@ class CombatService
       next unless kw
       total += kw.properties['regenerate_health'].to_f if kw.properties&.dig('regenerate_health')
     end
-    total
+    
+    # Apply life_regen multiplier from passives
+    regen_mult = entity_data['life_regen_multiplier'] || 1.0
+    (total * regen_mult).to_f
   end
 
   # Apply stacking or non-stacking debuff to an entity's active_debuffs hash.
@@ -633,6 +659,8 @@ class CombatService
       if attack_kw
         attrs = attack_kw.properties || {}
         next unless stamina_cap >= (attrs['stamina_cost'] || 10).to_f
+        next unless mana_cap >= (attrs['mana_cost'] || 0).to_f
+        next if (actor_data['cooldowns'] || {})[ability].to_i > 0
         hit_count  = (attrs['hit_count'] || 1).to_i
         base_dmg   = attrs['base_damage_by_type'] || { 'physical' => 10 }
         single_dmg = DamageCalculator.calculate_damage(actor_data, target_data, base_dmg)[:total_damage]
