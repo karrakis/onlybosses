@@ -120,7 +120,11 @@ class CombatService
     end
 
     # Boss turn
-    boss_action = forced_boss_action || (boss_action_resolver ? boss_action_resolver.call(game_status) : choose_boss_action(game_status))
+    # Check if the player's action forced the boss this turn (e.g. web, entangle).
+    # Mid-turn forced actions take priority over carry-over forced actions from the
+    # previous round, which in turn take priority over the AI choice.
+    mid_turn_forced_boss = game_status.delete('bossForcedNextAction')
+    boss_action = mid_turn_forced_boss || forced_boss_action || (boss_action_resolver ? boss_action_resolver.call(game_status) : choose_boss_action(game_status))
     next_forced_boss = nil
     if known_action?(boss_action)
       boss_mana_before    = game_status['bossMana']
