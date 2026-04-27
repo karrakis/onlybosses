@@ -17,7 +17,6 @@ import InitialKeywordSelectionScreen from './InitialKeywordSelectionScreen';
 import DepthCounter from './DepthCounter';
 
 const WING_SVG = '/assets/keywords/wing.svg';
-const WING_SVG_STATIC = '/assets/keywords/wing.svg?static=1';
 const WING_SVG_FLAPX = '/assets/keywords/wing.svg?flapx=1';
 
 interface GameProps {
@@ -187,8 +186,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     });
 
     const renderCreatureWithWings = (keywords: string[], animStyle: React.CSSProperties = {}) => {
-        const { hasWings, goatBody, wingsBackground, wingAnchorX, wingAnchorY } = compositeCreature(keywords);
-        const wingAsset = wingsBackground ? WING_SVG_STATIC : WING_SVG;
+        const { hasWings, goatBody, wingAnchorX, wingAnchorY } = compositeCreature(keywords);
 
         const wingStyleRight: React.CSSProperties = goatBody ? {
             position: 'absolute', width: 350, height: 330,
@@ -226,10 +224,10 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 <div style={{ position: 'absolute', inset: 0, perspective: '800px', ...animStyle }}>
                     {hasWings && !goatBody && (
                         <>
-                            <object type="image/svg+xml" data={wingAsset} aria-label="right wing"
+                            <object type="image/svg+xml" data={WING_SVG} aria-label="right wing"
                                 style={{ ...wingStyleRight, zIndex: 0 }}
                             />
-                            <object type="image/svg+xml" data={wingAsset} aria-label="left wing"
+                            <object type="image/svg+xml" data={WING_SVG} aria-label="left wing"
                                 style={{ ...wingStyleLeft, zIndex: 0 }}
                             />
                         </>
