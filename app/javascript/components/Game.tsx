@@ -12,6 +12,7 @@ import KeywordSelectionModal from './modals/KeywordSelectionModal';
 import PlayerStatusModal from './modals/PlayerStatusModal';
 import RaceConflictModal from './modals/RaceConflictModal';
 import WeaponConflictModal from './modals/WeaponConflictModal';
+import Cauldron from './Cauldron';
 import BottomPanel from './BottomPanel';
 import InitialKeywordSelectionScreen from './InitialKeywordSelectionScreen';
 import DepthCounter from './DepthCounter';
@@ -42,6 +43,16 @@ const getLifeResourceValue = (entity: Player | Boss | null, keywords: any[]): nu
 // Helper to check if entity is dead
 const isDead = (entity: Player | Boss | null, keywords: any[]): boolean => {
     return getLifeResourceValue(entity, keywords) <= 0;
+};
+
+const emptyCauldronStatusForDepth = (depth: number) => {
+    const tier = Math.floor((depth - 1) / 5) + 1;
+    return {
+        fed_count: 0,
+        required_count: tier + 1,
+        is_ready: false,
+        fed_keywords: [] as string[],
+    };
 };
 
 const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailableKeywords }) => {
@@ -98,6 +109,10 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     // Weapon conflict: set when a new weapon would exceed hand capacity.
     const [weaponConflictPending, setWeaponConflictPending] = useState<{ newWeapon: string; handsNeeded: number } | null>(null);
     const [weaponDiscardSelection, setWeaponDiscardSelection] = useState<string[]>([]);
+    // Cauldron crafting state
+    const [cauldronStatus, setCauldronStatus] = useState<any>(emptyCauldronStatusForDepth(1));
+    const [cauldronReady, setCauldronReady] = useState<boolean>(false);
+    const [showCauldronPanel, setShowCauldronPanel] = useState<boolean>(false);
     const TIER_UP_DEPTH = 5;
 
     useEffect(() => {
@@ -141,6 +156,38 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         return spell
             .replace(/_/g, ' ')
             .replace(/\b\w/g, (char) => char.toUpperCase());
+    };
+
+    const getActionCosts = (action: string): { stamina: number; mana: number; life: number } => {
+        if (action.startsWith('cast:')) {
+            return { stamina: 0, mana: 10, life: 0 };
+        }
+
+        const keywordName = action;
+        const kw = allKeywordsData.find((k: any) => k.name === keywordName);
+        const attrs = kw?.properties || {};
+
+        const fallbackStamina = (kw?.category === 'attack' || kw?.category === 'ability') ? 10 : 0;
+
+        return {
+            stamina: typeof attrs.stamina_cost === 'number' ? attrs.stamina_cost : fallbackStamina,
+            mana: typeof attrs.mana_cost === 'number' ? attrs.mana_cost : 0,
+            life: typeof attrs.life_cost === 'number'
+                ? attrs.life_cost
+                : typeof attrs.health_cost === 'number'
+                ? attrs.health_cost
+                : typeof attrs.hp_cost === 'number'
+                ? attrs.hp_cost
+                : 0,
+        };
+    };
+
+    const isActionAffordable = (action: string): boolean => {
+        if (!player) return false;
+        const costs = getActionCosts(action);
+        return (player.stamina ?? 0) >= costs.stamina
+            && (player.mana ?? 0) >= costs.mana
+            && (player.life ?? 0) >= costs.life;
     };
 
     const playerAbilities = getPlayerAbilities(playerKeywordData);
@@ -385,6 +432,9 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         const loadGame = async () => {
             try {
                 setLoading(true);
+                setCauldronReady(false);
+                setDepth(1);
+                setCauldronStatus(emptyCauldronStatusForDepth(1));
                 
                 // Reset player for new game
                 await PlayerService.resetPlayer();
@@ -428,6 +478,9 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 }
                 setTieredKeywords(rolledTiered);
 
+                // Only fetch cauldron status after reset/bootstrap is complete.
+                setCauldronReady(true);
+
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load game');
             } finally {
@@ -457,6 +510,42 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
             return () => clearInterval(interval);
         };
     }, []);
+
+    // Fetch cauldron status when depth changes
+    useEffect(() => {
+        if (!cauldronReady) {
+            return;
+        }
+
+        const fetchCauldronStatus = async () => {
+            const fallbackStatus = emptyCauldronStatusForDepth(depth);
+
+            try {
+                const response = await fetch(`/get_cauldron_status?depth=${depth}`);
+                const status = await response.json();
+
+                if (!response.ok) {
+                    setCauldronStatus(fallbackStatus);
+                    return;
+                }
+
+                // Guard against partial/error payloads so the UI never crashes.
+                setCauldronStatus({
+                    fed_count: typeof status?.fed_count === 'number' ? status.fed_count : 0,
+                    required_count: typeof status?.required_count === 'number' ? status.required_count : fallbackStatus.required_count,
+                    is_ready: Boolean(status?.is_ready),
+                    fed_keywords: Array.isArray(status?.fed_keywords) ? status.fed_keywords : [],
+                });
+            } catch (error) {
+                console.error('Failed to fetch cauldron status:', error);
+                setCauldronStatus(fallbackStatus);
+            }
+        };
+
+        if (depth > 0) {
+            fetchCauldronStatus();
+        }
+    }, [depth, cauldronReady]);
 
     const handleDescend = () => {
         if (boss && (isDead(boss, bossKeywordData) || bossDying) && !descendClicked) {
@@ -814,6 +903,49 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         }
     };
 
+    const handleFeedToCauldron = async (keywordToFeed: string) => {
+        if (actionInProgress) return;
+
+        try {
+            setActionInProgress(true);
+
+            const response = await fetch('/feed_to_cauldron', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keyword: keywordToFeed, depth }),
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                setCauldronStatus(data.cauldron_status);
+                setShowRemoveKeywordPanel(false);
+
+                // Feeding is the depth choice for this descent: level up, snapshot, and advance.
+                const nextDepth = depth + 1;
+                const updatedPlayer = await PlayerService.skipKeyword(nextDepth);
+                setPlayer(updatedPlayer);
+                await proceedWithBossKeywords(keywordToFeed, nextDepth);
+            } else {
+                setError(data.error || 'Failed to feed to cauldron');
+                setActionInProgress(false);
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to feed to cauldron');
+            setActionInProgress(false);
+        }
+    };
+
+    const handleCauldronSelectPassive = async () => {
+        // Refresh the player after passive selection
+        try {
+            const updatedPlayer = await PlayerService.getPlayer();
+            setPlayer(updatedPlayer);
+            setCauldronStatus(emptyCauldronStatusForDepth(depth));
+        } catch (err) {
+            console.error('Failed to refresh player after cauldron selection:', err);
+        }
+    };
+
     const pollForImage = async (bossId: number) => {
         const interval = setInterval(async () => {
             try {
@@ -834,6 +966,10 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
     const handleAction = async (action: string) => {
         if (actionInProgress) {
             console.log("Action already in progress, ignoring");
+            return;
+        }
+
+        if (!isActionAffordable(action)) {
             return;
         }
         
@@ -1546,6 +1682,17 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                         />
                                     </div>
                                 </ShakeAnimation>
+                                
+                                {/* Cauldron display */}
+                                <Cauldron 
+                                    depth={depth}
+                                    cauldronStatus={cauldronStatus}
+                                    onSelectPassive={handleCauldronSelectPassive}
+                                    formatPassiveDetails={(passiveName: string) => {
+                                        const passiveKw = allKeywordsData.find((k: any) => k.name === passiveName);
+                                        return passiveKw ? formatKeywordAttributes(passiveKw) : 'No special attributes';
+                                    }}
+                                />
                             </div>
                         )}
                     </div> 
@@ -1564,6 +1711,7 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                     canCast={canCast}
                     visibleActionBarSpells={visibleActionBarSpells}
                     formatSpellName={formatSpellName}
+                    isActionAffordable={isActionAffordable}
                     handleAction={handleAction}
                     onOpenCastMenu={() => setShowCastMenu(true)}
                     onDescend={handleDescend}
@@ -1609,6 +1757,8 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                 getBossKeywordDerivedFrom={getBossKeywordDerivedFrom}
                 handleKeywordSelection={handleKeywordSelection}
                 handleRemoveKeywordSelection={handleRemoveKeywordSelection}
+                handleFeedToCauldron={handleFeedToCauldron}
+                selectionInProgress={actionInProgress}
                 renderKeywordAttributes={renderKeywordAttributes}
                 formatKeywordAttributes={formatKeywordAttributes}
             />

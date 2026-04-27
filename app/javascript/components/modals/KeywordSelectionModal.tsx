@@ -14,6 +14,8 @@ interface KeywordSelectionModalProps {
     getBossKeywordDerivedFrom: (passiveName: string) => string | null;
     handleKeywordSelection: (selectedKeyword: string) => void;
     handleRemoveKeywordSelection: (keywordToRemove: string) => void;
+    handleFeedToCauldron?: (keywordToFeed: string) => void;
+    selectionInProgress?: boolean;
     renderKeywordAttributes: (keyword: any, redAttrKeys?: string[]) => React.ReactNode;
     formatKeywordAttributes: (keyword: any) => string;
 }
@@ -30,6 +32,8 @@ const KeywordSelectionModal: React.FC<KeywordSelectionModalProps> = ({
     getBossKeywordDerivedFrom,
     handleKeywordSelection,
     handleRemoveKeywordSelection,
+    handleFeedToCauldron,
+    selectionInProgress,
     renderKeywordAttributes,
     formatKeywordAttributes,
 }) => {
@@ -42,7 +46,7 @@ const KeywordSelectionModal: React.FC<KeywordSelectionModalProps> = ({
                     <>
                         <h2 className="text-3xl font-bold pt-8 px-8 pb-4 text-center shrink-0">Choose a Power to Absorb</h2>
                         <div className="overflow-y-auto px-8 flex-1 min-h-0">
-                            <div className="grid grid-cols-2 gap-4 pb-4">
+                            <div className="space-y-3 pb-4">
                                 {boss.keywords && boss.keywords.map((keywordName: string) => {
                                     const keywordData = allKeywordsData.find(kw => kw.name === keywordName);
                                     const weaponConflict = keywordData ? getWeaponConflict(keywordData) : null;
@@ -50,25 +54,37 @@ const KeywordSelectionModal: React.FC<KeywordSelectionModalProps> = ({
                                     const derivedFrom = keywordData?.category === 'passive' ? getBossKeywordDerivedFrom(keywordName) : null;
                                     const hasConflict = !!(weaponConflict || raceConflict);
                                     return (
-                                        <button
-                                            key={keywordName}
-                                            onClick={() => handleKeywordSelection(keywordName)}
-                                            className={`bg-gray-700 hover:bg-gray-600 border-2 rounded-lg p-4 text-left transition-colors ${hasConflict ? 'border-yellow-600' : 'border-gray-500'}`}
-                                        >
-                                            <div className="text-xl font-semibold capitalize mb-2">{keywordName}</div>
-                                            {keywordData && (
-                                                <div className="text-sm text-gray-300">{renderKeywordAttributes(keywordData)}</div>
+                                        <div key={keywordName} className="flex gap-2">
+                                            <button
+                                                onClick={() => handleKeywordSelection(keywordName)}
+                                                disabled={selectionInProgress}
+                                                className={`flex-1 bg-gray-700 hover:bg-gray-600 border-2 rounded-lg p-4 text-left transition-colors ${hasConflict ? 'border-yellow-600' : 'border-gray-500'}`}
+                                            >
+                                                <div className="text-xl font-semibold capitalize mb-2">{keywordName}</div>
+                                                {keywordData && (
+                                                    <div className="text-sm text-gray-300">{renderKeywordAttributes(keywordData)}</div>
+                                                )}
+                                                {derivedFrom && (
+                                                    <div className="mt-2 text-xs text-yellow-400 italic">↳ Derived from {derivedFrom} — boss will re-acquire</div>
+                                                )}
+                                                {weaponConflict && (
+                                                    <div className="mt-2 text-xs text-yellow-300">⚠ {weaponConflict}</div>
+                                                )}
+                                                {raceConflict && (
+                                                    <div className="mt-2 text-xs text-yellow-300">⚠ {raceConflict}</div>
+                                                )}
+                                            </button>
+                                            {handleFeedToCauldron && (
+                                                <button
+                                                    onClick={() => handleFeedToCauldron(keywordName)}
+                                                    disabled={selectionInProgress}
+                                                    className="px-3 py-2 bg-purple-800 hover:bg-purple-700 border-2 border-purple-600 rounded-lg text-purple-200 text-sm font-semibold transition-colors whitespace-nowrap self-start disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    title="Feed this keyword to the cauldron"
+                                                >
+                                                    🔥 Feed
+                                                </button>
                                             )}
-                                            {derivedFrom && (
-                                                <div className="mt-2 text-xs text-yellow-400 italic">↳ Derived from {derivedFrom} — boss will re-acquire</div>
-                                            )}
-                                            {weaponConflict && (
-                                                <div className="mt-2 text-xs text-yellow-300">⚠ {weaponConflict}</div>
-                                            )}
-                                            {raceConflict && (
-                                                <div className="mt-2 text-xs text-yellow-300">⚠ {raceConflict}</div>
-                                            )}
-                                        </button>
+                                        </div>
                                     );
                                 })}
                             </div>
@@ -129,6 +145,7 @@ const KeywordSelectionModal: React.FC<KeywordSelectionModalProps> = ({
                                         <button
                                             key={keywordName}
                                             onClick={() => handleRemoveKeywordSelection(keywordName)}
+                                            disabled={selectionInProgress}
                                             className="bg-gray-700 hover:bg-red-900 border-2 border-red-700 rounded-lg p-4 text-left transition-colors"
                                         >
                                             <div className="text-xl font-semibold capitalize mb-2">{keywordName}</div>

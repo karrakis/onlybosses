@@ -15,6 +15,7 @@ interface BottomPanelProps {
     canCast: boolean;
     visibleActionBarSpells: string[];
     formatSpellName: (name: string) => string;
+    isActionAffordable: (action: string) => boolean;
     handleAction: (action: string) => void;
     onOpenCastMenu: () => void;
     onDescend: () => void;
@@ -34,6 +35,7 @@ const BottomPanel: React.FC<BottomPanelProps> = ({
     canCast,
     visibleActionBarSpells,
     formatSpellName,
+    isActionAffordable,
     handleAction,
     onOpenCastMenu,
     onDescend,
@@ -107,23 +109,28 @@ const BottomPanel: React.FC<BottomPanelProps> = ({
                         >
                             Guard
                         </div>
-                        {physicalAbilities.map((ability) => (
-                            <div
-                                key={ability}
-                                className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
-                                    actionInProgress || bossDying || (forcedPlayerAction && forcedPlayerAction !== ability)
-                                        ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40'
-                                        : 'bg-orange-900 hover:bg-orange-800 active:bg-orange-700'
-                                }`}
-                                onClick={() => !actionInProgress && !bossDying && (!forcedPlayerAction || forcedPlayerAction === ability) && handleAction(ability)}
-                            >
-                                {formatSpellName(ability)}
-                            </div>
-                        ))}
+                        {physicalAbilities.map((ability) => {
+                            const affordable = isActionAffordable(ability);
+                            const abilityDisabled = actionInProgress || bossDying || !affordable || (forcedPlayerAction && forcedPlayerAction !== ability);
+                            return (
+                                <div
+                                    key={ability}
+                                    className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
+                                        abilityDisabled
+                                            ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40'
+                                            : 'bg-orange-900 hover:bg-orange-800 active:bg-orange-700'
+                                    }`}
+                                    onClick={() => !abilityDisabled && handleAction(ability)}
+                                >
+                                    {formatSpellName(ability)}
+                                </div>
+                            );
+                        })}
                         {activeAbilities.map((ability) => {
                             const cooldownTurns = ((player?.cooldowns?.[ability] ?? 0) as number);
                             const onCooldown = cooldownTurns > 0;
-                            const abilityDisabled = actionInProgress || bossDying || onCooldown || (forcedPlayerAction != null && forcedPlayerAction !== ability);
+                            const affordable = isActionAffordable(ability);
+                            const abilityDisabled = actionInProgress || bossDying || onCooldown || !affordable || (forcedPlayerAction != null && forcedPlayerAction !== ability);
                             return (
                                 <div
                                     key={ability}
@@ -151,19 +158,24 @@ const BottomPanel: React.FC<BottomPanelProps> = ({
                                 Cast
                             </div>
                         )}
-                        {visibleActionBarSpells.map((spell) => (
-                            <div
-                                key={spell}
-                                className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
-                                    actionInProgress || bossDying || (forcedPlayerAction && forcedPlayerAction !== `cast:${spell}`)
-                                        ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40'
-                                        : 'bg-blue-800 hover:bg-blue-700 active:bg-blue-600'
-                                }`}
-                                onClick={() => !actionInProgress && !bossDying && (!forcedPlayerAction || forcedPlayerAction === `cast:${spell}`) && handleAction(`cast:${spell}`)}
-                            >
-                                {formatSpellName(spell)}
-                            </div>
-                        ))}
+                        {visibleActionBarSpells.map((spell) => {
+                            const actionName = `cast:${spell}`;
+                            const affordable = isActionAffordable(actionName);
+                            const spellDisabled = actionInProgress || bossDying || !affordable || (forcedPlayerAction && forcedPlayerAction !== actionName);
+                            return (
+                                <div
+                                    key={spell}
+                                    className={`w-48 h-24 rounded-lg border-2 border-gray-400 flex items-center justify-center cursor-pointer ${
+                                        spellDisabled
+                                            ? 'bg-gray-900 text-gray-600 cursor-not-allowed opacity-40'
+                                            : 'bg-blue-800 hover:bg-blue-700 active:bg-blue-600'
+                                    }`}
+                                    onClick={() => !spellDisabled && handleAction(actionName)}
+                                >
+                                    {formatSpellName(spell)}
+                                </div>
+                            );
+                        })}
                     </>
                 )}
             </div>

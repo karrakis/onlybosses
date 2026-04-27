@@ -22,6 +22,10 @@ Rails.application.routes.draw do
   post 'remove_keyword', to: 'game#remove_keyword'
   post 'record_snapshot', to: 'game#record_snapshot'
   post 'set_boss', to: 'game#set_boss'
+  post 'feed_to_cauldron', to: 'game#feed_to_cauldron'
+  get 'get_cauldron_status', to: 'game#get_cauldron_status'
+  post 'craft_passive', to: 'game#craft_passive'
+  post 'select_crafted_passive', to: 'game#select_crafted_passive'
   get  'simulate_runs', to: 'simulation#run'
 
   resources :simulation_batches, only: [:create, :show] do

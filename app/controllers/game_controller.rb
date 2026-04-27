@@ -25,6 +25,7 @@ class GameController < ApplicationController
     SnapshotService.close_run(session, outcome || 'quit') if session[:run_id]
     PlayerFactory.reset_player(session)
     session[:current_boss] = nil
+    session[:cauldron_keyword_ids] = []
     player = PlayerFactory.get_player(session)
     render json: player
   end
@@ -247,6 +248,116 @@ class GameController < ApplicationController
 
   def save_current_boss(boss_data)
     session[:current_boss] = boss_data.is_a?(ActionController::Parameters) ? boss_data.to_unsafe_h : boss_data
+  end
+
+  public
+
+  # POST /feed_to_cauldron
+  # Adds a keyword to the cauldron for the current run.
+  # Stored in session so progress persists across depths in this run.
+  def feed_to_cauldron
+    keyword = params[:keyword]
+    depth   = params[:depth].to_i
+
+    # Add keyword ID to cauldron (store as integer IDs, not names).
+    # Repeats intentionally count as additional feeds.
+    kw_record = BossKeyword.find_by(name: keyword)
+    if kw_record
+      session[:cauldron_keyword_ids] ||= []
+      session[:cauldron_keyword_ids] << kw_record.id
+    end
+    
+    render json: {
+      cauldron_status: get_cauldron_status_data(depth)
+    }
+  end
+
+  # GET /get_cauldron_status
+  # Returns the current session cauldron status for a specific depth threshold
+  def get_cauldron_status
+    depth   = params[:depth].to_i
+
+    render json: get_cauldron_status_data(depth)
+  end
+
+  # POST /craft_passive
+  # When enough keywords are in the cauldron, returns 3 random passives to choose from
+  def craft_passive
+    depth   = params[:depth].to_i
+
+    fed_count = Array(session[:cauldron_keyword_ids]).length
+    
+    required = get_required_cauldron_count(depth)
+    if fed_count < required
+      render json: { error: "Not enough keywords. Have #{fed_count}, need #{required}" }, status: :unprocessable_entity
+      return
+    end
+    
+    # Get available passives based on depth tier
+    tier = (depth - 1) / 5 + 1  # tier 1 for depths 1-5, etc.
+    available_passives = BossKeyword
+      .where(category: 'passive')
+      .where('rarity <= ?', tier)
+      .pluck(:name)
+    
+    # Select 3 random passives (or fewer if not enough available)
+    selected_passives = available_passives.sample([3, available_passives.length].min)
+    
+    render json: {
+      available_passives: selected_passives,
+      rarity_tier: tier
+    }
+  end
+
+  # POST /select_crafted_passive
+  # Applies the selected passive to the player and clears the cauldron.
+  # This is not a new descent choice event, so it does not level up or write
+  # another depth snapshot.
+  def select_crafted_passive
+    keyword = params[:keyword]
+    depth   = params[:depth].to_i
+    
+    # Verify passive is valid
+    passive = BossKeyword.find_by(name: keyword, category: 'passive')
+    unless passive
+      render json: { error: 'Invalid passive' }, status: :bad_request
+      return
+    end
+    
+    player = PlayerFactory.get_player(session)
+    
+    # Add the passive to the player
+    PlayerFactory.add_keyword(player, keyword)
+    PlayerFactory.save_player(session, player)
+    
+    # Clear the cauldron
+    session[:cauldron_keyword_ids] = []
+    
+    render json: {
+      player: player,
+      cauldron_cleared: true
+    }
+  end
+
+  private
+
+  def get_cauldron_status_data(depth)
+    required = get_required_cauldron_count(depth)
+    keyword_ids = Array(session[:cauldron_keyword_ids])
+    fed_count = keyword_ids.length
+    keyword_name_by_id = BossKeyword.where(id: keyword_ids).index_by(&:id)
+    
+    {
+      fed_count: fed_count,
+      required_count: required,
+      is_ready: fed_count >= required,
+      fed_keywords: keyword_ids.map { |id| keyword_name_by_id[id]&.name }.compact
+    }
+  end
+
+  def get_required_cauldron_count(depth)
+    tier = (depth - 1) / 5 + 1
+    tier + 1
   end
 
   # Delegate to CombatService — kept here only as a private wrapper so choose_boss_action

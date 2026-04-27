@@ -254,8 +254,11 @@ class CombatService
     if (debuffs = entity['active_debuffs'])
       # DoT and per-turn side effects fire before the turn counter decrements
       debuffs.each do |_name, data|
+        next unless data.is_a?(Hash)
+        
         # Damage-over-time (poison, burning, etc.)
-        if (dot = data['damage_per_turn'].to_f) > 0
+        dot_value = data['damage_per_turn']
+        if dot_value.is_a?(Numeric) && (dot = dot_value.to_f) > 0
           dmg_type    = data['damage_type'] || 'physical'
           life_res    = DamageCalculator.get_life_resource(entity)
           life_key    = "#{entity_key}#{life_res.capitalize}"
@@ -270,10 +273,11 @@ class CombatService
 
       # Tick durations — permanent debuffs (turns == -1) are skipped
       debuffs.each do |name, data|
+        next unless data.is_a?(Hash)
         next if data['turns'].to_i == -1
         debuffs[name] = data.merge('turns' => data['turns'].to_i - 1)
       end
-      debuffs.reject! { |_, data| data['turns'].to_i != -1 && data['turns'].to_i <= 0 }
+      debuffs.reject! { |_, data| !data.is_a?(Hash) || (data['turns'].to_i != -1 && data['turns'].to_i <= 0) }
     end
 
     if (cooldowns = entity['cooldowns'])

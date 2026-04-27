@@ -90,9 +90,31 @@ class DamageCalculator
     # type reductions, so piercing penetration scales on what actually arrives.
     piercing_before_reduction = damage_by_type['piercing'].to_f
 
-    # 6. Apply defender's incoming damage reduction by type.
-    #     options[:ignore_physical_reduction_fraction] (e.g. 0.5 for smash) causes
-    #     physical-subtype reductions <1.0 to be partially bypassed on this hit.
+    # 6. Apply flat damage reduction first (additive from all keyword sources,
+    #    applied once per hit since calculate_damage is called per-hit by
+    #    multi-hit attacks).
+    #    Piercing damage partially ignores flat DR: ceil(10% of piercing before
+    #    defender reductions) is subtracted from the effective flat reduction.
+    pre_reduction_total = damage_by_type.values.sum.to_f
+    flat_reduction = get_flat_damage_reduction(defender_data)
+    piercing_penetration = (piercing_before_reduction * 0.1).ceil
+    effective_flat_reduction = [flat_reduction - piercing_penetration, 0].max
+    after_flat_total = [pre_reduction_total - effective_flat_reduction, 0].max
+
+    # Keep type proportions after flat reduction so per-type percentage reductions
+    # can be applied after flat in the same hit.
+    if pre_reduction_total > 0
+      scale_after_flat = after_flat_total / pre_reduction_total
+      damage_by_type.each do |type, amount|
+        damage_by_type[type] = amount * scale_after_flat
+      end
+    else
+      damage_by_type.each_key { |type| damage_by_type[type] = 0 }
+    end
+
+    # 7. Apply defender's incoming damage reduction by type AFTER flat reduction.
+    #    options[:ignore_physical_reduction_fraction] (e.g. 0.5 for smash) causes
+    #    physical-subtype reductions <1.0 to be partially bypassed on this hit.
     defender_reduction_mods = get_damage_reduction_by_type(defender_data)
     ignore_frac = options[:ignore_physical_reduction_fraction].to_f
     damage_by_type.each do |type, amount|
@@ -103,20 +125,11 @@ class DamageCalculator
       end
       damage_by_type[type] = amount * modifier
     end
-    
-    # 7. Sum all damage types for total damage
+
+    # 8. Sum all damage types for total damage
     total_damage = damage_by_type.values.sum
 
-    # 7b. Apply flat damage reduction (additive from all keyword sources, applied once
-    #     per hit since calculate_damage is called per-hit by multi-hit attacks).
-    #     Piercing damage partially ignores flat DR: ceil(10% of piercing before
-    #     type reductions) is subtracted from the effective flat reduction.
-    flat_reduction = get_flat_damage_reduction(defender_data)
-    piercing_penetration = (piercing_before_reduction * 0.1).ceil
-    effective_flat_reduction = [flat_reduction - piercing_penetration, 0].max
-    total_damage = [total_damage - effective_flat_reduction, 0].max
-
-    # 8. Determine which resource to damage
+    # 9. Determine which resource to damage
     life_resource = get_life_resource(defender_data)
     
     {
