@@ -992,6 +992,62 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         return null;
     }
 
+    function formatEffectName(name: string): string {
+        return name.replace(/_/g, ' ');
+    }
+
+    function structuredAbilityDetails(attrs: any): string[] {
+        const parts: string[] = [];
+
+        if (typeof attrs.mana_cost === 'number' && attrs.mana_cost > 0) {
+            parts.push(`${attrs.mana_cost} mana`);
+        }
+
+        if (attrs.negation_check?.target_has_property) {
+            parts.push(`Negated if target has ${formatEffectName(attrs.negation_check.target_has_property)}`);
+        }
+
+        if (attrs.negation_check?.target_has_ability_immunity) {
+            parts.push(`Negated by ${formatEffectName(attrs.negation_check.target_has_ability_immunity)} immunity`);
+        }
+
+        const casterBuff = attrs.on_success_caster?.add_buff;
+        if (casterBuff?.name) {
+            const turns = casterBuff.turns;
+            const buffName = formatEffectName(casterBuff.name);
+            parts.push(typeof turns === 'number'
+                ? `Grants ${buffName} for ${turns} turn${turns !== 1 ? 's' : ''}`
+                : `Grants ${buffName}`);
+        }
+
+        if (attrs.on_success_target?.force_action) {
+            parts.push(`Forces target to ${formatEffectName(attrs.on_success_target.force_action)} next turn`);
+        }
+
+        const targetDebuff = attrs.on_success_target?.add_debuff;
+        if (targetDebuff?.name) {
+            const debuffName = formatEffectName(targetDebuff.name);
+            const turns = targetDebuff.turns;
+            let debuffText = `Applies ${debuffName}`;
+
+            if (typeof targetDebuff.multiplier === 'number' && targetDebuff.multiplier !== 1) {
+                if (targetDebuff.name.includes('vulnerability')) {
+                    debuffText += ` (+${((targetDebuff.multiplier - 1) * 100).toFixed(0)}% damage taken)`;
+                } else {
+                    debuffText += ` (x${targetDebuff.multiplier.toFixed(2)} effect)`;
+                }
+            }
+
+            if (typeof turns === 'number') {
+                debuffText += ` for ${turns} turn${turns !== 1 ? 's' : ''}`;
+            }
+
+            parts.push(debuffText);
+        }
+
+        return parts;
+    }
+
     function formatKeywordAttributes(keyword: any): string {
         const attrs = keyword.properties || {};
         const parts: string[] = [];
@@ -1142,6 +1198,8 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
 
         if (typeof attrs.description === 'string' && attrs.description) {
             parts.push(attrs.description);
+        } else {
+            parts.push(...structuredAbilityDetails(attrs));
         }
 
         return parts.join(' • ') || 'No special attributes';
@@ -1319,6 +1377,8 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
 
         if (typeof attrs.description === 'string' && attrs.description) {
             parts.push(attrs.description);
+        } else {
+            parts.push(...structuredAbilityDetails(attrs));
         }
         
         if (parts.length === 0) return 'No special attributes';
@@ -1424,9 +1484,26 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                         ? `${TIER_UP_DEPTH - depth} descent${TIER_UP_DEPTH - depth === 1 ? '' : 's'} until:`
                                         : 'Arriving now:'}
                                 </div>
-                                {tieredKeywords.map(kw => (
-                                    <div key={kw} className="text-gray-200 capitalize">{kw}</div>
-                                ))}
+                                {tieredKeywords.map((kw) => {
+                                    const kwData = allKeywordsData.find((k: any) => k.name === kw);
+                                    const label = (
+                                        <span className="text-gray-200 capitalize underline decoration-dotted cursor-help">
+                                            {kw}
+                                        </span>
+                                    );
+
+                                    return (
+                                        <div key={kw}>
+                                            {kwData ? (
+                                                <Tooltip text={formatKeywordAttributes(kwData)}>
+                                                    {label}
+                                                </Tooltip>
+                                            ) : (
+                                                <span className="text-gray-200 capitalize">{kw}</span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                         {loading && <div className="text-gray-400">Loading boss...</div>}
