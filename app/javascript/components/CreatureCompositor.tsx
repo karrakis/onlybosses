@@ -829,14 +829,20 @@ export function compositeCreature(keywords: string[]): CompositorResult {
 
   // ── Wing anchor ───────────────────────────────────────────────────────────
   const phoenixScale = body === 'phoenix' ? 1.2 : 1;
-  const WING_ANCHOR_MAP: Partial<Record<BodyPlan | 'human', HeadPt>> = {
-    goblin: GOBLIN_WING_ANCHOR,
-    phoenix: PHOENIX_WING_ANCHOR,
+  type WingAttachment = { anchor: HeadPt; wingsBackground?: boolean };
+  const defaultWingAttachment: WingAttachment = {
+    anchor: { cx: 80, cy: (body === 'giant_spider' && !boneMode) ? 90 : 125 },
+    wingsBackground: false,
   };
-  const defaultWingAnchor: HeadPt = { cx: 80, cy: (body === 'giant_spider' && !boneMode) ? 90 : 125 };
-  const baseWingAnchor = WING_ANCHOR_MAP[body] ?? defaultWingAnchor;
-  const wingAnchorX = Math.round(baseWingAnchor.cx * phoenixScale);
-  const wingAnchorY = Math.round(baseWingAnchor.cy * phoenixScale);
+  const WING_ATTACHMENT_MAP: Partial<Record<BodyPlan | 'human', WingAttachment>> = {
+    goblin: { anchor: GOBLIN_WING_ANCHOR, wingsBackground: false },
+    phoenix: { anchor: PHOENIX_WING_ANCHOR, wingsBackground: true },
+    harpy: { anchor: { cx: 80, cy: 125 }, wingsBackground: true },
+    giant_spider: { anchor: { cx: 80, cy: 90 }, wingsBackground: !boneMode },
+  };
+  const wingAttachment = WING_ATTACHMENT_MAP[body] ?? defaultWingAttachment;
+  const wingAnchorX = Math.round(wingAttachment.anchor.cx * phoenixScale);
+  const wingAnchorY = Math.round(wingAttachment.anchor.cy * phoenixScale);
 
   return {
     parts,
@@ -850,7 +856,7 @@ export function compositeCreature(keywords: string[]): CompositorResult {
            : body === 'harpy'    ? 480 :                       420,
     hasWings,
     goatBody: body === 'goat',
-    wingsBackground: (body === 'giant_spider' && !boneMode) || body === 'harpy' || body === 'phoenix',
+    wingsBackground: !!wingAttachment.wingsBackground,
     wingAnchorX,
     wingAnchorY,
   };
