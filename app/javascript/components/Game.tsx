@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { BossService, Boss } from '../services/BossService';
 import { PlayerService, Player } from '../services/PlayerService';
 import takeAction from '../actions/takeAction';
-import CreatureCompositor, { compositeCreature } from './CreatureCompositor';
+import CreatureViewport from './CreatureViewport';
 import ShakeAnimation from './ShakeAnimation';
 import Tooltip from './Tooltip';
 import { getPassiveDescription } from '../data/passiveDescriptions';
@@ -15,9 +15,7 @@ import WeaponConflictModal from './modals/WeaponConflictModal';
 import BottomPanel from './BottomPanel';
 import InitialKeywordSelectionScreen from './InitialKeywordSelectionScreen';
 import DepthCounter from './DepthCounter';
-
-const WING_SVG = '/assets/keywords/wing.svg';
-const WING_SVG_FLAPX = '/assets/keywords/wing.svg?flapx=1';
+import { toAnimationStyle, type AnimationStyleSpec } from './animationStyle';
 
 interface GameProps {
     onExit: () => void;
@@ -185,67 +183,23 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
         return formatSpellName(a).localeCompare(formatSpellName(b));
     });
 
-    const renderCreatureWithWings = (keywords: string[], animStyle: React.CSSProperties = {}) => {
-        const { hasWings, goatBody, wingAnchorX, wingAnchorY } = compositeCreature(keywords);
+    const playerAnimSpec: AnimationStyleSpec | null = playerCombatAnim === 'whirlwind'
+        ? { animName: 'whirlwindSpin', duration: '0.7s', easing: 'ease-in-out' }
+        : playerCombatAnim === 'smash'
+        ? { animName: 'smashSlam', duration: '0.8s', easing: 'ease-in-out' }
+        : playerCombatAnim === 'fly'
+        ? { animName: 'anim-fly', duration: '1.1s', easing: 'ease-in-out', fillMode: 'both' }
+        : isFlying
+        ? { animName: 'flyFloat', duration: '2s', easing: 'ease-in-out', iterationCount: 'infinite' }
+        : null;
 
-        const wingStyleRight: React.CSSProperties = goatBody ? {
-            position: 'absolute', width: 350, height: 330,
-            left: -24, top: -33,
-            transformOrigin: '28px 140px',
-            transform: 'rotate(-40deg) rotateY(70deg)',
-            pointerEvents: 'none',
-        } : {
-            position: 'absolute', width: 350, height: 330,
-            left: wingAnchorX - 30, top: wingAnchorY - 220,
-            pointerEvents: 'none',
-        };
-
-        const wingStyleLeft: React.CSSProperties = goatBody ? {
-            position: 'absolute', width: 350, height: 330,
-            left: 5, top: -33,
-            transformOrigin: '28px 140px',
-            transform: 'scaleX(-1) scaleY(-1) rotate(153deg) rotateY(-70deg)',
-            pointerEvents: 'none',
-        } : {
-            position: 'absolute', width: 350, height: 330,
-            left: wingAnchorX - 320, top: wingAnchorY - 220,
-            transform: 'scaleX(-1)',
-            pointerEvents: 'none',
-        };
-
-        return (
-            <div style={{ position: 'relative', width: 160, height: 420, overflow: 'visible' }}>
-                {hasWings && goatBody && (
-                    <object type="image/svg+xml" data={WING_SVG_FLAPX} aria-label="right wing"
-                        style={{ ...wingStyleRight, zIndex: 0 }}
-                    />
-                )}
-
-                <div style={{ position: 'absolute', inset: 0, perspective: '800px', ...animStyle }}>
-                    {hasWings && !goatBody && (
-                        <>
-                            <object type="image/svg+xml" data={WING_SVG} aria-label="right wing"
-                                style={{ ...wingStyleRight, zIndex: 0 }}
-                            />
-                            <object type="image/svg+xml" data={WING_SVG} aria-label="left wing"
-                                style={{ ...wingStyleLeft, zIndex: 0 }}
-                            />
-                        </>
-                    )}
-
-                    <div style={{ position: 'absolute', left: 0, top: 0, zIndex: 10 }}>
-                        <CreatureCompositor keywords={keywords} />
-                    </div>
-                </div>
-
-                {hasWings && goatBody && (
-                    <object type="image/svg+xml" data={WING_SVG_FLAPX} aria-label="left wing"
-                        style={{ ...wingStyleLeft, zIndex: 20 }}
-                    />
-                )}
-            </div>
-        );
-    };
+    const bossAnimSpec: AnimationStyleSpec | null = bossCombatAnim === 'whirlwind'
+        ? { animName: 'whirlwindSpin', duration: '0.7s', easing: 'ease-in-out' }
+        : bossCombatAnim === 'smash'
+        ? { animName: 'smashSlam', duration: '0.8s', easing: 'ease-in-out' }
+        : isBossWebbed
+        ? { animName: 'webPulse', duration: '1.5s', easing: 'ease-in-out', iterationCount: 'infinite' }
+        : null;
 
     const playerStatusData = useMemo(() => {
         if (!player) {
@@ -1449,17 +1403,13 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                 intensity={10}
                                 onComplete={() => setPlayerShaking(false)}
                             >
-                                {/* scaleX(-1) mirrors the left-facing compositor so the player faces right */}
-                                <div style={{ transform: 'scaleX(-1)', display: 'inline-block', marginBottom: '4rem' }}>
-                                    {renderCreatureWithWings(
-                                        player?.keywords ?? [],
-                                        playerCombatAnim === 'whirlwind' ? { animation: 'whirlwindSpin 0.7s ease-in-out' }
-                                        : playerCombatAnim === 'smash'   ? { animation: 'smashSlam 0.8s ease-in-out' }
-                                        : playerCombatAnim === 'fly'     ? { animation: 'anim-fly 1.1s ease-in-out both' }
-                                        : isFlying                        ? { animation: 'flyFloat 2s ease-in-out infinite' }
-                                        : {}
-                                    )}
-                                </div>
+                                <CreatureViewport
+                                    keywords={player?.keywords ?? []}
+                                    mode="compact"
+                                    flipped={true}
+                                    style={{ display: 'inline-block', marginBottom: '4rem' }}
+                                    animStyle={toAnimationStyle(playerAnimSpec)}
+                                />
                             </ShakeAnimation>
                         </div>
                     </div>
@@ -1511,16 +1461,12 @@ const Game: React.FC<GameProps> = ({ onExit, availableKeywords: initialAvailable
                                         transition: 'opacity 5000ms',
                                         marginBottom: '4rem',
                                     }}>
-                                        {renderCreatureWithWings(
-                                            bossKeywords,
-                                            bossCombatAnim === 'whirlwind'
-                                                ? { animation: 'whirlwindSpin 0.7s ease-in-out' }
-                                                : bossCombatAnim === 'smash'
-                                                ? { animation: 'smashSlam 0.8s ease-in-out' }
-                                                : isBossWebbed
-                                                ? { animation: 'webPulse 1.5s ease-in-out infinite' }
-                                                : {}
-                                        )}
+                                        <CreatureViewport
+                                            keywords={bossKeywords}
+                                            mode="compact"
+                                            style={{ marginBottom: '4rem' }}
+                                            animStyle={toAnimationStyle(bossAnimSpec)}
+                                        />
                                     </div>
                                 </ShakeAnimation>
                             </div>

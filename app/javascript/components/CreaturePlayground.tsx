@@ -1,5 +1,6 @@
 import * as React from "react";
-import CreatureCompositor, { compositeCreature } from "./CreatureCompositor";
+import CreatureViewport from "./CreatureViewport";
+import { toAnimationStyle, type AnimationStyleSpec } from "./animationStyle";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,13 +18,10 @@ type Keyword = {
 
 const ACTION_CATEGORIES = ['attack', 'ability', 'spell'];
 
-type AnimDef = {
+type AnimDef = AnimationStyleSpec & {
   label:     string;   // display name on the button
   keyframes: string;   // @keyframes block (name must match animName)
   animName:  string;   // must be globally unique
-  duration:  string;
-  easing:    string;
-  fillMode:  string;
 };
 
 const ANIMATIONS: Record<string, AnimDef> = {
@@ -185,173 +183,6 @@ const RARITY_COLOUR: Record<string, string> = {
   legendary: 'text-orange-400',
 };
 
-// SVGs served by Sprockets from app/assets/images/keywords/
-const HUMANOID_SVG      = '/assets/keywords/humanoid.svg';
-const PHOENIX_SVG       = '/assets/keywords/phoenix.svg';
-const WING_SVG          = '/assets/keywords/wing.svg';
-const WING_SVG_STATIC   = '/assets/keywords/wing.svg?static=1';
-const WING_SVG_FLAPX    = '/assets/keywords/wing.svg?flapx=1';
-
-// Creatures that use humanoid.svg as their base model
-const HUMANOID_CREATURES = new Set([
-  'human', 'golem', 'vampire', 'giant', 'goblin',
-  'troll', 'zombie', 'werewolf', 'minotaur',
-]);
-
-// Creatures with their own dedicated base SVG
-const GHOST_SVG        = '/assets/keywords/ghost.svg';
-const SKELETON_SVG     = '/assets/keywords/skeleton.svg';
-const LICH_SVG         = '/assets/keywords/lich.svg';
-const MERMAID_SVG      = '/assets/keywords/mermaid.svg';
-const CENTAUR_SVG      = '/assets/keywords/centaur.svg';
-const GIANT_SPIDER_SVG = '/assets/keywords/giant_spider.svg';
-
-// Creatures with their own dedicated base SVG
-const CREATURE_SVG: Record<string, string> = {
-  phoenix:      PHOENIX_SVG,
-  ghost:        GHOST_SVG,
-  skeleton:     SKELETON_SVG,
-  lich:         LICH_SVG,
-  mermaid:      MERMAID_SVG,
-  centaur:      CENTAUR_SVG,
-  giant_spider: GIANT_SPIDER_SVG,
-};
-
-// Keywords handled by the compositor (inline SVG assembly)
-const COMPOSITOR_KEYWORDS = new Set([
-  'human', 'golem', 'vampire', 'giant', 'goblin', 'troll', 'zombie', 'werewolf', 'minotaur',
-  'centaur', 'skeleton', 'lich', 'ghost', 'mermaid', 'phoenix', 'giant_spider', 'harpy', 'giant_rat', 'giant_snake',
-]);
-
-function usesCompositor(selected: string[]): boolean {
-  // Use compositor if any selected creature keyword is in the compositor set,
-  // or if no creature keyword is selected at all (default humanoid)
-  return selected.some(k => COMPOSITOR_KEYWORDS.has(k)) ||
-    !selected.some(k => CREATURE_SVG[k] || HUMANOID_CREATURES.has(k));
-}
-
-function resolveBodySvg(selected: string[]): string {
-  // First selected keyword that has a dedicated SVG wins
-  for (const name of selected) {
-    if (CREATURE_SVG[name]) return CREATURE_SVG[name];
-  }
-  // Humanoid creatures (and default)
-  return HUMANOID_SVG;
-}
-
-// ─── Creature viewport ────────────────────────────────────────────────────────
-
-function CreatureViewport({ selected, activeAnim, flipped }: { selected: string[]; activeAnim: string | null; flipped: boolean }) {
-  const anim = activeAnim ? (ANIMATIONS[activeAnim] ?? FALLBACK_ANIM) : null;
-
-  const animStyle: React.CSSProperties = anim ? {
-    animation: `${anim.animName} ${anim.duration} ${anim.easing} ${anim.fillMode}`,
-  } : {};
-
-  const flipStyle: React.CSSProperties = flipped ? { transform: 'scaleX(-1)' } : {};
-
-  // Compositor path: inline SVG assembled from parts
-  if (usesCompositor(selected)) {
-    const { hasWings, goatBody, wingsBackground, wingAnchorX, wingAnchorY } = compositeCreature(selected);
-
-    // Non-goat wings: position derived from compositor anchor point.
-    // P0 of wing bezier sits at object-pixel (30, 220); we pin it to the anchor.
-    //   right: left = 270 + wingAnchorX - 30,  top = 60 + wingAnchorY - 220
-    //   left:  left = 270 + wingAnchorX - 320, top = 60 + wingAnchorY - 220
-    const wingAbsX = 270 + wingAnchorX;
-    const wingAbsY = 60  + wingAnchorY;
-
-    // Goat wings grow from the withers, rotated & depth-tilted to lie across the back.
-    const wingStyleRight: React.CSSProperties = goatBody ? {
-      position: 'absolute', width: 350, height: 330,
-      left: 246, top: 27,
-      transformOrigin: '28px 140px',
-      transform: 'rotate(-40deg) rotateY(70deg)',
-      pointerEvents: 'none',
-    } : {
-      position: 'absolute', width: 350, height: 330,
-      left: wingAbsX - 30, top: wingAbsY - 220,
-      pointerEvents: 'none',
-    };
-    const wingStyleLeft: React.CSSProperties = goatBody ? {
-      position: 'absolute', width: 350, height: 330,
-      left: 275, top: 27,
-      transformOrigin: '28px 140px',
-      transform: 'scaleX(-1) scaleY(-1) rotate(153deg) rotateY(-70deg)',
-      pointerEvents: 'none',
-    } : {
-      position: 'absolute', width: 350, height: 330,
-      left: wingAbsX - 320, top: wingAbsY - 220,
-      transform: 'scaleX(-1)',
-      pointerEvents: 'none',
-    };
-
-    return (
-      <div
-        className="relative"
-        style={{ width: 700, height: 540, background: '#1e1e2e', borderRadius: 8, overflow: 'visible', ...flipStyle }}
-      >
-        {/* Goat far wing — behind body, X-axis flap */}
-        {hasWings && goatBody && (
-          <object type="image/svg+xml" data={WING_SVG_FLAPX} aria-label="right wing"
-            style={{ ...wingStyleRight, position: 'absolute' }}
-          />
-        )}
-        <div style={{ position: 'absolute', inset: 0, perspective: '800px', ...animStyle }}>
-          {hasWings && !goatBody && (
-            <>
-              <object type="image/svg+xml" data={WING_SVG} aria-label="right wing"
-                style={wingStyleRight}
-              />
-              <object type="image/svg+xml" data={WING_SVG} aria-label="left wing"
-                style={wingStyleLeft}
-              />
-            </>
-          )}
-          <div style={{ position: 'absolute', left: 270, top: 60, zIndex: 10 }}>
-            <CreatureCompositor keywords={selected}/>
-          </div>
-        </div>
-        {/* Goat near wing — in front of body, X-axis flap */}
-        {hasWings && goatBody && (
-          <object type="image/svg+xml" data={WING_SVG_FLAPX} aria-label="left wing"
-            style={{ ...wingStyleLeft, position: 'absolute', zIndex: 20 }}
-          />
-        )}
-      </div>
-    );
-  }
-
-  // Legacy path: <object> SVG for creatures not yet in compositor
-  const hasWings = selected.includes('fly');
-  const bodySvg  = resolveBodySvg(selected);
-
-  return (
-    <div
-      className="relative"
-      style={{ width: 700, height: 540, background: '#1e1e2e', borderRadius: 8, overflow: 'visible', ...flipStyle }}
-    >
-      <div style={{ position: 'absolute', inset: 0, ...animStyle }}>
-        {hasWings && (
-          <>
-            <object type="image/svg+xml" data={WING_SVG} aria-label="right wing"
-              style={{ position: 'absolute', width: 350, height: 330, left: 320, top: -35, pointerEvents: 'none' }}
-            />
-            <object type="image/svg+xml" data={WING_SVG} aria-label="left wing"
-              style={{ position: 'absolute', width: 350, height: 330, left: 30, top: -35,
-                       transform: 'scaleX(-1)', pointerEvents: 'none' }}
-            />
-          </>
-        )}
-        <object type="image/svg+xml" data={bodySvg} aria-label="creature body"
-          style={{ position: 'absolute', width: 160, height: 420, left: 270, top: 60,
-                   overflow: 'visible', pointerEvents: 'none', zIndex: 10 }}
-        />
-      </div>
-    </div>
-  );
-}
-
 // ─── Keyword chip ─────────────────────────────────────────────────────────────
 
 function KeywordChip({ name, category, onRemove }: { name: string; category: string; onRemove: () => void }) {
@@ -508,7 +339,12 @@ export default function CreaturePlayground({ onBack }: { onBack: () => void }) {
 
         {/* Centre: creature viewport */}
         <div className="flex-1 flex items-center justify-center p-6 overflow-auto">
-          <CreatureViewport selected={selected} activeAnim={activeAnim} flipped={!isBoss} />
+          <CreatureViewport
+            keywords={selected}
+            mode="playground"
+            flipped={!isBoss}
+            animStyle={toAnimationStyle(activeAnim ? (ANIMATIONS[activeAnim] ?? FALLBACK_ANIM) : null)}
+          />
         </div>
 
         {/* Right: action panel */}
