@@ -61,6 +61,15 @@
   100% { transform: translate(-50%, -50%) scale(4.5); opacity: 0; }
 }
 
+/* Fly: one-shot takeoff animation when the fly action is used */
+@keyframes anim-fly {
+  0%   { transform: translateY(0); }
+  30%  { transform: translateY(-40px); }
+  60%  { transform: translateY(-60px); }
+  80%  { transform: translateY(-50px); }
+  100% { transform: translateY(0); }
+}
+
 /* Fly: player gently floats up/down with sky-blue glow */
 @keyframes flyFloat {
   0%, 100% { transform: translateY(0);    filter: drop-shadow(0 0 8px rgba(100, 200, 255, 0.7)); }
